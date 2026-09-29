@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Acompanhamento de Plantio | Nadiana Agropecuária</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#EDF1EF; --surface:#FFFFFF; --surface-2:#F6F8F7; --ink:#00232B; --muted:#5A6D71; --line:#D6DFDB;
+  --brand:#019A62; --brand-deep:#016835; --petrol:#00232B; --warn:#C97A00; --bad:#C8363D; --rain:#1C8FD0;
+  --c-milho:#E0A100; --c-feijao:#D4454C; --c-pasto:#2E9E5B; --c-mix:#7D5BA6; --c-soja:#6B8E23; --c-outro:#6F8A91;
+  --shadow:0 1px 2px rgba(0,35,43,.06);
+  --sans:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --cond:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1719; --surface:#132427; --surface-2:#182D31; --ink:#E3ECE9; --muted:#93A8AB; --line:#26403F;
+  --brand:#1DBA7E; --brand-deep:#15925F; --shadow:none;
+}}
+:root[data-theme="dark"]{
+  --bg:#0C1719; --surface:#132427; --surface-2:#182D31; --ink:#E3ECE9; --muted:#93A8AB; --line:#26403F;
+  --brand:#1DBA7E; --brand-deep:#15925F; --shadow:none;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+img{max-width:100%}
+
+/* ---------- Header ---------- */
+.top{background:var(--petrol);color:#E9F3EF}
+.top-in{max-width:1480px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.logo{background:#fff;border-radius:6px;padding:6px 10px;display:flex;align-items:center;height:48px}
+.logo img{height:36px;width:auto;display:block}
+.ttl h1{margin:0;font-family:var(--cond);font-weight:600;font-size:26px;letter-spacing:.2px;line-height:1.1}
+.ttl p{margin:2px 0 0;color:#9FC4B6;font-size:13.5px}
+.safra{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:3px 10px;font-size:13px;margin-left:6px;vertical-align:3px;font-family:var(--sans);font-weight:500}
+.safra i{width:7px;height:7px;border-radius:50%;background:#35D39A;display:inline-block}
+.actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid rgba(255,255,255,.25);background:transparent;color:#E9F3EF;border-radius:6px;padding:7px 12px;cursor:pointer;font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:rgba(255,255,255,.08)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:#01855A}
+.btn svg{width:16px;height:16px}
+.btn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.drive{margin:3px 0 0;font-size:13px;color:#CFE3DB;display:flex;align-items:center;gap:7px}
+.drive .ddot{width:8px;height:8px;border-radius:50%;background:#9FC4B6;flex:none}
+.drive.ok .ddot{background:#35D39A}
+.drive.warn .ddot{background:#F2B400}
+.drive.err .ddot{background:#FF6B6B}
+.drive.busy .ddot{background:#9FC4B6;animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* Tabs */
+.tabs{max-width:1480px;margin:0 auto;padding:0 24px;display:flex;gap:2px;overflow-x:auto}
+.tab{background:none;border:0;color:#9FC4B6;padding:10px 16px 12px;cursor:pointer;font-weight:600;font-size:14.5px;border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:#fff;border-bottom-color:#35D39A}
+.tab:hover{color:#fff}
+
+/* ---------- Filters ---------- */
+.filters{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(0,35,43,.05)}
+.filters-in{max-width:1480px;margin:0 auto;padding:12px 24px 10px;display:flex;gap:14px 18px;flex-wrap:wrap;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fg>label,.fg>.lbl{font-size:12.5px;color:var(--muted);font-weight:600}
+.dates{display:flex;gap:6px;align-items:center}
+.dates input{border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:5px 8px;height:34px;width:142px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:4px 11px 4px 9px;cursor:pointer;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;height:34px;font-weight:500}
+.chip .dot{width:10px;height:10px;border-radius:3px;background:var(--c)}
+.chip[aria-pressed="true"]{border-color:var(--c,var(--brand));background:color-mix(in srgb,var(--c,var(--brand)) 14%,var(--surface));}
+#fCult .chip[aria-pressed="false"]{opacity:.55}
+#fTurno .chip .dot{display:none}
+.chip[aria-pressed="false"] .dot{background:transparent;border:1.5px solid var(--c)}
+.ms{position:relative}
+.ms-btn{border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:5px 30px 5px 10px;height:34px;min-width:150px;max-width:220px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;font-size:14px}
+.ms-btn::after{content:"";position:absolute;right:11px;top:13px;border:5px solid transparent;border-top-color:var(--muted)}
+.ms-btn.on{border-color:var(--brand);color:var(--brand-deep);font-weight:600}
+:root[data-theme="dark"] .ms-btn.on{color:var(--brand)}
+.ms-pop{position:absolute;top:38px;left:0;z-index:50;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 30px rgba(0,35,43,.18);width:260px;padding:8px;display:none}
+.ms.open .ms-pop{display:block}
+.ms-pop input[type=search]{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:6px 8px;margin-bottom:6px}
+.ms-list{max-height:280px;overflow:auto}
+.ms-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:5px;cursor:pointer;font-size:14px}
+.ms-opt:hover{background:var(--surface-2)}
+.ms-opt small{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.ms-opt.grp{font-size:12px;color:var(--muted);font-weight:700;padding:8px 6px 2px;cursor:default}
+.ms-opt.grp:hover{background:none}
+.ms-foot{display:flex;gap:6px;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.lnk{background:none;border:0;color:var(--brand-deep);cursor:pointer;font-weight:600;font-size:13px;padding:4px 6px;border-radius:4px}
+:root[data-theme="dark"] .lnk{color:var(--brand)}
+.lnk:hover{background:var(--surface-2)}
+select.sel{border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:5px 8px;height:34px}
+.rainf{display:flex;gap:8px;align-items:center}
+.rainf input[type=range]{width:110px;accent-color:var(--rain)}
+.rainf output{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:44px}
+.epocas{max-width:1480px;margin:0 auto;padding:0 24px 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.epocas .lbl{font-size:12.5px;color:var(--muted);font-weight:600;margin-right:4px}
+.ep{border:1px solid var(--line);background:none;border-radius:5px;padding:2px 9px;font-size:13px;cursor:pointer;color:var(--ink)}
+.ep:hover{border-color:var(--brand)}
+.ep.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.status{max-width:1480px;margin:0 auto;padding:0 24px 10px;font-size:13px;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.status b{color:var(--ink);font-weight:600}
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:1px 4px 1px 7px;font-size:12.5px;color:var(--ink)}
+.tag button{border:0;background:none;cursor:pointer;color:var(--muted);padding:0 3px;font-size:14px;line-height:1}
+.help{font-size:12.5px;color:var(--muted)}
+
+/* ---------- Main ---------- */
+main{max-width:1480px;margin:0 auto;padding:20px 24px 48px}
+.view{display:none}.view.on{display:block}
+
+/* Hero: progress ribbon */
+.hero{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:28px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 24px;box-shadow:var(--shadow)}
+.hero .big{font-family:var(--cond);font-weight:700;font-size:58px;line-height:.95;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.hero .big small{font-size:24px;font-weight:600;color:var(--muted);margin-left:4px}
+.hero .sub{color:var(--muted);font-size:14.5px;margin-top:6px}
+.hero .sub b{color:var(--ink)}
+.ribbon{position:relative;height:30px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;overflow:hidden;display:flex}
+.ribbon span{height:100%;transition:width .5s ease}
+.ribbon .goal{position:absolute;right:0;top:0;bottom:0;width:0}
+.leg{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:13.5px}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.leg b{font-variant-numeric:tabular-nums;font-weight:600}
+.scale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin:14px 0 18px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.kpi{padding:12px 16px;border-left:1px solid var(--line)}
+.kpi:first-child{border-left:0}
+.kpi .k{font-size:12.5px;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--cond);font-weight:600;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .v small{font-size:15px;color:var(--muted);font-weight:500;margin-left:3px}
+.kpi .d{font-size:12.5px;color:var(--muted)}
+.kpi.rain .v{color:var(--rain)}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px;box-shadow:var(--shadow);min-width:0;display:flex;flex-direction:column}
+.card h2{margin:0;font-size:16px;font-weight:700;letter-spacing:.1px}
+.card .hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.card .hd p{margin:0;font-size:13px;color:var(--muted)}
+.card .hd .tools{margin-left:auto;display:flex;gap:4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:none;padding:3px 10px;font-size:12.5px;cursor:pointer;color:var(--muted);font-weight:600}
+.seg button.on{background:var(--petrol);color:#fff}
+:root[data-theme="dark"] .seg button.on{background:var(--brand-deep)}
+.cv{position:relative;flex:none}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
+.h380{height:380px}.h320{height:320px}.h300{height:300px}.h280{height:280px}
+.empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:20px}
+.empty.on{display:flex}
+
+/* Tables */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;max-height:560px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-weight:700;font-size:12.5px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;z-index:1}
+th.n,td.n{text-align:right}
+th[data-dir="asc"]::after{content:" ▲";font-size:9px}
+th[data-dir="desc"]::after{content:" ▼";font-size:9px}
+td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.click{cursor:pointer}
+.bar{display:inline-block;width:80px;height:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px;vertical-align:middle;margin-right:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brand)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.ok{background:color-mix(in srgb,var(--brand) 16%,transparent);color:var(--brand-deep)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.pill.mid{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+:root[data-theme="dark"] .pill.ok{color:var(--brand)}
+.cdot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+
+/* Talhão mosaic */
+.mosaic{display:flex;flex-direction:column;gap:12px}
+.mrow{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:start}
+.mrow h3{margin:4px 0 0;font-size:13.5px;font-weight:700}
+.mrow h3 small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.tiles{display:flex;flex-wrap:wrap;gap:4px}
+.tile{border:1px solid var(--line);border-radius:5px;padding:4px 6px 3px;min-width:66px;cursor:pointer;background:var(--surface-2);position:relative;overflow:hidden;text-align:left}
+.tile .fill{position:absolute;left:0;bottom:0;top:0;opacity:.28}
+.tile b{position:relative;display:block;font-size:12.5px;font-weight:700}
+.tile small{position:relative;display:block;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tile.sel{outline:2px solid var(--ink);outline-offset:1px}
+.tile.dim{opacity:.35}
+
+/* Base de dados */
+.schema{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:16px}
+.ent{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:12px 14px}
+.ent h3{margin:0 0 2px;font-size:15px}
+.ent .src{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.ent ul{margin:0;padding:0;list-style:none;font-size:13px}
+.ent li{padding:2px 0;display:flex;gap:6px}
+.ent li code{font-family:var(--sans);font-weight:600}
+.ent li .k{color:var(--brand-deep);font-weight:700;font-size:11px;border:1px solid currentColor;border-radius:3px;padding:0 3px;line-height:16px}
+:root[data-theme="dark"] .ent li .k{color:var(--brand)}
+.ent .cnt{float:right;font-family:var(--cond);font-size:22px;font-weight:600;line-height:1}
+.dbsel{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+
+.note{background:color-mix(in srgb,var(--brand) 8%,var(--surface));border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line));border-radius:8px;padding:10px 14px;font-size:13.5px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start}
+.note b{font-weight:700}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--petrol);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw}
+.toast.on{opacity:1}
+.busyov{position:fixed;inset:0;background:rgba(0,35,43,.55);z-index:200;display:flex;align-items:center;justify-content:center}
+.busyov>div{background:var(--surface);color:var(--ink);padding:16px 22px;border-radius:10px;display:flex;gap:12px;align-items:center;font-weight:600}
+.spinner{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:1100px){
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .kpi:nth-child(4){border-left:0}
+  .kpi:nth-child(n+4){border-top:1px solid var(--line)}
+  .s8,.s7,.s6,.s5,.s4{grid-column:span 12}
+  .hero{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .top-in,.tabs,.filters-in,.epocas,.status,main{padding-left:14px;padding-right:14px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpi:nth-child(odd){border-left:0}.kpi:nth-child(4){border-left:1px solid var(--line)}
+  .kpi:nth-child(n+3){border-top:1px solid var(--line)}
+  .hero .big{font-size:44px}
+  .filters{position:static}
+  .mrow{grid-template-columns:1fr}
+  .actions{margin-left:0}
+  .h380{height:320px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body{background:#fff;font-size:12px}
+  .actions,.tabs,.filters-in,.epocas,.ms-pop,.tools,.toast,.noprint{display:none!important}
+  .filters{position:static;box-shadow:none;border:0}
+  .top{background:#fff;color:#00232B;border-bottom:2px solid #019A62}
+  .ttl p{color:#5A6D71}
+  .drive{color:#5A6D71!important}
+  .safra{border-color:#ccc}
+  .card,.hero,.kpis{box-shadow:none;break-inside:avoid}
+  .view{display:none!important}.view.on{display:block!important}
+  .tw{max-height:none;overflow:visible}
+  main{padding:10px 0}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="logo"><img src="data:image/webp;base64,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" alt="Nadiana Agropecuária"></div>
+    <div class="ttl">
+      <h1>Acompanhamento de plantio <span class="safra"><i></i><span id="safraName">—</span></span></h1>
+      <p id="srcLine">Fazenda Reata e unidades</p>
+      <p class="drive" id="driveLine" hidden><span class="ddot" id="driveDot"></span><span id="driveTxt"></span></p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnDrive" hidden title="Busca a versão mais recente da planilha no Google Drive">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        Atualizar do Drive</button>
+      <input type="file" id="fileIn" accept=".xlsx,.xlsm,.xls" class="sr" aria-label="Arquivo Excel da safra">
+      <button class="btn primary" id="btnLoad" title="Lê as abas Diário, Pluviometria, DADOS, Teste de Germinação e a aba de planejamento">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+        Carregar planilha</button>
+      <button class="btn" id="btnReset" hidden>Voltar aos dados originais</button>
+      <button class="btn" id="btnCsv">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+        Exportar CSV</button>
+      <button class="btn" id="btnPrint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1"/><path d="M7 14h10v7H7z"/></svg>
+        Baixar PDF</button>
+      <button class="btn" id="btnTheme" aria-label="Alternar tema claro e escuro" title="Tema claro / escuro">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-view="plantio">Plantio e chuva</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="talhoes">Talhões</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="sementes">Lotes de sementes</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="base">Base de dados</button>
+  </nav>
+</header>
+
+<section class="filters" id="filterBar" aria-label="Filtros">
+  <div class="filters-in">
+    <div class="fg">
+      <span class="lbl">Período de plantio</span>
+      <div class="dates">
+        <input type="date" id="fIni" aria-label="Data inicial">
+        <span class="help">até</span>
+        <input type="date" id="fFim" aria-label="Data final">
+      </div>
+    </div>
+    <div class="fg">
+      <span class="lbl">Cultura</span>
+      <div class="chips" id="fCult"></div>
+    </div>
+    <div class="fg" id="fgTurno"><span class="lbl">Turno</span><div class="chips" id="fTurno"></div></div>
+    <div class="fg"><span class="lbl">Fazenda</span><div class="ms" id="msFaz"></div></div>
+    <div class="fg"><span class="lbl">Talhão</span><div class="ms" id="msTal"></div></div>
+    <div class="fg"><span class="lbl">Cultivar / híbrido</span><div class="ms" id="msVar"></div></div>
+    <div class="fg">
+      <label for="fRain">Chuva no dia do plantio</label>
+      <div class="rainf">
+        <select class="sel" id="fRain">
+          <option value="all">Qualquer dia</option>
+          <option value="dry">Só dias secos (0 mm)</option>
+          <option value="wet">Só dias com chuva ≥</option>
+        </select>
+        <input type="range" id="fRainMin" min="0" max="50" step="1" value="1" aria-label="Chuva mínima em mm" disabled>
+        <output id="fRainOut" for="fRainMin">1 mm</output>
+      </div>
+    </div>
+    <div class="fg"><button class="lnk" id="btnClear">Limpar filtros</button></div>
+  </div>
+  <div class="epocas" id="epocas"></div>
+  <div class="status" id="status"></div>
+</section>
+
+<main>
+  <!-- ============ PLANTIO ============ -->
+  <section class="view on" id="v-plantio" role="tabpanel">
+    <div class="note noprint" id="noteSoja" hidden></div>
+    <div class="hero">
+      <div>
+        <div class="big" id="hArea">0<small>ha</small></div>
+        <div class="sub" id="hSub"></div>
+      </div>
+      <div>
+        <div class="ribbon" id="ribbon" role="img" aria-label="Área plantada por cultura sobre a área total dos talhões"></div>
+        <div class="scale"><span>0 ha</span><span id="scaleMax"></span></div>
+        <div class="leg" id="ribLeg"></div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid">
+      <div class="card s12">
+        <div class="hd"><h2>Acompanhamento diário de plantio</h2><p>Barras: hectares plantados no dia. Linhas: área acumulada.</p>
+          <div class="tools"><div class="seg" id="segDaily"><button class="on" data-m="cult">Por cultura</button><button data-m="tot">Total</button></div></div></div>
+        <div class="cv h380"><canvas id="chDaily"></canvas><div class="empty" id="eDaily">Nenhum plantio com os filtros atuais. Amplie o período ou limpe os filtros.</div></div>
+      </div>
+
+      <div class="card s8">
+        <div class="hd"><h2>Pluviometria</h2><p>Chuva diária (mm), acumulado do período e área plantada no dia.</p>
+          <div class="tools"><div class="seg" id="segRain"><button class="on" data-m="d">Diário</button><button data-m="w">Semanal</button></div></div></div>
+        <div class="cv h320"><canvas id="chRain"></canvas><div class="empty" id="eRain">Sem registros de chuva no período.</div></div>
+      </div>
+      <div class="card s4">
+        <div class="hd"><h2 id="tCult">Cultura</h2><p>Participação na área plantada</p></div>
+        <div class="cv h320"><canvas id="chCult"></canvas><div class="empty" id="eCult">Sem dados.</div></div>
+      </div>
+
+      <div class="card s5">
+        <div class="hd"><h2>Fazenda</h2><p>Área plantada por unidade. Clique numa barra para filtrar.</p></div>
+        <div class="cv h320"><canvas id="chFaz"></canvas><div class="empty" id="eFaz">Sem dados.</div></div>
+      </div>
+      <div class="card s7">
+        <div class="hd"><h2 id="tVar">Cultivares e híbridos</h2><p>Área plantada por material. Clique para filtrar.</p>
+          <div class="tools"><div class="seg" id="segVar"></div></div></div>
+        <div class="cv h320"><canvas id="chVar"></canvas><div class="empty" id="eVar">Sem dados.</div></div>
+      </div>
+
+      <div class="card s4" id="cardTurno">
+        <div class="hd"><h2>Turno</h2><p>Área plantada por turno em cada fazenda. Clique para filtrar.</p></div>
+        <div class="cv h280"><canvas id="chTurno"></canvas><div class="empty" id="eTurno">Sem turno registrado.</div></div>
+      </div>
+      <div class="card s8" id="cardWeek">
+        <div class="hd"><h2>Ritmo por semana</h2><p>Hectares plantados por semana e chuva da semana; ajuda a ver janelas perdidas por chuva.</p></div>
+        <div class="cv h280"><canvas id="chWeek"></canvas><div class="empty" id="eWeek">Sem dados.</div></div>
+      </div>
+
+      <div class="card s12">
+        <div class="hd"><h2>Registros de plantio</h2><p id="regCount"></p></div>
+        <div class="tw" style="max-height:420px"><table id="tbReg"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TALHOES ============ -->
+  <section class="view" id="v-talhoes" role="tabpanel">
+    <div class="grid">
+      <div class="card s12">
+        <div class="hd"><h2>Mapa de avanço por fazenda</h2><p>Cada bloco é um talhão; o preenchimento mostra o percentual plantado da área total. Clique para filtrar.</p></div>
+        <div class="mosaic" id="mosaic"></div>
+      </div>
+      <div class="card s12">
+        <div class="hd"><h2>Situação dos talhões</h2><p id="talCount"></p>
+          <div class="tools"><div class="seg" id="segTal"><button class="on" data-m="all">Todos</button><button data-m="done">Concluídos</button><button data-m="part">Em andamento</button><button data-m="none">Sem plantio</button></div></div></div>
+        <div class="tw"><table id="tbTal"></table></div>
+        <p class="help" style="margin:8px 2px 0">Chuva 7 dias: soma da chuva registrada do dia do primeiro plantio até 6 dias depois, indicador de umidade para emergência. População e ciclo vêm da aba de planejamento, quando preenchidos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SEMENTES ============ -->
+  <section class="view" id="v-sementes" role="tabpanel">
+    <div class="hd" style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+      <div class="fg"><span class="lbl" style="font-size:12.5px;color:var(--muted);font-weight:600">Variedade</span><div class="ms" id="msLVar"></div></div>
+      <div class="fg"><span class="lbl" style="font-size:12.5px;color:var(--muted);font-weight:600">Sementeira</span><div class="ms" id="msLSem"></div></div>
+      <div class="fg"><label for="gMin" style="font-size:12.5px;color:var(--muted);font-weight:600">Germinação mínima (7º dia)</label>
+        <div class="rainf"><input type="range" id="gMin" min="70" max="100" value="90" style="accent-color:var(--brand)"><output id="gMinOut">90%</output></div></div>
+    </div>
+    <div class="kpis" id="kpisL"></div>
+    <div class="grid">
+      <div class="card s8">
+        <div class="hd"><h2>Germinação por lote</h2><p>Germinação final (7º dia) e vigor (IVG %). A linha tracejada é o mínimo exigido.</p></div>
+        <div class="cv h380"><canvas id="chLot"></canvas><div class="empty" id="eLot">Nenhum lote com esses filtros.</div></div>
+      </div>
+      <div class="card s4">
+        <div class="hd"><h2>Curva de germinação</h2><p>Média acumulada do 3º ao 7º dia, por variedade</p></div>
+        <div class="cv h380"><canvas id="chCurve"></canvas></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Sementes recebidas por variedade</h2><p>Peso de nota (t), por sementeira</p></div>
+        <div class="cv h300"><canvas id="chEntVar"></canvas><div class="empty" id="eEntVar">Nenhuma entrada de sementes com esses filtros.</div></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Chegadas de sementes</h2><p>Peso recebido por data (t) e acumulado</p></div>
+        <div class="cv h300"><canvas id="chEntDate"></canvas><div class="empty" id="eEntDate">Nenhuma entrada de sementes com esses filtros.</div></div>
+      </div>
+      <div class="card s12">
+        <div class="hd"><h2>Entrada de sementes</h2><p id="entCount"></p></div>
+        <div class="tw" style="max-height:420px"><table id="tbEnt"></table></div>
+      </div>
+      <div class="card s12">
+        <div class="hd"><h2>Lotes testados</h2><p id="lotCount"></p></div>
+        <div class="tw"><table id="tbLot"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BASE ============ -->
+  <section class="view" id="v-base" role="tabpanel">
+    <div class="note"><div>A planilha foi organizada em sete tabelas ligadas pelo <b>Talhão</b>, pela <b>Cultivar</b> e pela <b>Data</b>. Os filtros do topo cruzam essas ligações: filtrar uma fazenda restringe os talhões, que restringem os registros diários e a área total usada no percentual. Para atualizar, preencha a planilha e use <b>Carregar planilha</b>; os dados ficam salvos neste navegador.</div></div>
+    <div class="schema" id="schema"></div>
+    <div class="card" id="confCard" style="margin-bottom:16px">
+      <div class="hd"><h2>Conferência dos dados</h2><p>Pontos da planilha que merecem revisão. O dashboard usa a fazenda do cadastro de talhões.</p></div>
+      <div class="tw" style="max-height:300px"><table id="tbConf"></table></div>
+    </div>
+    <div class="card">
+      <div class="hd"><h2>Visualizar tabela</h2><div class="tools"><div class="dbsel seg" id="dbSel"></div></div></div>
+      <div class="tw"><table id="tbDb"></table></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="busyov" id="busyOv" hidden><div><span class="spinner"></span><span id="busyTxt">Gerando PDF…</span></div></div>
+
+<script>
+/* ============ CONFIGURAÇÃO ============
+   Cole entre as aspas o endereço do Apps Script (termina em /exec). */
+const DATA_URL = "https://script.google.com/macros/s/AKfycbz5_QCzuaya1GKYIdLrrotkpj51H01k99vvgZFWWNq1CONkdmrX3w2iOeDvwp6cn4zEGw/exec";
+/* ===================================== */
+const ORIGINAL = {"safra":"—","plantio":[],"chuva":[],"talhoes":[],"cultivares":[],"culturas":[],"fazendas":[],"turnos":[],"plano":[],"lotes":[],"entradas":[]}
+;
+</script>
+<script>
+(function(){
+"use strict";
+/* ================= utilidades ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const nf0=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
+const nf1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const nf2=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const parseD=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d));};
+const fmtD=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'—';
+const fmtDY=s=>s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'—';
+const addDays=(s,n)=>{const d=parseD(s);d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
+const dayDiff=(a,b)=>Math.round((parseD(b)-parseD(a))/864e5);
+const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),3200);}
+const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
+
+function cultColor(c){
+  const n=norm(c);
+  if(n.startsWith('MILHO')&&!n.includes('MILHETO'))return cssv('--c-milho');
+  if(n.startsWith('FEIJ'))return cssv('--c-feijao');
+  if(n.startsWith('PASTO')||n.includes('BRACH')||n.includes('PIAT'))return cssv('--c-pasto');
+  if(n.startsWith('MIX')||n.includes('MILHETO')||n.includes('CROTAL'))return cssv('--c-mix');
+  if(n.startsWith('SOJA'))return cssv('--c-soja');
+  return cssv('--c-outro');
+}
+const turnoLab=s=>{if(!s)return 'Sem turno';const m=String(s).match(/^\s*(\d)/);return m?m[1]+'º turno':s;};
+const PAL=['#019A62','#E0A100','#1C8FD0','#D4454C','#7D5BA6','#8A6A2E','#2E9E5B','#00232B','#C2185B','#5E7C88'];
+const isCover=c=>{const n=norm(c);return n.startsWith('PASTO')||n.startsWith('MIX')||n.includes('MILHETO')||n.includes('BRACH')||n.includes('CROTAL');};
+
+/* ================= modelo de dados ================= */
+let DB, M; // M = modelo derivado
+function buildModel(db){
+  const tal=new Map();
+  const canon=s=>norm(s).replace(/BLOCO/g,'').trim().split(' ')[0].replace(/(.)\1+/g,'$1');
+  const FZ=[...new Set([...(db.fazendas||[]),...(db.talhoes||[]).map(t=>t.f).filter(Boolean),...(db.plantio||[]).map(p=>p.f).filter(Boolean)])];
+  const toFaz=s=>{if(!s)return null;const c=canon(s);return FZ.find(f=>canon(f)===c)||null;};
+  // fazenda do talhão: planejamento > bloco do cadastro > registros do Diário
+  const tf=new Map(),tr=new Map();
+  (db.plano||[]).forEach(p=>{const f=toFaz(p.f);if(p.tl&&f&&!tf.has(norm(p.tl)))tf.set(norm(p.tl),f);});
+  (db.plantio||[]).forEach(p=>{if(p.tl&&p.f&&!tr.has(norm(p.tl)))tr.set(norm(p.tl),p.f);});
+  (db.talhoes||[]).forEach(t=>{
+    const k=norm(t.tl); if(tal.has(k))return;
+    tal.set(k,{tl:t.tl,b:t.b||t.f||'—',f:toFaz(t.f)||tf.get(k)||toFaz(t.b)||tr.get(k)||'—',a:t.a||0});
+  });
+  (db.plantio||[]).forEach(p=>{const k=norm(p.tl);if(p.tl&&!tal.has(k))tal.set(k,{tl:p.tl,b:'—',f:tf.get(k)||p.f||'—',a:0,semCad:true});});
+  const rain=new Map();(db.chuva||[]).forEach(r=>rain.set(r.d,(rain.get(r.d)||0)+(+r.mm||0)));
+  const rec=(db.plantio||[]).filter(p=>p.d).map((p,i)=>{
+    const t=tal.get(norm(p.tl));
+    return {...p,i,k:norm(p.tl),f0:p.f,f:(t&&t.f!=='—'&&t.f)||p.f||'—',tl:t?t.tl:p.tl,c:(p.c||'—').trim(),v:(p.v||'—').trim(),mm:rain.get(p.d)||0};
+  });
+  const plano=new Map();(db.plano||[]).forEach(p=>{const k=norm(p.tl);if(!p.c&&!p.v&&!p.ini)return;if(!plano.has(k))plano.set(k,[]);plano.get(k).push(p);});
+  const dates=[...rec.map(r=>r.d),...rain.keys()].sort();
+  const culturas=[...new Set([...rec.map(r=>r.c)])];
+  const ord=['MILHO','SOJA','FEIJ','PASTO','MIX'];
+  culturas.sort((a,b)=>{const ia=ord.findIndex(o=>norm(a).startsWith(o)),ib=ord.findIndex(o=>norm(b).startsWith(o));return (ia<0?9:ia)-(ib<0?9:ib)||a.localeCompare(b);});
+  const turnos=[...new Set(rec.map(r=>r.t).filter(Boolean))].sort();
+  return {tal,rain,rec,plano,culturas,turnos,dMin:dates[0],dMax:dates[dates.length-1],
+    fazendas:[...new Set([...(db.fazendas||[]),...[...tal.values()].map(t=>t.f)])].filter(f=>f&&f!=='—').sort((a,b)=>a.localeCompare(b,'pt'))};
+}
+
+/* ================= estado dos filtros ================= */
+const F={ini:null,fim:null,tn:new Set(),cult:new Set(),faz:new Set(),tal:new Set(),vr:new Set(),rain:'all',rmin:1};
+function resetFilters(){F.ini=M.dMin;F.fim=M.dMax;F.cult=new Set(M.culturas);F.faz.clear();F.tal.clear();F.vr.clear();F.tn.clear();F.rain='all';F.rmin=1;}
+
+/* ================= multiselect ================= */
+function MultiSelect(el,{label,getOptions,set,onChange,allLabel}){
+  el.innerHTML=`<button class="ms-btn" type="button" aria-haspopup="listbox"></button><div class="ms-pop"><input type="search" placeholder="Buscar…" aria-label="Buscar ${label}"><div class="ms-list" role="listbox" aria-multiselectable="true"></div><div class="ms-foot"><button class="lnk" data-a="all">Marcar visíveis</button><button class="lnk" data-a="none">Limpar</button></div></div>`;
+  const btn=el.querySelector('.ms-btn'),pop=el.querySelector('.ms-pop'),q=el.querySelector('input'),list=el.querySelector('.ms-list');
+  function paint(){
+    const opts=getOptions(),s=q.value?norm(q.value):'';
+    let html='',lastG=null;
+    opts.forEach(o=>{
+      if(s&&!norm(o.v).includes(s)&&!norm(o.g||'').includes(s))return;
+      if(o.g&&o.g!==lastG){html+=`<div class="ms-opt grp">${esc(o.g)}</div>`;lastG=o.g;}
+      html+=`<label class="ms-opt"><input type="checkbox" value="${esc(o.v)}" ${set().has(o.v)?'checked':''}> ${o.c?`<span class="cdot" style="background:${o.c}"></span>`:''}${esc(o.v)}<small>${o.n!=null?nf0.format(o.n)+' ha':''}</small></label>`;
+    });
+    list.innerHTML=html||'<div class="help" style="padding:8px">Nada encontrado.</div>';
+    const n=set().size;
+    btn.textContent=n===0?allLabel:(n===1?[...set()][0]:`${n} selecionados`);
+    btn.classList.toggle('on',n>0);
+  }
+  btn.onclick=e=>{e.stopPropagation();$$('.ms.open').forEach(m=>m!==el&&m.classList.remove('open'));el.classList.toggle('open');if(el.classList.contains('open')){paint();q.focus();}};
+  pop.onclick=e=>e.stopPropagation();
+  q.oninput=paint;
+  list.onchange=e=>{const v=e.target.value;e.target.checked?set().add(v):set().delete(v);paint();onChange();};
+  pop.querySelector('[data-a=all]').onclick=()=>{list.querySelectorAll('input').forEach(i=>set().add(i.value));paint();onChange();};
+  pop.querySelector('[data-a=none]').onclick=()=>{set().clear();paint();onChange();};
+  el.addEventListener('keydown',e=>{if(e.key==='Escape'){el.classList.remove('open');btn.focus();}});
+  return {paint};
+}
+document.addEventListener('click',()=>$$('.ms.open').forEach(m=>m.classList.remove('open')));
+
+/* ================= filtragem ================= */
+function talPass(t){ // filtros estruturais de talhão
+  if(F.faz.size&&!F.faz.has(t.f))return false;
+  if(F.tal.size&&!F.tal.has(t.tl))return false;
+  return true;
+}
+function recPass(r,skip){
+  if(skip!=='date'&&(r.d<F.ini||r.d>F.fim))return false;
+  if(skip!=='cult'&&!F.cult.has(r.c))return false;
+  if(skip!=='faz'&&F.faz.size&&!F.faz.has(r.f))return false;
+  if(skip!=='turno'&&F.tn.size&&!F.tn.has(r.t))return false;
+  if(skip!=='tal'&&F.tal.size&&!F.tal.has(r.tl))return false;
+  if(skip!=='var'&&F.vr.size&&!F.vr.has(r.v))return false;
+  if(skip!=='rain'){
+    if(F.rain==='dry'&&r.mm>0)return false;
+    if(F.rain==='wet'&&r.mm<F.rmin)return false;
+  }
+  return true;
+}
+const filtered=()=>M.rec.filter(r=>recPass(r));
+function dateRange(a,b){const out=[];let d=a;while(d<=b){out.push(d);d=addDays(d,1);}return out;}
+function sumBy(arr,key,val='a'){const m=new Map();arr.forEach(r=>m.set(key(r),(m.get(key(r))||0)+(+r[val]||0)));return m;}
+
+/* ================= Chart.js defaults ================= */
+const charts={};
+function themeChart(){
+  Chart.defaults.font.family=cssv('--sans')||'Barlow';
+  Chart.defaults.font.size=12.5;
+  Chart.defaults.locale='pt-BR';
+  Chart.defaults.color=cssv('--muted');
+  Chart.defaults.borderColor=cssv('--line');
+  Chart.defaults.plugins.legend.labels.boxWidth=11;
+  Chart.defaults.plugins.legend.labels.boxHeight=11;
+  Chart.defaults.plugins.tooltip.backgroundColor='#00232B';
+  Chart.defaults.plugins.tooltip.padding=10;
+  Chart.defaults.plugins.tooltip.titleFont={weight:'600'};
+  Chart.defaults.maintainAspectRatio=false;
+  Chart.defaults.animation.duration=350;
+}
+function mk(id,cfg){if(charts[id]){charts[id].destroy();}charts[id]=new Chart(document.getElementById(id),cfg);return charts[id];}
+function empty(id,on){$('#'+id).classList.toggle('on',!!on);}
+const haTip=ctx=>`${ctx.dataset.label}: ${nf1.format(ctx.parsed.y??ctx.parsed)} ${ctx.dataset.unit||'ha'}`;
+// rótulos de valor nas barras (estilo da planilha original)
+const valueLabels={id:'valueLabels',afterDatasetsDraw(chart,args,opts){
+  if(!opts||!opts.on)return;const {ctx}=chart;ctx.save();ctx.font=`600 11.5px ${cssv('--sans')}`;ctx.fillStyle=cssv('--ink');
+  chart.data.datasets.forEach((ds,di)=>{const meta=chart.getDatasetMeta(di);if(meta.hidden||ds.type==='line')return;
+    meta.data.forEach((el,i)=>{const v=ds.data[i];if(!v)return;const horiz=chart.options.indexAxis==='y';
+      const txt=nf0.format(v);
+      if(horiz){ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(txt,el.x+5,el.y);}
+      else{ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(txt,el.x,el.y-3);}
+    });});ctx.restore();}};
+const goalLine={id:'goalLine',afterDatasetsDraw(chart,args,opts){if(opts==null||opts.v==null)return;const y=chart.scales.y;if(!y)return;const py=y.getPixelForValue(opts.v);const {ctx,chartArea:a}=chart;ctx.save();ctx.strokeStyle=cssv('--bad');ctx.setLineDash([6,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.left,py);ctx.lineTo(a.right,py);ctx.stroke();ctx.fillStyle=cssv('--bad');ctx.font=`600 11.5px ${cssv('--sans')}`;ctx.textAlign='right';const lb=`mínimo ${opts.v}%`,w=ctx.measureText(lb).width;ctx.fillStyle=cssv('--surface');ctx.fillRect(a.right-w-8,py-18,w+8,15);ctx.fillStyle=cssv('--bad');ctx.fillText(lb,a.right-4,py-6);ctx.restore();}};
+
+/* ================= renderização: Plantio ================= */
+let dailyMode='cult',rainMode='d',varMode=null;
+function totalPlanned(){let s=0;M.tal.forEach(t=>{if(talPass(t))s+=t.a;});return s;}
+
+function renderPlantio(){
+  if(!M.dMin){$('#hArea').innerHTML='—';$('#hSub').textContent=webOn()?'Carregando os dados da planilha…':'Nenhum dado carregado. Use Carregar planilha.';$('#kpis').innerHTML='';$('#ribbon').innerHTML='';$('#ribLeg').innerHTML='';renderStatus(0);return;}
+  const R=filtered();
+  const tot=R.reduce((s,r)=>s+r.a,0);
+  const plan=totalPlanned();
+  const byC=sumBy(R,r=>r.c);
+  // hero
+  $('#hArea').innerHTML=`${nf0.format(tot)}<small>ha</small>`;
+  const pct=plan?tot/plan*100:0;
+  $('#hSub').innerHTML=plan?`plantados, <b>${nf1.format(pct)}%</b> da área total dos talhões selecionados (${nf0.format(plan)} ha). Restam <b>${nf0.format(Math.max(plan-tot,0))} ha</b>.`:'plantados. Sem área total cadastrada para os talhões selecionados.';
+  const max=Math.max(plan,tot,1);
+  $('#ribbon').innerHTML=M.culturas.filter(c=>byC.get(c)).map(c=>`<span style="width:${byC.get(c)/max*100}%;background:${cultColor(c)}" title="${esc(c)}: ${nf1.format(byC.get(c))} ha"></span>`).join('');
+  $('#scaleMax').textContent=nf0.format(max)+' ha';
+  $('#ribLeg').innerHTML=M.culturas.filter(c=>byC.get(c)).map(c=>`<span><i style="background:${cultColor(c)}"></i>${esc(c)} <b>${nf0.format(byC.get(c))} ha</b></span>`).join('')+(plan>tot?`<span><i style="background:var(--surface-2);border:1px solid var(--line)"></i>A plantar <b>${nf0.format(plan-tot)} ha</b></span>`:'');
+
+  // KPIs
+  const byD=sumBy(R,r=>r.d);
+  const plantDays=[...byD.entries()].filter(([,v])=>v>0);
+  const best=plantDays.sort((a,b)=>b[1]-a[1])[0];
+  const rng=dateRange(F.ini,F.fim);
+  const rainTot=rng.reduce((s,d)=>s+(M.rain.get(d)||0),0);
+  const rainDays=rng.filter(d=>(M.rain.get(d)||0)>0).length;
+  const talP=new Set(R.filter(r=>r.a>0).map(r=>r.tl));
+  let talT=0;M.tal.forEach(t=>{if(talPass(t)&&t.a>0)talT++;});
+  const ds=R.map(r=>r.d).sort();
+  $('#kpis').innerHTML=[
+    ['Ritmo médio',plantDays.length?nf0.format(tot/plantDays.length):'0','ha/dia','nos dias com plantio'],
+    ['Dias com plantio',plantDays.length,'',ds.length?`${fmtD(ds[0])} a ${fmtD(ds[ds.length-1])}`:'—'],
+    ['Maior dia',best?nf0.format(best[1]):'0','ha',best?fmtDY(best[0]):'—'],
+    ['Talhões plantados',talP.size,`de ${talT}`,'com área total cadastrada'],
+    ['Chuva no período',nf0.format(rainTot),'mm',`${rainDays} dias com chuva`,'rain'],
+    ['Cultivares',new Set(R.map(r=>r.v)).size,'',`${new Set(R.map(r=>r.f)).size} fazendas`]
+  ].map(([k,v,u,d,cl])=>`<div class="kpi ${cl||''}"><div class="k">${k}</div><div class="v">${v}<small>${u}</small></div><div class="d">${d}</div></div>`).join('');
+
+  // status line
+  renderStatus(R.length);
+
+  // ---------- gráfico diário (barras + acumulado) ----------
+  const days=dateRange(F.ini,F.fim);
+  const labels=days.map(fmtD);
+  const cults=M.culturas.filter(c=>byC.get(c));
+  let dsets=[];
+  if(dailyMode==='cult'){
+    cults.forEach(c=>{
+      const m=sumBy(R.filter(r=>r.c===c),r=>r.d);
+      const col=cultColor(c);
+      dsets.push({type:'bar',label:c,data:days.map(d=>m.get(d)||0),backgroundColor:col,stack:'s',yAxisID:'y',order:2,borderRadius:2,maxBarThickness:22});
+      let acc=0;dsets.push({type:'line',label:c+' (acum.)',data:days.map(d=>acc+=m.get(d)||0),borderColor:col,backgroundColor:col,yAxisID:'y1',pointRadius:0,borderWidth:2.2,tension:.25,order:1});
+    });
+  } else {
+    dsets.push({type:'bar',label:'Área plantada no dia',data:days.map(d=>byD.get(d)||0),backgroundColor:cssv('--brand'),yAxisID:'y',order:2,borderRadius:2,maxBarThickness:22});
+    let acc=0;dsets.push({type:'line',label:'Acumulado',data:days.map(d=>acc+=byD.get(d)||0),borderColor:cssv('--petrol')==='#00232B'&&document.documentElement.dataset.theme!=='dark'&&!matchMedia('(prefers-color-scheme:dark)').matches?'#00232B':cssv('--ink'),yAxisID:'y1',pointRadius:0,borderWidth:2.5,tension:.25,order:1,fill:false});
+  }
+  mk('chDaily',{data:{labels,datasets:dsets},options:{interaction:{mode:'index',intersect:false},
+    scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:10}},y:{stacked:true,title:{display:true,text:'ha/dia'},beginAtZero:true},y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'ha acumulados'}}},
+    plugins:{legend:{position:'bottom',labels:{filter:i=>dailyMode==='tot'||!i.text.includes('(acum.)')}},tooltip:{callbacks:{label:haTip},filter:i=>i.parsed.y>0}}}});
+  empty('eDaily',!R.length);
+
+  // ---------- pluviometria ----------
+  let rl,rv,ra;
+  if(rainMode==='d'){rl=labels;rv=days.map(d=>M.rain.get(d)||0);ra=days.map(d=>byD.get(d)||0);}
+  else{const wk=weeks(days);rl=wk.map(w=>w.lab);rv=wk.map(w=>w.days.reduce((s,d)=>s+(M.rain.get(d)||0),0));ra=wk.map(w=>w.days.reduce((s,d)=>s+(byD.get(d)||0),0));}
+  let racc=0;const rAcc=rv.map(v=>racc+=v);
+  const rainC=cssv('--rain');
+  mk('chRain',{data:{labels:rl,datasets:[
+    {type:'line',label:'Chuva (mm)',unit:'mm',data:rv,borderColor:rainC,backgroundColor:rainC+'55',fill:'origin',yAxisID:'y',pointRadius:rainMode==='w'?3:0,borderWidth:1.8,tension:.15,order:2},
+    {type:'line',label:'Chuva acumulada (mm)',unit:'mm',data:rAcc,borderColor:rainC,borderDash:[5,4],yAxisID:'y2',pointRadius:0,borderWidth:1.6,order:1},
+    {type:'bar',label:'Área plantada (ha)',data:ra,backgroundColor:cssv('--brand')+'66',yAxisID:'y1',order:3,borderRadius:2,maxBarThickness:rainMode==='w'?38:16}
+  ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:10}},
+    y:{beginAtZero:true,title:{display:true,text:'mm'},ticks:{color:rainC}},
+    y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'ha'}},
+    y2:{display:false,beginAtZero:true}},
+    plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip}}}}});
+  empty('eRain',!rv.some(v=>v>0)&&!ra.some(v=>v>0));
+
+  // ---------- pizza cultura (ou variedade quando só há uma cultura) ----------
+  const oneC=cults.length<=1;
+  const byVv=sumBy(R,r=>r.v);
+  const pk=oneC?[...byVv.keys()].sort((a,b)=>byVv.get(b)-byVv.get(a)):cults;
+  const pv=oneC?pk.map(v=>byVv.get(v)):cults.map(c=>byC.get(c));
+  const pc=oneC?pk.map((v,i)=>pk.length===1?cultColor(cults[0]||''):PAL[i%PAL.length]):cults.map(cultColor);
+  $('#tCult').textContent=oneC?`Variedade${cults[0]?' ('+cults[0]+')':''}`:'Cultura';
+  mk('chCult',{type:'doughnut',data:{labels:pk,datasets:[{data:pv,backgroundColor:pc,borderColor:cssv('--surface'),borderWidth:2}]},
+    options:{cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${nf1.format(c.parsed)} ha (${nf1.format(c.parsed/tot*100)}%)`}}},
+    onClick:(e,els)=>{if(els.length){const k=pk[els[0].index];if(oneC)F.vr=new Set([k]);else F.cult=new Set([k]);syncUI();render();}}},
+    plugins:[{id:'center',afterDraw(ch){const {ctx,chartArea:a}=ch;if(!tot)return;ctx.save();ctx.textAlign='center';ctx.fillStyle=cssv('--ink');ctx.font=`700 22px ${cssv('--cond')}`;const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;ctx.fillText(nf0.format(tot),cx,cy+2);ctx.font=`500 12px ${cssv('--sans')}`;ctx.fillStyle=cssv('--muted');ctx.fillText('ha',cx,cy+18);ctx.restore();}}]});
+  empty('eCult',!tot);
+
+  // ---------- turno ----------
+  const tns=[...new Set(R.map(r=>r.t))].sort((a,b)=>String(a).localeCompare(String(b)));
+  const hasT=M.turnos.length>0;
+  $('#cardTurno').hidden=!hasT;$('#cardWeek').classList.toggle('s8',hasT);$('#cardWeek').classList.toggle('s12',!hasT);
+  if(hasT){const fzT=[...sumBy(R,r=>r.f).entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+    const tcol=['#E0A100','#00232B','#1C8FD0'];
+    mk('chTurno',{type:'bar',data:{labels:fzT,datasets:tns.map((tn,i)=>{const m=sumBy(R.filter(r=>r.t===tn),r=>r.f);return{label:turnoLab(tn),full:tn,data:fzT.map(f=>m.get(f)||0),backgroundColor:tn?(document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches))&&i===1?'#9FC4B6':tcol[i%3]:cssv('--c-outro'),borderRadius:2,maxBarThickness:22};})},
+      options:{indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'ha'}},y:{stacked:true,grid:{display:false}}},
+        plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.full||c.dataset.label}: ${nf1.format(c.parsed.x)} ha`},filter:i=>i.parsed.x>0}},
+        onClick:(e,els)=>{if(els.length){const tn=tns[els[0].datasetIndex];F.tn=new Set([tn]);syncUI();render();}}}});
+    empty('eTurno',!R.length);}
+
+  // ---------- fazenda (barras empilhadas por cultura) ----------
+  const byF=sumBy(R,r=>r.f);const fz=[...byF.keys()].sort((a,b)=>byF.get(b)-byF.get(a));
+  mk('chFaz',{type:'bar',data:{labels:fz,datasets:cults.map(c=>{const m=sumBy(R.filter(r=>r.c===c),r=>r.f);return{label:c,data:fz.map(f=>m.get(f)||0),backgroundColor:cultColor(c),stack:'f',borderRadius:2,maxBarThickness:44};})},
+    options:{scales:{x:{stacked:true,grid:{display:false},ticks:{autoSkip:false,maxRotation:45,minRotation:0}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'ha'}}},
+      plugins:{legend:{display:cults.length>1,position:'bottom'},tooltip:{callbacks:{label:haTip,footer:it=>'Total: '+nf1.format(byF.get(fz[it[0].dataIndex]))+' ha'},filter:i=>i.parsed.y>0}},
+      onClick:(e,els)=>{if(els.length){const f=fz[els[0].index];F.faz=new Set([f]);syncUI();render();}}},
+    plugins:[{id:'tot',afterDatasetsDraw(ch){const {ctx}=ch;const last=ch.getDatasetMeta(ch.data.datasets.length-1);if(!last)return;ctx.save();ctx.font=`600 11.5px ${cssv('--sans')}`;ctx.fillStyle=cssv('--ink');ctx.textAlign='center';
+      fz.forEach((f,i)=>{let top=Infinity,x=0;ch.data.datasets.forEach((d,di)=>{const m=ch.getDatasetMeta(di);if(m.hidden)return;const el=m.data[i];if(el&&d.data[i]){top=Math.min(top,el.y);x=el.x;}});if(top<Infinity)ctx.fillText(nf0.format(byF.get(f)),x,top-4);});ctx.restore();}}]});
+  empty('eFaz',!fz.length);
+
+  // ---------- cultivares por cultura (Milho / Feijão / Cobertura como na planilha) ----------
+  const groups=[];
+  cults.forEach(c=>{const g=isCover(c)?'Cobertura':c;if(!groups.includes(g))groups.push(g);});
+  if(!groups.includes(varMode))varMode=groups[0]||null;
+  $('#segVar').innerHTML=groups.map(g=>`<button data-g="${esc(g)}" class="${g===varMode?'on':''}">${esc(g)}</button>`).join('');
+  $('#segVar').querySelectorAll('button').forEach(b=>b.onclick=()=>{varMode=b.dataset.g;renderPlantio();});
+  const RV=R.filter(r=>varMode==='Cobertura'?isCover(r.c):r.c===varMode);
+  const byV=sumBy(RV,r=>r.v);const vs=[...byV.keys()].sort((a,b)=>byV.get(b)-byV.get(a));
+  const vcol=varMode==='Cobertura'?vs.map(v=>cultColor((RV.find(r=>r.v===v)||{}).c)):vs.map(()=>cultColor(varMode||''));
+  $('#tVar').textContent=varMode?`Cultivares e híbridos: ${varMode}`:'Cultivares e híbridos';
+  mk('chVar',{type:'bar',data:{labels:vs,datasets:[{label:'Área plantada',data:vs.map(v=>byV.get(v)),backgroundColor:vcol,borderRadius:3,maxBarThickness:26}]},
+    options:{indexAxis:'y',layout:{padding:{right:40}},scales:{x:{beginAtZero:true,title:{display:true,text:'ha'}},y:{grid:{display:false},ticks:{autoSkip:false}}},
+      plugins:{legend:{display:false},valueLabels:{on:true},tooltip:{callbacks:{label:c=>`${nf1.format(c.parsed.x)} ha, ${new Set(RV.filter(r=>r.v===vs[c.dataIndex]).map(r=>r.tl)).size} talhões`}}},
+      onClick:(e,els)=>{if(els.length){F.vr=new Set([vs[els[0].index]]);syncUI();render();}}},plugins:[valueLabels]});
+  empty('eVar',!vs.length);
+
+  // ---------- semanal ----------
+  const wk=weeks(days);
+  mk('chWeek',{data:{labels:wk.map(w=>w.lab),datasets:[
+    ...cults.map(c=>{const m=sumBy(R.filter(r=>r.c===c),r=>r.d);return{type:'bar',label:c,data:wk.map(w=>w.days.reduce((s,d)=>s+(m.get(d)||0),0)),backgroundColor:cultColor(c),stack:'w',yAxisID:'y',borderRadius:2,maxBarThickness:48,order:2};}),
+    {type:'line',label:'Chuva na semana (mm)',unit:'mm',data:wk.map(w=>w.days.reduce((s,d)=>s+(M.rain.get(d)||0),0)),borderColor:rainC,backgroundColor:rainC,yAxisID:'y1',pointRadius:4,pointBackgroundColor:cssv('--surface'),borderWidth:2,tension:.2,order:1}
+  ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'ha/semana'}},y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'mm'},ticks:{color:rainC}}},
+    plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip},filter:i=>i.parsed.y>0}}}});
+  empty('eWeek',!R.length);
+
+  // ---------- tabela registros ----------
+  $('#regCount').textContent=`${R.length} registros no filtro atual. Clique no cabeçalho para ordenar.`;
+  table('#tbReg',[
+    {k:'d',t:'Data',f:fmtDY},{k:'t',t:'Turno',f:v=>esc(turnoLab(v))},{k:'c',t:'Cultura',f:(v)=>`<span class="cdot" style="background:${cultColor(v)}"></span>${esc(v)}`},{k:'v',t:'Cultivar / híbrido'},
+    {k:'f',t:'Fazenda'},{k:'tl',t:'Talhão'},{k:'a',t:'Área (ha)',n:1,f:v=>nf2.format(v)},{k:'mm',t:'Chuva no dia (mm)',n:1,f:v=>v?nf1.format(v):'0'}
+  ],R,{sort:'d',dir:'asc'});
+}
+function weeks(days){
+  const out=[];let cur=null;
+  days.forEach(d=>{const dt=parseD(d);const dow=(dt.getUTCDay()+6)%7;const mon=addDays(d,-dow);
+    if(!cur||cur.k!==mon){cur={k:mon,days:[],lab:'sem. '+fmtD(mon<days[0]?days[0]:mon)};out.push(cur);}cur.days.push(d);});
+  return out;
+}
+function renderStatus(n){
+  const tags=[];
+  if(M.dMin&&(F.ini!==M.dMin||F.fim!==M.dMax))tags.push(['per',`${fmtDY(F.ini)} a ${fmtDY(F.fim)}`]);
+  if(F.cult.size!==M.culturas.length)tags.push(['cult',[...F.cult].join(', ')||'nenhuma cultura']);
+  F.tn.forEach(v=>tags.push(['tn:'+v,turnoLab(v)]));
+  F.faz.forEach(v=>tags.push(['faz:'+v,v]));
+  F.tal.forEach(v=>tags.push(['tal:'+v,'Talhão '+v]));
+  F.vr.forEach(v=>tags.push(['var:'+v,v]));
+  if(F.rain!=='all')tags.push(['rain',F.rain==='dry'?'Dias secos':`Chuva ≥ ${F.rmin} mm`]);
+  $('#status').innerHTML=`<span><b>${n}</b> registros de plantio</span>`+(tags.length?tags.map(([k,t])=>`<span class="tag">${esc(t)}<button data-k="${esc(k)}" aria-label="Remover filtro ${esc(t)}">×</button></span>`).join(''):'<span class="help">Sem filtros ativos. Use os campos acima; clicar nos gráficos também filtra.</span>');
+  $('#status').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;
+    if(k==='per'){F.ini=M.dMin;F.fim=M.dMax;}else if(k==='cult'){F.cult=new Set(M.culturas);}else if(k==='rain'){F.rain='all';}
+    else{const[t,...v]=k.split(':');({faz:F.faz,tal:F.tal,var:F.vr,tn:F.tn})[t].delete(v.join(':'));}
+    syncUI();render();});
+}
+
+/* ================= tabela genérica ordenável ================= */
+function table(sel,cols,rows,opt={}){
+  const el=$(sel);el._st=el._st||{sort:opt.sort,dir:opt.dir||'asc'};const st=el._st;
+  const col=cols.find(c=>c.k===st.sort)||cols[0];
+  const sorted=[...rows].sort((a,b)=>{let x=a[col.k],y=b[col.k];if(x==null)return 1;if(y==null)return -1;const r=typeof x==='number'?x-y:String(x).localeCompare(String(y),'pt',{numeric:true});return st.dir==='asc'?r:-r;});
+  el.innerHTML=`<thead><tr>${cols.map(c=>`<th class="${c.n?'n':''}" data-k="${c.k}" ${c.k===st.sort?`data-dir="${st.dir}"`:''}>${c.t}</th>`).join('')}</tr></thead><tbody>${sorted.slice(0,opt.limit||2000).map(r=>`<tr class="${opt.click?'click':''}" data-id="${esc(r[opt.id||'i'])}">${cols.map(c=>`<td class="${c.n?'n':''}">${c.f?c.f(r[c.k],r):esc(r[c.k]??'—')}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  el.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(st.sort===k)st.dir=st.dir==='asc'?'desc':'asc';else{st.sort=k;st.dir=cols.find(c=>c.k===k).n?'desc':'asc';}table(sel,cols,rows,opt);});
+  if(opt.click)el.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>opt.click(tr.dataset.id));
+}
+
+/* ================= Talhões ================= */
+let talMode='all';
+function talRows(){
+  const R=M.rec.filter(r=>recPass(r,'tal'));
+  const g=new Map();
+  R.forEach(r=>{if(!g.has(r.k))g.set(r.k,[]);g.get(r.k).push(r);});
+  const rows=[];
+  M.tal.forEach((t,k)=>{
+    if(!talPass(t)&&!(F.tal.size===0&&false))return;
+    const rs=(g.get(k)||[]).filter(r=>r.a>0);
+    const ap=rs.reduce((s,r)=>s+r.a,0);
+    const ds=rs.map(r=>r.d).sort();
+    const ini=ds[0]||null,fim=ds[ds.length-1]||null;
+    let ch7=null;if(ini){ch7=0;for(let i=0;i<7;i++)ch7+=M.rain.get(addDays(ini,i))||0;}
+    const pl=M.plano.get(k)||[];
+    const pop=pl.filter(p=>p.sha).map(p=>p.sha);
+    const em=pl.map(p=>p.em).filter(Boolean).sort()[0]||null;
+    const cic=pl.map(p=>p.ciclo).filter(Boolean);
+    // se o filtro de cultura/cultivar exclui o talhão inteiro, esconder quando não plantado
+    const cultFiltered=F.cult.size!==M.culturas.length||F.vr.size||F.rain!=='all';
+    if(cultFiltered&&!rs.length)return;
+    rows.push({k,tl:t.tl,f:t.f,b:t.b,at:t.a,ap,pct:t.a?ap/t.a*100:(ap?100:0),
+      c:[...new Set(rs.map(r=>r.c))].join(', ')||'—',v:[...new Set(rs.map(r=>r.v))].join(', ')||'—',
+      ini,fim,dias:ini?dayDiff(ini,fim)+1:null,ch7,ch7p:ini?addDays(ini,6)>M.dMax:false,pop:pop.length?Math.round(pop.reduce((a,b)=>a+b,0)/pop.length):null,
+      cic:cic.length?Math.max(...cic):null,em:em&&ini&&em>=ini?em:null,dae:ini&&em&&em>=ini?dayDiff(ini,em):null,cc:rs.length?rs.sort((a,b)=>b.a-a.a)[0].c:null});
+  });
+  return rows;
+}
+function renderTalhoes(){
+  const all=talRows();
+  // mosaico
+  const byF=new Map();all.forEach(r=>{if(!byF.has(r.f))byF.set(r.f,[]);byF.get(r.f).push(r);});
+  const fzs=[...byF.keys()].sort((a,b)=>a.localeCompare(b,'pt'));
+  $('#mosaic').innerHTML=fzs.map(f=>{const rs=byF.get(f).sort((a,b)=>a.tl.localeCompare(b.tl,'pt',{numeric:true}));const at=rs.reduce((s,r)=>s+r.at,0),ap=rs.reduce((s,r)=>s+r.ap,0);
+    return `<div class="mrow"><h3>${esc(f)}<small>${nf0.format(ap)} de ${nf0.format(at)} ha</small></h3><div class="tiles">${rs.map(r=>`<button class="tile ${F.tal.has(r.tl)?'sel':''}" data-tl="${esc(r.tl)}" title="${esc(r.tl)}: ${nf1.format(r.ap)} de ${nf1.format(r.at)} ha${r.v!=='—'?' | '+esc(r.v):''}"><span class="fill" style="width:${Math.min(r.pct,100)}%;background:${r.cc?cultColor(r.cc):'transparent'}"></span><b>${esc(r.tl)}</b><small>${r.at?nf0.format(Math.min(r.pct,999))+'%':nf0.format(r.ap)+' ha'}</small></button>`).join('')}</div></div>`;}).join('')||'<p class="help">Nenhum talhão com os filtros atuais.</p>';
+  $('#mosaic').querySelectorAll('.tile').forEach(b=>b.onclick=()=>{const t=b.dataset.tl;F.tal.has(t)?F.tal.delete(t):F.tal.add(t);syncUI();render();});
+  let rows=all;
+  if(talMode==='done')rows=all.filter(r=>r.pct>=98);
+  if(talMode==='part')rows=all.filter(r=>r.ap>0&&r.pct<98);
+  if(talMode==='none')rows=all.filter(r=>!r.ap);
+  const done=all.filter(r=>r.pct>=98).length,part=all.filter(r=>r.ap>0&&r.pct<98).length,none=all.filter(r=>!r.ap).length;
+  $('#talCount').textContent=`${all.length} talhões: ${done} concluídos, ${part} em andamento, ${none} sem plantio.`;
+  table('#tbTal',[
+    {k:'tl',t:'Talhão'},{k:'f',t:'Fazenda'},...(all.some(r=>r.b&&r.b!=='—'&&norm(r.b)!==norm(r.f))?[{k:'b',t:'Bloco'}]:[]),
+    {k:'at',t:'Área total (ha)',n:1,f:v=>v?nf2.format(v):'—'},{k:'ap',t:'Plantada (ha)',n:1,f:v=>nf2.format(v)},
+    {k:'pct',t:'% plantado',f:(v,r)=>`<span class="bar"><i style="width:${Math.min(v,100)}%;background:${r.cc?cultColor(r.cc):'var(--brand)'}"></i></span>${nf0.format(v)}%`},
+    {k:'c',t:'Cultura'},{k:'v',t:'Cultivar / híbrido'},
+    {k:'ini',t:'Início',f:fmtDY},{k:'fim',t:'Fim',f:fmtDY},{k:'dias',t:'Dias',n:1,f:v=>v??'—'},
+    {k:'ch7',t:'Chuva 7 dias (mm)',n:1,f:(v,r)=>v==null?'—':r.ch7p?`<span class="pill" title="Menos de 7 dias desde o plantio" style="border:1px dashed var(--line)">${nf0.format(v)} parcial</span>`:`<span class="pill ${v>=20?'ok':v>=5?'mid':'bad'}">${nf0.format(v)}</span>`},
+    {k:'pop',t:'Sementes/ha',n:1,f:v=>v?nf0.format(v):'—'},{k:'cic',t:'Ciclo (d)',n:1,f:v=>v??'—'},
+    {k:'em',t:'Emergência',f:fmtDY},{k:'dae',t:'Dias p/ emergir',n:1,f:v=>v??'—'}
+  ],rows,{sort:'tl',id:'tl',click:tl=>{F.tal=new Set([tl]);syncUI();render();toast('Filtro aplicado: talhão '+tl);}});
+}
+
+/* ================= Sementes ================= */
+const L={vr:new Set(),sem:new Set(),min:90};
+const SEMPAL=['#3D6B78','#C9A66B','#8C5E3C','#9FB8BF','#5E4B8B','#7A8F3A'];
+function varColor(v){const all=[...new Set([...(DB.lotes||[]),...(DB.entradas||[])].map(l=>l.v))].sort();return PAL[Math.max(0,all.indexOf(v))%PAL.length];}
+function renderSementes(){
+  const lots=(DB.lotes||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
+  const ents=(DB.entradas||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
+  const kgT=ents.reduce((s,e)=>s+(e.kg||0),0),qT=ents.reduce((s,e)=>s+(e.q||0),0);
+  const g7=l=>l.tot??(l.med&&l.med[4]);
+  const ok=lots.filter(l=>g7(l)>=L.min);
+  const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
+  $('#kpisL').innerHTML=[
+    ['Lotes testados',lots.length,'',`${new Set(lots.map(l=>l.v)).size} variedades`],
+    ['Aprovados',ok.length,`de ${lots.length}`,`germinação ≥ ${L.min}%`],
+    ['Reprovados',lots.length-ok.length,'',lots.length-ok.length?'revisar antes do plantio':'nenhum abaixo do mínimo'],
+    ['Germinação média',nf1.format(avg(lots.map(g7))),'%','no 7º dia'],
+    ['Vigor médio (IVG)',nf1.format(avg(lots.map(l=>l.ivgp||0))),'%','do IVG máximo possível'],
+    ['Sementes recebidas',nf1.format(kgT/1000),'t',`${nf0.format(qT)} embalagens em ${ents.length} entradas`]
+  ].map(([k,v,u,d],i)=>`<div class="kpi ${i===2&&lots.length-ok.length?'bad':''}"><div class="k">${k}</div><div class="v" ${i===2&&lots.length-ok.length?'style="color:var(--bad)"':''}>${v}<small>${u}</small></div><div class="d">${d}</div></div>`).join('');
+  const labs=lots.map(l=>l.lote);
+  mk('chLot',{data:{labels:labs,datasets:[
+    {type:'bar',label:'Germinação 7º dia (%)',unit:'%',data:lots.map(g7),backgroundColor:lots.map(l=>g7(l)>=L.min?cssv('--brand'):cssv('--bad')),borderRadius:2,maxBarThickness:26,order:2},
+    {type:'line',label:'IVG (%)',unit:'%',data:lots.map(l=>l.ivgp),borderColor:cssv('--c-milho'),backgroundColor:cssv('--c-milho'),showLine:false,pointRadius:5,pointStyle:'rectRot',order:1}
+  ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:70,minRotation:50,font:{size:11}}},y:{min:Math.max(0,Math.floor(Math.min(70,...lots.map(g7),...lots.map(l=>l.ivgp||100))/10)*10),max:100,title:{display:true,text:'%'}}},
+    plugins:{legend:{position:'bottom'},goalLine:{v:L.min},tooltip:{callbacks:{title:it=>{const l=lots[it[0].dataIndex];return `${l.v}  |  lote ${l.lote}`;},afterTitle:it=>{const l=lots[it[0].dataIndex];return `${l.sem}, teste em ${fmtDY(l.d)}`;},label:c=>`${c.dataset.label}: ${nf1.format(c.parsed.y)}`}}}},plugins:[goalLine]});
+  empty('eLot',!lots.length);
+  // curva por variedade
+  const vs=[...new Set(lots.map(l=>l.v))];
+  const pal=['#019A62','#E0A100','#1C8FD0','#D4454C','#7D5BA6','#8A6A2E','#2E9E5B','#00232B','#C2185B'];
+  mk('chCurve',{type:'line',data:{labels:['3º','4º','5º','6º','7º dia'],datasets:vs.map((v,i)=>{const ls=lots.filter(l=>l.v===v);return{label:v,data:[0,1,2,3,4].map(j=>{const x=ls.map(l=>l.med&&l.med[j]).filter(n=>n!=null);return x.length?avg(x):(j===0?0:null);}),borderColor:varColor(v),backgroundColor:varColor(v),tension:.3,pointRadius:3,spanGaps:true};})},
+    options:{scales:{y:{min:0,max:100,title:{display:true,text:'% germinado (acum.)'}},x:{grid:{display:false}}},plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${nf1.format(c.parsed.y)}%`}}}}});
+  // ---------- entradas ----------
+  const gByLote=new Map((DB.lotes||[]).map(l=>[norm(l.lote),l]));
+  const evs=[...new Set(ents.map(e=>e.v))];const kv=sumBy(ents,e=>e.v,'kg');evs.sort((a,b)=>kv.get(b)-kv.get(a));
+  const sems=[...new Set(ents.map(e=>e.sem))].sort();
+  mk('chEntVar',{type:'bar',data:{labels:evs,datasets:sems.map((s,i)=>{const m=sumBy(ents.filter(e=>e.sem===s),e=>e.v,'kg');return{label:s,data:evs.map(v=>(m.get(v)||0)/1000),backgroundColor:SEMPAL[i%SEMPAL.length],borderRadius:2,maxBarThickness:24};})},
+    options:{indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'t'}},y:{stacked:true,grid:{display:false},ticks:{autoSkip:false}}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${nf2.format(c.parsed.x)} t`},filter:i=>i.parsed.x>0}},
+      onClick:(e,els)=>{if(els.length){L.vr=new Set([evs[els[0].index]]);msLVar.paint();renderSementes();}}}});
+  empty('eEntVar',!ents.length);
+  const eds=[...new Set(ents.map(e=>e.d).filter(Boolean))].sort();
+  let eacc=0;
+  mk('chEntDate',{data:{labels:eds.map(fmtD),datasets:[
+    ...evs.map((v,i)=>{const m=sumBy(ents.filter(e=>e.v===v),e=>e.d,'kg');return{type:'bar',label:v,data:eds.map(d=>(m.get(d)||0)/1000),backgroundColor:varColor(v),stack:'e',yAxisID:'y',borderRadius:2,maxBarThickness:34,order:2};}),
+    {type:'line',label:'Acumulado (t)',data:eds.map(d=>eacc+=ents.filter(e=>e.d===d).reduce((s,e)=>s+(e.kg||0),0)/1000),borderColor:cssv('--ink'),backgroundColor:cssv('--ink'),yAxisID:'y1',pointRadius:3,borderWidth:2,order:1}
+  ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'t no dia'}},y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'t acumuladas'}}},
+    plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${nf2.format(c.parsed.y)} t`},filter:i=>i.parsed.y>0}}}});
+  empty('eEntDate',!ents.length);
+  $('#entCount').textContent=`${ents.length} entradas, ${nf1.format(kgT/1000)} t. A germinação vem do teste do mesmo lote.`;
+  table('#tbEnt',[
+    {k:'d',t:'Chegada',f:fmtDY},{k:'v',t:'Variedade'},{k:'lote',t:'Lote'},{k:'sem',t:'Sementeira'},
+    {k:'kg',t:'Peso de nota (kg)',n:1,f:v=>v!=null?nf0.format(v):'—'},{k:'q',t:'Embalagens',n:1,f:v=>v??'—'},
+    {k:'kgq',t:'kg/embalagem',n:1,f:v=>v?nf0.format(v):'—'},
+    {k:'g7',t:'Germinação 7º dia (%)',n:1,f:v=>v??'—'},
+    {k:'st',t:'Situação',f:v=>`<span class="pill ${v==='Aprovado'?'ok':v==='Sem teste'?'mid':'bad'}">${v}</span>`}
+  ],ents.map((e,i)=>{const g=gByLote.get(norm(e.lote));const g7v=g?(g.tot??(g.med&&g.med[4])):null;return{...e,i,kgq:e.kg&&e.q?e.kg/e.q:null,g7:g7v,st:!g?'Sem teste':g7v>=L.min?'Aprovado':'Abaixo do mínimo'};}),{sort:'d',dir:'asc'});
+
+  $('#lotCount').textContent=`${lots.length} lotes. Dados da aba Teste de Germinação.`;
+  table('#tbLot',[
+    {k:'v',t:'Variedade'},{k:'lote',t:'Lote'},{k:'sem',t:'Sementeira'},{k:'d',t:'Data do teste',f:fmtDY},
+    {k:'p4',t:'4º dia (%)',n:1,f:v=>v??'—'},{k:'tot',t:'7º dia (%)',n:1,f:v=>v??'—'},
+    {k:'ivg',t:'IVG',n:1,f:v=>v!=null?nf2.format(v):'—'},{k:'ivgp',t:'IVG (%)',n:1,f:v=>v!=null?nf1.format(v):'—'},
+    {k:'st',t:'Situação',f:v=>`<span class="pill ${v==='Aprovado'?'ok':'bad'}">${v}</span>`}
+  ],lots.map(l=>({...l,tot:g7(l),p4:l.med?l.med[1]:null,st:g7(l)>=L.min?'Aprovado':'Abaixo do mínimo'})),{sort:'d',dir:'asc'});
+}
+
+/* ================= Conferência ================= */
+function computeConf(){
+  const conf=[];const lim=(DB.lotesMin||90);
+  const byT=new Map();M.rec.forEach(r=>{if(!byT.has(r.k))byT.set(r.k,{a:0,f0:new Set(),v:new Set(),rs:[]});const o=byT.get(r.k);o.a+=r.a;o.rs.push(r);if(r.f0)o.f0.add(r.f0);if(r.v&&r.a>0)o.v.add(norm(r.v));});
+  const canon=s=>norm(s).replace(/(.)\1+/g,'$1');
+  M.tal.forEach((t,k)=>{const o=byT.get(k);const pl=M.plano.get(k)||[];
+    pl.forEach(p=>{
+      if(p.ini&&p.fim&&p.fim<p.ini)conf.push({tl:t.tl,tipo:'Final antes do início',det:`Planejamento: início ${fmtDY(p.ini)}, final ${fmtDY(p.fim)}`});
+      if(p.ini&&p.em&&p.em<p.ini)conf.push({tl:t.tl,tipo:'Emergência antes do plantio',det:`Emergência ${fmtDY(p.em)} com início em ${fmtDY(p.ini)} (provável data da safra anterior)`});
+      if(p.at&&p.ap&&p.ap>p.at+0.01)conf.push({tl:t.tl,tipo:'Área plantada maior que a total',det:`Planejamento: ${nf2.format(p.ap)} ha plantados para ${nf2.format(p.at)} ha`});});
+    if(!o)return;
+    const dif=[...o.f0].filter(f=>canon(f)!==canon(t.f));
+    if(dif.length)conf.push({tl:t.tl,tipo:'Fazenda diferente',det:`No Diário aparece como ${dif.join(', ')}; no cadastro é ${t.f}`});
+    if(t.a&&o.a>t.a*1.05)conf.push({tl:t.tl,tipo:'Área plantada maior que a total',det:`Diário soma ${nf2.format(o.a)} ha para ${nf2.format(t.a)} ha de área total (${nf0.format(o.a/t.a*100)}%)`});
+    if(t.semCad)conf.push({tl:t.tl,tipo:'Talhão sem cadastro',det:'Aparece no Diário, mas não na lista de talhões da aba DADOS'});
+    const ini=pl.map(p=>p.ini).filter(Boolean).sort()[0],fim=pl.map(p=>p.fim||p.ini).filter(Boolean).sort().pop();
+    if(ini&&fim){const a=ini<fim?ini:fim,b=ini<fim?fim:ini;o.rs.forEach(r=>{if(r.d<addDays(a,-5)||r.d>addDays(b,5))conf.push({tl:t.tl,tipo:'Data fora da janela planejada',det:`Lançamento de ${fmtDY(r.d)} (${nf2.format(r.a)} ha); planejamento de ${fmtDY(a)} a ${fmtDY(b)}. Verifique o mês digitado.`});});}
+    pl.forEach(p=>{if(p.v&&p.ap&&o.v.size&&!o.v.has(norm(p.v)))conf.push({tl:t.tl,tipo:'Variedade sem lançamento',det:`Planejamento prevê ${p.v} (${nf2.format(p.ap)} ha), mas o Diário só tem ${[...new Set(o.rs.map(r=>r.v))].join(', ')}`});});
+  });
+  const tested=new Set((DB.lotes||[]).map(l=>norm(l.lote)));
+  const seen=new Set();(DB.entradas||[]).forEach(e=>{const k=norm(e.lote);if(!tested.has(k)&&!seen.has(k)){seen.add(k);conf.push({tl:'—',tipo:'Lote sem teste de germinação',det:`${e.v}, lote ${e.lote} (${e.sem}), recebido em ${fmtDY(e.d)}`});}});
+  return conf;
+}
+
+/* ================= Base de dados ================= */
+let dbTab='plantio';
+function renderBase(){
+  const T={
+    plantio:{n:'Plantio diário',src:'aba Diário',rows:DB.plantio||[],cols:[['d','Data',fmtDY],['t','Turno'],['c','Cultura'],['v','Cultivar'],['f','Fazenda'],['tl','Talhão'],['a','Área (ha)']],keys:{tl:'FK',v:'FK',d:'FK'}},
+    chuva:{n:'Pluviometria',src:DB._rainSrc||'aba Diário (coluna Chuva)',rows:DB.chuva||[],cols:[['d','Data',fmtDY],['mm','Chuva (mm)']],keys:{d:'PK'}},
+    talhoes:{n:'Talhões',src:'aba DADOS',rows:[...M.tal.values()],cols:[['tl','Talhão'],['f','Fazenda'],['a','Área total (ha)']],keys:{tl:'PK'}},
+    cultivares:{n:'Cultivares',src:'aba DADOS (lista suspensa)',rows:DB.cultivares||[],cols:[['v','Cultivar'],['ciclo','Ciclo (dias)']],keys:{v:'PK'}},
+    plano:{n:'Planejamento por talhão',src:DB._planSrc||'aba de planejamento',rows:DB.plano||[],cols:[['tl','Talhão'],['f','Fazenda'],['c','Cultura'],['v','Cultivar'],['ap','Área plantada'],['sm','Sem./m'],['sha','Sem./ha'],['ciclo','Ciclo'],['ini','Início',fmtDY],['fim','Final',fmtDY],['em','Emergência',fmtDY]],keys:{tl:'FK',v:'FK'}},
+    entradas:{n:'Entrada de sementes',src:'aba Entrada de sementes',rows:DB.entradas||[],cols:[['d','Chegada',fmtDY],['v','Variedade'],['lote','Lote'],['sem','Sementeira'],['kg','Peso de nota (kg)'],['q','Quantidade'],['c','Cultura']],keys:{lote:'FK',v:'FK'}},
+    lotes:{n:'Lotes de sementes',src:'aba Teste de Germinação',rows:DB.lotes||[],cols:[['lote','Lote'],['v','Variedade'],['sem','Sementeira'],['d','Data',fmtDY],['tot','Germ. 7º dia'],['ivgp','IVG %']],keys:{lote:'PK',v:'FK'}}
+  };
+  const lists=[['Culturas',DB.culturas],['Fazendas',DB.fazendas],['Turnos',DB.turnos]].filter(x=>x[1]&&x[1].length);
+  $('#schema').innerHTML=Object.entries(T).map(([k,t])=>`<div class="ent"><span class="cnt">${t.rows.length}</span><h3>${t.n}</h3><div class="src">${esc(t.src)}</div><ul>${t.cols.map(([c,n])=>`<li>${t.keys[c]?`<span class="k">${t.keys[c]}</span>`:''}<code>${n}</code></li>`).join('')}</ul></div>`).join('')+
+    `<div class="ent"><h3>Listas suspensas</h3><div class="src">aba DADOS</div><ul>${lists.map(([n,a])=>`<li><code>${n}:</code> ${esc(a.join(', '))}</li>`).join('')}</ul></div>`;
+  const conf=computeConf();
+  $('#confCard').hidden=!conf.length;
+  table('#tbConf',[{k:'tl',t:'Talhão / lote'},{k:'tipo',t:'Ocorrência'},{k:'det',t:'Detalhe'}],conf,{sort:'tipo'});
+  $('#dbSel').innerHTML=Object.entries(T).map(([k,t])=>`<button data-k="${k}" class="${k===dbTab?'on':''}">${t.n}</button>`).join('');
+  $('#dbSel').querySelectorAll('button').forEach(b=>b.onclick=()=>{dbTab=b.dataset.k;$('#tbDb')._st=null;renderBase();});
+  const t=T[dbTab];
+  table('#tbDb',t.cols.map(([k,n,f])=>({k,t:n,f:f?(v=>f(v)):(v=>typeof v==='number'?(['a','ap','at','mm','tot','ivgp','sm'].includes(k)?nf2.format(v):nf0.format(v)):esc(v??'—')),n:typeof(t.rows[0]||{})[k]==='number'})),t.rows.map((r,i)=>({...r,i})),{sort:t.cols[0][0]});
+}
+
+/* ================= épocas (quinzenas) ================= */
+function renderEpocas(){
+  if(!M.dMin){$('#epocas').innerHTML='';return;}
+  const out=[];let d=M.dMin.slice(0,8)+(+M.dMin.slice(8)>15?'16':'01');
+  while(d<=M.dMax){const y=+d.slice(0,4),m=+d.slice(5,7),first=d.slice(8)==='01';
+    const last=first?d.slice(0,8)+'15':new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
+    out.push({a:d<M.dMin?M.dMin:d,b:last>M.dMax?M.dMax:last,lab:`${first?'1ª':'2ª'} quinz. ${MES[m-1]}`});
+    d=first?d.slice(0,8)+'16':new Date(Date.UTC(y,m,1)).toISOString().slice(0,10);}
+  $('#epocas').innerHTML=`<span class="lbl">Épocas de plantio</span><button class="ep ${F.ini===M.dMin&&F.fim===M.dMax?'on':''}" data-a="${M.dMin}" data-b="${M.dMax}">Safra inteira</button>`+
+    out.map(e=>`<button class="ep ${F.ini===e.a&&F.fim===e.b?'on':''}" data-a="${e.a}" data-b="${e.b}" title="${fmtDY(e.a)} a ${fmtDY(e.b)}">${e.lab}</button>`).join('');
+  $('#epocas').querySelectorAll('.ep').forEach(b=>b.onclick=()=>{F.ini=b.dataset.a;F.fim=b.dataset.b;syncUI();render();});
+}
+
+/* ================= UI sync ================= */
+let msFaz,msTal,msVar,msLVar,msLSem;
+function setupUI(){
+  $('#safraName').textContent=DB.safra||'Safra';
+  $('#srcLine').textContent=DB._web?`Dados de ${DB._file}`:DB._drive?`Dados de ${DB._file} (Google Drive)`:DB._file?`Dados de ${DB._file}`:'Fazenda Reata e unidades, Nadiana Agropecuária';
+  $('#fIni').min=$('#fFim').min=M.dMin||'';$('#fIni').max=$('#fFim').max=M.dMax||'';
+  $('#fCult').innerHTML=M.culturas.map(c=>`<button class="chip" style="--c:${cultColor(c)}" data-c="${esc(c)}" aria-pressed="true"><span class="dot"></span>${esc(c)}</button>`).join('');
+  $('#fCult').querySelectorAll('.chip').forEach(b=>b.onclick=e=>{const c=b.dataset.c;
+    if(e.shiftKey||e.altKey){F.cult=new Set([c]);} else {F.cult.has(c)?F.cult.delete(c):F.cult.add(c);if(!F.cult.size)F.cult=new Set(M.culturas);}
+    syncUI();render();});
+  $('#fgTurno').hidden=!M.turnos.length;
+  $('#fTurno').innerHTML=M.turnos.map(tn=>`<button class="chip" style="--c:var(--petrol)" data-t="${esc(tn)}" aria-pressed="false" title="${esc(tn)}">${esc(turnoLab(tn))}</button>`).join('');
+  $('#fTurno').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{const tn=b.dataset.t;F.tn.has(tn)?F.tn.delete(tn):F.tn.add(tn);if(F.tn.size===M.turnos.length)F.tn.clear();syncUI();render();});
+  $('#fCult').title='Clique para ligar/desligar. Shift+clique mostra só essa cultura.';
+  const rec=()=>M.rec.filter(r=>recPass(r,'__'));
+  msFaz=MultiSelect($('#msFaz'),{label:'fazenda',allLabel:'Todas as fazendas',set:()=>F.faz,onChange:()=>{render();},
+    getOptions:()=>{const m=sumBy(M.rec.filter(r=>recPass(r,'faz')),r=>r.f);return M.fazendas.map(f=>({v:f,n:m.get(f)||0}));}});
+  msTal=MultiSelect($('#msTal'),{label:'talhão',allLabel:'Todos os talhões',set:()=>F.tal,onChange:()=>{render();},
+    getOptions:()=>{const m=sumBy(M.rec.filter(r=>recPass(r,'tal')),r=>r.tl);return [...M.tal.values()].filter(t=>!F.faz.size||F.faz.has(t.f)).sort((a,b)=>a.f.localeCompare(b.f,'pt')||a.tl.localeCompare(b.tl,'pt',{numeric:true})).map(t=>({v:t.tl,g:t.f,n:m.get(t.tl)||0}));}});
+  msVar=MultiSelect($('#msVar'),{label:'cultivar',allLabel:'Todas as cultivares',set:()=>F.vr,onChange:()=>{render();},
+    getOptions:()=>{const R=M.rec.filter(r=>recPass(r,'var'));const m=sumBy(R,r=>r.v);const vc=new Map();M.rec.forEach(r=>vc.set(r.v,r.c));
+      return [...vc.keys()].filter(v=>F.cult.has(vc.get(v))).sort((a,b)=>M.culturas.indexOf(vc.get(a))-M.culturas.indexOf(vc.get(b))||(m.get(b)||0)-(m.get(a)||0)).map(v=>({v,g:vc.get(v),c:cultColor(vc.get(v)),n:m.get(v)||0}));}});
+  msLVar=MultiSelect($('#msLVar'),{label:'variedade',allLabel:'Todas as variedades',set:()=>L.vr,onChange:renderSementes,getOptions:()=>[...new Set([...(DB.lotes||[]),...(DB.entradas||[])].map(l=>l.v))].sort().map(v=>({v}))});
+  msLSem=MultiSelect($('#msLSem'),{label:'sementeira',allLabel:'Todas as sementeiras',set:()=>L.sem,onChange:renderSementes,getOptions:()=>[...new Set([...(DB.lotes||[]),...(DB.entradas||[])].map(l=>l.sem))].sort().map(v=>({v}))});
+  [msFaz,msTal,msVar,msLVar,msLSem].forEach(m=>m.paint());
+  const conf=computeConf();
+  const n=$('#noteSoja');
+  if(conf.length){n.hidden=false;const tipos=[...new Set(conf.map(c=>c.tipo.toLowerCase()))];
+    n.innerHTML=`<div><b>${conf.length} ${conf.length===1?'ponto':'pontos'} da planilha para revisar</b> (${esc(tipos.join(', '))}). Os números abaixo usam os dados como estão lançados. <button class="lnk" id="goConf">Ver a lista</button></div>`;
+    $('#goConf').onclick=()=>{$('.tab[data-view=base]').click();setTimeout(()=>$('#confCard').scrollIntoView({behavior:'smooth'}),60);};}
+  else n.hidden=true;
+}
+function syncUI(){
+  $('#fIni').value=F.ini||'';$('#fFim').value=F.fim||'';
+  $$('#fCult .chip').forEach(b=>b.setAttribute('aria-pressed',F.cult.has(b.dataset.c)?'true':'false'));
+  $$('#fTurno .chip').forEach(b=>b.setAttribute('aria-pressed',F.tn.has(b.dataset.t)?'true':'false'));
+  $('#fRain').value=F.rain;$('#fRainMin').value=F.rmin;$('#fRainMin').disabled=F.rain!=='wet';$('#fRainOut').textContent=F.rmin+' mm';
+  [msFaz,msTal,msVar].forEach(m=>m&&m.paint());
+}
+let view='plantio';
+function render(){
+  if(!M.rec.length&&!M.dMin){$('#status').innerHTML='<span class="help">A planilha não tem registros de plantio. Preencha a aba Diário e carregue novamente.</span>';}
+  renderEpocas();
+  if(view==='plantio')renderPlantio();else renderStatus(filtered().length);
+  if(view==='talhoes')renderTalhoes();
+  if(view==='sementes')renderSementes();
+  if(view==='base')renderBase();
+  [msFaz,msTal,msVar].forEach(m=>m&&m.paint());
+}
+
+/* ================= eventos ================= */
+$('#fIni').onchange=e=>{if(e.target.value){F.ini=e.target.value;if(F.ini>F.fim)F.fim=F.ini;}syncUI();render();};
+$('#fFim').onchange=e=>{if(e.target.value){F.fim=e.target.value;if(F.fim<F.ini)F.ini=F.fim;}syncUI();render();};
+$('#fRain').onchange=e=>{F.rain=e.target.value;syncUI();render();};
+$('#fRainMin').oninput=e=>{F.rmin=+e.target.value;$('#fRainOut').textContent=F.rmin+' mm';render();};
+$('#btnClear').onclick=()=>{resetFilters();syncUI();render();};
+$('#segDaily').onclick=e=>{const b=e.target.closest('button');if(!b)return;dailyMode=b.dataset.m;$$('#segDaily button').forEach(x=>x.classList.toggle('on',x===b));renderPlantio();};
+$('#segRain').onclick=e=>{const b=e.target.closest('button');if(!b)return;rainMode=b.dataset.m;$$('#segRain button').forEach(x=>x.classList.toggle('on',x===b));renderPlantio();};
+$('#segTal').onclick=e=>{const b=e.target.closest('button');if(!b)return;talMode=b.dataset.m;$$('#segTal button').forEach(x=>x.classList.toggle('on',x===b));renderTalhoes();};
+$('#gMin').oninput=e=>{L.min=+e.target.value;$('#gMinOut').textContent=L.min+'%';renderSementes();};
+$$('.tab').forEach(t=>t.onclick=()=>{view=t.dataset.view;$$('.tab').forEach(x=>x.setAttribute('aria-selected',x===t?'true':'false'));$$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+view));
+  $('#filterBar').style.display=view==='sementes'||view==='base'?'none':'';render();});
+$('#btnPrint').onclick=()=>exportPdf();
+$('#btnTheme').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark';store.set('plantio-theme',r.dataset.theme);themeChart();render();};
+$('#btnCsv').onclick=()=>{
+  let rows,head;
+  if(view==='talhoes'){const r=talRows();head=['Talhão','Fazenda','Bloco','Área total (ha)','Plantada (ha)','% plantado','Cultura','Cultivar','Início','Fim','Chuva 7 dias (mm)','Sementes/ha','Emergência'];rows=r.map(x=>[x.tl,x.f,x.b,x.at,x.ap,x.pct.toFixed(1),x.c,x.v,x.ini,x.fim,x.ch7,x.pop,x.em]);}
+  else if(view==='sementes'){head=['Variedade','Lote','Sementeira','Data','Germinação 7º dia (%)','IVG','IVG (%)'];rows=(DB.lotes||[]).map(l=>[l.v,l.lote,l.sem,l.d,l.tot,l.ivg,l.ivgp]);}
+  else{head=['Data','Turno','Cultura','Cultivar','Fazenda','Talhão','Área (ha)','Chuva no dia (mm)'];rows=filtered().map(r=>[r.d,r.t,r.c,r.v,r.f,r.tl,r.a,r.mm]);}
+  const csv=[head,...rows].map(r=>r.map(v=>{v=v==null?'':String(v).replace('.',typeof v==='number'?',':'.');return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(';')).join('\n');
+  saveFile(`plantio_${view}.csv`,'\ufeff'+csv,'text/csv;charset=utf-8').then(ok=>{if(!ok&&navigator.clipboard)navigator.clipboard.writeText(csv).then(()=>toast('Não foi possível baixar; o CSV foi copiado para a área de transferência.'),()=>{});});
+};
+
+/* ================= entrega de arquivos ================= */
+let dlNs;
+async function saveFile(filename,data,mime){
+  try{if(dlNs===undefined)dlNs=(window.claude&&typeof window.claude.use==='function')?await window.claude.use('downloads'):null;}catch(e){dlNs=null;}
+  if(dlNs){
+    try{await dlNs.save({filename,data});toast('Arquivo salvo: '+filename);return true;}
+    catch(err){const c=err&&err.code;
+      if(c==='declined')toast('Download cancelado.');
+      else if(c==='rate_limited')toast('Já existe um pedido de download aberto. Confirme ou aguarde e tente de novo.');
+      else if(c==='rejected_extension'||c==='extension_not_enabled')toast('Este formato não pode ser baixado aqui.');
+      else if(c==='too_large')toast('Arquivo grande demais para baixar aqui.');
+      else toast('O download não está disponível nesta visualização.');
+      return c==='declined';}
+  }
+  // fora do Claude (arquivo aberto localmente): link de download comum
+  try{const blob=data instanceof Blob?data:new Blob([data],{type:mime||'application/octet-stream'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);return true;}catch(e){return false;}
+}
+
+/* ================= PDF ================= */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function fitChart(id,boxW,boxH){const c=document.getElementById(id);if(!c||!charts[id])return;const cv=c.parentElement;const w=cv.clientWidth;if(!w)return;
+  cv.dataset.pdfH='1';cv.style.height=Math.round(Math.min(1100,Math.max(160,w*(boxH-9)/(boxW-4))))+'px';charts[id].resize();}
+function chartImg(id){const c=document.getElementById(id);if(!c||!c.width||!c.height||!charts[id])return null;
+  const k=document.createElement('canvas');k.width=c.width;k.height=c.height;const x=k.getContext('2d');x.fillStyle='#FFFFFF';x.fillRect(0,0,k.width,k.height);x.drawImage(c,0,0);
+  return {src:k.toDataURL('image/jpeg',0.92),w:c.width,h:c.height};}
+async function exportPdf(){
+  if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
+  const ov=$('#busyOv');ov.hidden=false;
+  const prevTheme=document.documentElement.dataset.theme,prevView=view,prevAnim=Chart.defaults.animation;
+  const imgs={};
+  const PW=297,PH=210,PM=10,gw0=(PW-2*PM-4)/2,gh0=(PH-21-9-4)/2,shH=(PH-42-9-4)/2,wkH=72,lotH=104,entH=PH-42-9-4-104;
+  const BOX={chDaily:[PW-2*PM,PH-69-9],chRain:[gw0*1.25,gh0],chCult:[gw0*.75,gh0],chFaz:[gw0,gh0],chVar:[gw0,gh0],
+    chTurno:[gw0*.8,wkH],chWeek:[PW-2*PM-gw0*.8-4,wkH],chLot:[PW-2*PM,lotH],chEntVar:[gw0,entH],chEntDate:[gw0,entH]};
+  const grab=ids=>{ids.forEach(id=>{const b=BOX[id];if(b)fitChart(id,b[0],b[1]);});return sleep(120).then(()=>ids.forEach(id=>imgs[id]=chartImg(id)));};
+  try{
+    document.documentElement.dataset.theme='light';themeChart();Chart.defaults.animation=false;
+    const show=v=>{view=v;$$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+v));render();};
+    show('plantio');await sleep(250);
+    if(!M.turnos.length)BOX.chWeek=[PW-2*PM,wkH];
+    await grab(['chDaily','chRain','chCult','chFaz','chVar','chTurno','chWeek']);
+    const kp=[...$$('#kpis .kpi')].map(k=>[k.querySelector('.k').textContent,[...k.querySelector('.v').childNodes].map(x=>x.textContent.trim()).filter(Boolean).join(' '),k.querySelector('.d').textContent]);
+    const heroA=[...$('#hArea').childNodes].map(x=>x.textContent.trim()).filter(Boolean).join(' '),heroS=$('#hSub').textContent;
+    const R=filtered();const byC=sumBy(R,r=>r.c);
+    show('talhoes');await sleep(50);
+    const tal=talRows().filter(r=>r.ap>0).sort((a,b)=>a.f.localeCompare(b.f,'pt')||a.tl.localeCompare(b.tl,'pt',{numeric:true}));
+    show('sementes');await sleep(250);
+    if(charts.chLot){const o=charts.chLot.options;o.scales.x.ticks.font={size:10};o.scales.x.ticks.maxRotation=40;o.scales.x.ticks.minRotation=40;o.plugins.legend.labels.font={size:11};charts.chLot.update('none');}
+    await grab(['chLot','chEntVar','chEntDate']);
+    const kl=[...$$('#kpisL .kpi')].map(k=>[k.querySelector('.k').textContent,[...k.querySelector('.v').childNodes].map(x=>x.textContent.trim()).filter(Boolean).join(' '),k.querySelector('.d').textContent]);
+    const conf=computeConf();
+
+    const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const W=297,H=210,MG=10;let page=1;
+    const PET=[0,35,43],GRN=[1,154,98],MUT=[90,109,113],LINE=[214,223,219];
+    const clean=s=>String(s??'').replace(/≥/g,'>=').replace(/[–—]/g,'-').replace(/…/g,'...').replace(/[^\x20-\xFF]/g,'');
+    const header=(title)=>{doc.setFillColor(...PET);doc.rect(0,0,W,16,'F');
+      try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.setFillColor(255,255,255);doc.roundedRect(MG-1,2,26,12,1,1,'F');doc.addImage(lc.toDataURL('image/png'),'PNG',MG,3,24,10);}catch(e){}
+      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(clean(title),MG+28,8.5);
+      doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(185,215,203);
+      doc.text(clean(`${DB.safra||''}  |  ${DB._file||'Nadiana Agropecuária'}${DB._drive?' (Google Drive, salvo em '+fmtDT(DB._drive.mod)+')':''}`),MG+28,13);
+      doc.text(clean('Gerado em '+new Date().toLocaleString('pt-BR')),W-MG,13,{align:'right'});
+      doc.setTextColor(...MUT);doc.setFontSize(7.5);doc.text(clean('Página '+page),W-MG,H-5,{align:'right'});doc.text('Acompanhamento de plantio',MG,H-5);};
+    const newPage=title=>{doc.addPage();page++;header(title);};
+    const img=(id,x,y,w,h,title)=>{const im=imgs[id];doc.setDrawColor(...LINE);doc.setLineWidth(.2);doc.roundedRect(x,y,w,h,1.5,1.5,'S');
+      doc.setTextColor(...PET);doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text(clean(title),x+3,y+5);
+      if(!im){doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.setFontSize(8.5);doc.text('Sem dados com os filtros atuais.',x+3,y+12);return;}
+      const aw=w-4,ah=h-9;let iw=aw,ih=aw*im.h/im.w;if(ih>ah){ih=ah;iw=ah*im.w/im.h;}
+      doc.addImage(im.src,'JPEG',x+2+(aw-iw)/2,y+7.5,iw,ih);};
+    const kpiRow=(arr,y)=>{const n=arr.length,w=(W-2*MG)/n;arr.forEach(([k,v,d],i)=>{const x=MG+i*w;doc.setDrawColor(...LINE);doc.roundedRect(x+.5,y,w-1,17,1.5,1.5,'S');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...MUT);doc.text(clean(k),x+3,y+4.5);
+      doc.setFontSize(13);doc.setTextColor(...PET);doc.text(clean(v),x+3,y+11);
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUT);doc.text(clean(d).slice(0,48),x+3,y+15);});};
+
+    // página 1
+    header('Acompanhamento de plantio');
+    let y=21;
+    const tags=[];if(F.ini!==M.dMin||F.fim!==M.dMax)tags.push(`Período ${fmtDY(F.ini)} a ${fmtDY(F.fim)}`);
+    if(F.cult.size!==M.culturas.length)tags.push('Cultura: '+[...F.cult].join(', '));
+    if(F.tn.size)tags.push('Turno: '+[...F.tn].map(turnoLab).join(', '));
+    if(F.faz.size)tags.push('Fazenda: '+[...F.faz].join(', '));if(F.tal.size)tags.push('Talhão: '+[...F.tal].join(', '));
+    if(F.vr.size)tags.push('Cultivar: '+[...F.vr].join(', '));if(F.rain!=='all')tags.push(F.rain==='dry'?'Só dias secos':`Chuva >= ${F.rmin} mm`);
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MUT);
+    doc.text(clean('Filtros: '+(tags.length?tags.join('  |  '):'nenhum (safra inteira)')),MG,y);y+=5;
+    doc.setFont('helvetica','bold');doc.setFontSize(26);doc.setTextColor(...PET);doc.text(clean(heroA),MG,y+9);
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...MUT);doc.text(doc.splitTextToSize(clean(heroS),82),MG,y+15);
+    // barra de progresso
+    const bx=MG+92,bw=W-MG-bx,by=y+3;const plan=totalPlanned(),tot=R.reduce((s,r)=>s+r.a,0),mx=Math.max(plan,tot,1);
+    doc.setFillColor(238,242,240);doc.roundedRect(bx,by,bw,7,1,1,'F');let cx=bx;
+    M.culturas.filter(c=>byC.get(c)).forEach(c=>{const w=byC.get(c)/mx*bw;const hx=cultColor(c).replace('#','');doc.setFillColor(parseInt(hx.slice(0,2),16),parseInt(hx.slice(2,4),16),parseInt(hx.slice(4,6),16));doc.rect(cx,by,w,7,'F');cx+=w;});
+    doc.setFontSize(7.5);doc.setTextColor(...MUT);doc.text('0 ha',bx,by+11);doc.text(clean(nf0.format(mx)+' ha'),bx+bw,by+11,{align:'right'});
+    doc.text(clean(M.culturas.filter(c=>byC.get(c)).map(c=>`${c}: ${nf0.format(byC.get(c))} ha`).join('   ')+(plan>tot?`   A plantar: ${nf0.format(plan-tot)} ha`:'')),bx,by+15.5);
+    y+=22;kpiRow(kp,y);y+=21;
+    img('chDaily',MG,y,W-2*MG,H-y-9,'Acompanhamento diário de plantio (ha/dia e acumulado)');
+
+    // página 2
+    newPage('Chuva, fazendas e materiais');
+    const gw=(W-2*MG-4)/2,gh=(H-21-9-4)/2;
+    img('chRain',MG,21,gw*1.25,gh,'Pluviometria (mm) e área plantada');img('chCult',MG+gw*1.25+4,21,gw*0.75,gh,$('#tCult').textContent);
+    img('chFaz',MG,21+gh+4,gw,gh,'Área plantada por fazenda');img('chVar',MG+gw+4,21+gh+4,gw,gh,$('#tVar').textContent);
+
+    // página 3: turno + ritmo semanal em cima, talhões embaixo
+    newPage('Turno, ritmo semanal e talhões plantados');
+    if(imgs.chTurno){img('chTurno',MG,21,BOX.chTurno[0],wkH,'Plantio por turno');img('chWeek',MG+BOX.chTurno[0]+4,21,BOX.chWeek[0],wkH,'Ritmo por semana (ha) e chuva (mm)');}
+    else img('chWeek',MG,21,W-2*MG,wkH,'Ritmo por semana (ha) e chuva (mm)');
+
+    // tabela de talhões
+    const cols=[['Talhão',18],['Fazenda',26],['Área total (ha)',24,1],['Plantada (ha)',24,1],['%',12,1],['Cultivar',46],['Início',20],['Fim',20],['Dias',11,1],['Chuva 7d (mm)',22,1],['Sementes/ha',22,1],['Emergência',20]];
+    const tw=cols.reduce((s,c)=>s+c[1],0),sc=(W-2*MG)/tw;
+    const row=(vals,yy,bold,fill)=>{let x=MG;if(fill){doc.setFillColor(...fill);doc.rect(MG,yy-4,W-2*MG,5.6,'F');}
+      doc.setFont('helvetica',bold?'bold':'normal');vals.forEach((v,i)=>{const w=cols[i][1]*sc;const s=doc.splitTextToSize(clean(v),w-2)[0]||'';cols[i][2]?doc.text(s,x+w-1.5,yy,{align:'right'}):doc.text(s,x+1.5,yy);x+=w;});};
+    const talHead=(y0)=>{doc.setFontSize(8);doc.setTextColor(...MUT);row(cols.map(c=>c[0]),y0,true,[238,242,240]);return y0+6;};
+    let ty=21+wkH+8;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...PET);doc.text(clean(`Talhões plantados (${tal.length})`),MG,ty);ty=talHead(ty+6);doc.setFontSize(8);
+    tal.forEach((r,i)=>{if(ty>H-12){newPage('Talhões plantados (continuação)');ty=talHead(27);}
+      doc.setTextColor(...PET);doc.setFontSize(8);
+      row([r.tl,r.f,r.at?nf2.format(r.at):'-',nf2.format(r.ap),nf0.format(r.pct)+'%',r.v,fmtDY(r.ini),fmtDY(r.fim),r.dias??'-',r.ch7==null?'-':nf0.format(r.ch7)+(r.ch7p?' (parcial)':''),r.pop?nf0.format(r.pop):'-',r.em?fmtDY(r.em):'-'],ty,false,i%2?null:[248,250,249]);ty+=5.6;});
+    if(!tal.length){doc.setTextColor(...MUT);doc.text('Nenhum talhão plantado com os filtros atuais.',MG,ty);}
+
+    // sementes
+    if((DB.lotes||[]).length||(DB.entradas||[]).length){
+      newPage('Sementes: entrada e qualidade');kpiRow(kl,21);
+      img('chLot',MG,42,W-2*MG,lotH,'Germinação por lote (7º dia) e IVG (%)');
+      img('chEntVar',MG,42+lotH+4,gw,entH,'Sementes recebidas por variedade (t)');img('chEntDate',MG+gw+4,42+lotH+4,gw,entH,'Chegadas de sementes (t)');}
+
+    // conferência
+    if(conf.length){newPage(`Pontos para revisar na planilha (${conf.length})`);let cy=27;
+      conf.forEach(c=>{const lines=doc.splitTextToSize(clean(c.det),W-2*MG-70);if(cy+lines.length*4.2>H-12){newPage('Pontos para revisar (continuação)');cy=27;}
+        doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...PET);doc.text(clean(c.tl),MG,cy);doc.text(clean(c.tipo),MG+18,cy);
+        doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.text(lines,MG+70,cy);cy+=lines.length*4.2+2.5;});}
+
+    const blob=doc.output('blob');
+    const d=new Date();const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    ov.hidden=true;
+    await saveFile(`Plantio_${(DB.safra||'safra').replace(/[^\w\-]+/g,'_')}_${stamp}.pdf`,blob,'application/pdf');
+  }catch(err){console.error(err);toast('Não foi possível gerar o PDF: '+(err&&err.message||err));}
+  finally{
+    ov.hidden=true;
+    if(prevTheme)document.documentElement.dataset.theme=prevTheme;else delete document.documentElement.dataset.theme;
+    $$('.cv[data-pdf-h]').forEach(cv=>{cv.style.height='';delete cv.dataset.pdfH;});
+    Chart.defaults.animation=prevAnim;themeChart();
+    view=prevView;$$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+view));render();
+  }
+}
+
+/* ================= importação da planilha ================= */
+$('#btnLoad').onclick=()=>$('#fileIn').click();
+$('#fileIn').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+    const db=parseWorkbook(wb,f.name);
+    if(!db.plantio.length&&!db.lotes.length&&!db.talhoes.length&&!db.entradas.length)throw new Error('Não encontrei as abas Diário, DADOS ou Teste de Germinação.');
+    if(!store.set('plantio-db-v2',JSON.stringify(db)))toast('Dados carregados (não foi possível salvar neste navegador).');
+    load(db);
+    toast(`${f.name}: ${db.plantio.length} registros, ${db.chuva.length} dias de chuva, ${db.talhoes.length} talhões, ${db.entradas.length} entradas e ${db.lotes.length} lotes testados.`);
+  }catch(err){toast('Não foi possível ler a planilha: '+err.message);console.error(err);}
+  e.target.value='';
+};
+$('#btnReset').onclick=()=>{store.del('plantio-db-v2');load(ORIGINAL);toast('Dados originais restaurados.');};
+
+function parseWorkbook(wb,fname){
+  const sheets=wb.SheetNames;
+  const find=re=>sheets.find(s=>re.test(norm(s)));
+  const aoa=s=>s?XLSX.utils.sheet_to_json(wb.Sheets[s],{header:1,raw:true,defval:null}):[];
+  const ds=v=>{if(v==null||v==='')return null;if(v instanceof Date)return new Date(v.getTime()-v.getTimezoneOffset()*6e4).toISOString().slice(0,10);if(typeof v==='number'){const d=new Date(Date.UTC(1899,11,30)+v*864e5);return d.toISOString().slice(0,10);}
+    const m=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(m){const y=m[3].length===2?'20'+m[3]:m[3];return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}return null;};
+  const num=v=>{if(v==null||v===''||typeof v==='boolean')return null;const n=typeof v==='number'?v:parseFloat(String(v).replace(/\./g,'').replace(',','.'));return isNaN(n)?null:n;};
+  const str=v=>{if(v==null)return null;const s=String(v).trim();return s===''||s==='-'||s==='#VALUE!'?null:s;};
+  const hdrIdx=(rows,need)=>rows.findIndex(r=>r&&need.every(n=>r.some(c=>norm(c)===n||norm(c).startsWith(n))));
+  const col=(h,...names)=>{for(const n of names){const i=h.findIndex(c=>norm(c)===n);if(i>=0)return i;}for(const n of names){const i=h.findIndex(c=>norm(c).startsWith(n));if(i>=0)return i;}return -1;};
+  const db={safra:(fname.replace(/\.[^.]+$/,'').replace(/[_]+/g,' ').replace(/^plantio\s*/i,'').trim()||'Safra'),_file:fname,plantio:[],chuva:[],talhoes:[],cultivares:[],culturas:[],fazendas:[],turnos:[],plano:[],lotes:[],entradas:[]};
+  // Diário
+  const sD=find(/^DIARIO/);const rD=aoa(sD);const hD=hdrIdx(rD,['DATA','TALHAO']);
+  const rainD=new Map();
+  if(hD>=0){const h=rD[hD];const c={d:col(h,'DATA'),t:col(h,'TURNO'),c:col(h,'CULTURA'),v:col(h,'HIBRIDO','CULTIVAR','VARIEDADE'),f:col(h,'FAZENDA'),tl:col(h,'TALHAO'),a:col(h,'AREA'),mm:col(h,'CHUVA (MM)','CHUVA','PLUVIOMETRIA')};
+    for(const r of rD.slice(hD+1)){const d=ds(r[c.d]);if(!d)continue;const tl=str(r[c.tl]);
+      if(c.mm>=0&&num(r[c.mm]))rainD.set(d,(rainD.get(d)||0)+num(r[c.mm]));
+      if(!tl&&!num(r[c.a]))continue;
+      db.plantio.push({d,t:c.t>=0?str(r[c.t]):null,c:str(r[c.c]),v:str(r[c.v]),f:str(r[c.f]),tl,a:num(r[c.a])||0});}}
+  // Pluviometria (aba própria tem prioridade)
+  const sP=find(/^PLUVIO/);const rP=aoa(sP);const hP=hdrIdx(rP,['DATA']);const rainP=new Map();
+  if(hP>=0){const h=rP[hP];const cd=col(h,'DATA'),cm=col(h,'PLUVIOMETRIA','CHUVA','MM');
+    for(const r of rP.slice(hP+1)){const d=ds(r[cd]);const v=num(r[cm]);if(d&&v!=null)rainP.set(d,(rainP.get(d)||0)+v);}}
+  const rain=rainP.size?rainP:rainD;db._rainSrc=rainP.size?'aba Pluviometria':'aba Diário (coluna Chuva)';
+  db.chuva=[...rain.entries()].sort().map(([d,mm])=>({d,mm:Math.round(mm*100)/100}));
+  // DADOS
+  const sX=find(/^DADOS/);const rX=aoa(sX);
+  if(rX.length){const h=rX[0].map(norm);
+    const iT=h.findIndex(c=>c.startsWith('TALHO'));const iB=h.findIndex(c=>c.startsWith('BLOCO'));
+    const iFT=iT>0&&/^FAZENDA/.test(h[iT-1])?iT-1:-1; // fazenda por talhão (coluna ao lado)
+    const iF=h.findIndex((c,i)=>/^FAZENDA/.test(c)&&i!==iFT);
+    const iV=h.findIndex(c=>c.startsWith('VARIEDADE ')||c==='VARIEDADE'||c.startsWith('CULTIVAR')||c.startsWith('HIBRIDO'));
+    const iVL=h.findIndex(c=>c.startsWith('VARIEDADES'));
+    const iC=h.findIndex(c=>c==='CULTURA'),iTu=h.findIndex(c=>c.startsWith('TURNO')),iCi=h.findIndex(c=>c==='CICLO');
+    const iA=iT>=0?(h.slice(iT+1).findIndex(c=>c.startsWith('AREA'))+iT+1):-1;
+    const fz=new Set();
+    rX.slice(1).forEach(r=>{
+      if(iT>=0&&str(r[iT])){const f=iFT>=0?str(r[iFT]):null;if(f)fz.add(f);db.talhoes.push({b:iB>=0?str(r[iB]):(f||'—'),f,tl:str(r[iT]),a:iA>iT?num(r[iA])||0:0});}
+      if(iV>=0&&str(r[iV]))db.cultivares.push({v:str(r[iV]),ciclo:iCi>=0?num(r[iCi]):null});
+      if(iC>=0&&str(r[iC]))db.culturas.push(str(r[iC]));
+      if(iF>=0&&str(r[iF]))fz.add(str(r[iF]));
+      if(iTu>=0&&str(r[iTu]))db.turnos.push(str(r[iTu]));});
+    if(iVL>=0){const have=new Set(db.cultivares.map(c=>norm(c.v)));rX.slice(1).forEach(r=>{const v=str(r[iVL]);if(v&&!have.has(norm(v))){have.add(norm(v));db.cultivares.push({v,ciclo:null});}});}
+    db.fazendas=[...fz];}
+  // Planejamento: qualquer aba com Talhões + Sementes/ha
+  for(const s of sheets){const rows=aoa(s);const hi=hdrIdx(rows,['TALHO','SEMENTES/HA']);if(hi<0||/^DADOS|^DIARIO|^ENTRADA/.test(norm(s)))continue;
+    const h=rows[hi];const c={f:col(h,'FAZENDA'),b:col(h,'BLOCO'),tl:col(h,'TALHOES','TALHAO'),at:col(h,'AREA TOTAL'),ap:col(h,'AREA PLANTADA'),c:col(h,'CULTURA'),v:col(h,'VARIEDADE','HIBRIDO','CULTIVAR'),sm:col(h,'SEMENTE/M','SEMENTES/M'),sha:col(h,'SEMENTES/HA'),ci:col(h,'CICLO'),ini:col(h,'INICIO'),fim:col(h,'FINAL'),em:col(h,'EMERGENCIA'),pv:col(h,'PREVISAO COLHEITA')};
+    const g=i=>i>=0?i:9999;
+    rows.slice(hi+1).forEach(r=>{const tl=str(r[g(c.tl)]);if(!tl||norm(tl)==='TOTAL')return;db.plano.push({f:str(r[g(c.f)])||str(r[g(c.b)]),b:str(r[g(c.b)]),tl,at:num(r[g(c.at)]),ap:num(r[g(c.ap)]),c:str(r[g(c.c)]),v:str(r[g(c.v)]),sm:num(r[g(c.sm)]),sha:num(r[g(c.sha)]),ciclo:num(r[g(c.ci)]),ini:ds(r[g(c.ini)]),fim:ds(r[g(c.fim)]),em:ds(r[g(c.em)]),prev:ds(r[g(c.pv)])});});
+    db._planSrc='aba '+s;break;}
+  // Entrada de sementes
+  const sE=find(/^ENTRADA/);const rE=aoa(sE);const hE=hdrIdx(rE,['VARIEDADE','LOTE']);
+  if(hE>=0){const h=rE[hE];const c={d:col(h,'DATA DA CHEGADA','DATA'),v:col(h,'VARIEDADE'),l:col(h,'LOTE'),s:col(h,'SEMENTEIRA'),kg:col(h,'PESO'),q:col(h,'QUANTIDADE'),c:col(h,'CULTURA')};const g=i=>i>=0?i:9999;
+    rE.slice(hE+1).forEach(r=>{const v=str(r[g(c.v)]),lote=str(r[g(c.l)]);if(!v||!lote)return;db.entradas.push({d:ds(r[g(c.d)]),v,lote,sem:str(r[g(c.s)]),kg:num(r[g(c.kg)]),q:num(r[g(c.q)]),c:str(r[g(c.c)])});});}
+  // Teste de germinação
+  const sG=find(/^TESTE DE GERM/);const rG=aoa(sG);const hG=hdrIdx(rG,['VARIEDADE','LOTE']);
+  if(hG>=0){for(const r of rG.slice(hG+1)){const v=str(r[0]),lote=str(r[1]);if(!v||!lote)continue;
+    const med=[23,24,25,26,27].map(i=>num(r[i]));
+    db.lotes.push({v,lote,d:ds(r[2]),med,ivg:num(r[28]),ivgp:num(r[29]),sem:str(r[30]),tot:num(r[31])??med[4]});}}
+  return db;
+}
+
+/* ================= carga ================= */
+function load(db){
+  DB=db;M=buildModel(DB);resetFilters();
+  if(!M.dMin){F.ini=F.fim='';}
+  L.vr.clear();L.sem.clear();varMode=null;
+  ['#tbReg','#tbTal','#tbLot','#tbDb','#tbConf'].forEach(s=>$(s)._st=null);
+  $('#btnReset').hidden=DB===ORIGINAL||!!DB._drive||!!DB._web;
+  setupUI();syncUI();render();
+}
+/* ================= Atualização pela web (Apps Script) ================= */
+const WEB_EVERY=10*60*1000;let webBusy=false,webRetried=false;
+const webOn=()=>/^https:\/\/script\.google(usercontent)?\.com\//.test(DATA_URL);
+async function getJson(url,ms){const ac=new AbortController();const to=setTimeout(()=>ac.abort(),ms||90000);
+  try{const r=await fetch(url,{cache:'no-store',redirect:'follow',signal:ac.signal});if(!r.ok)throw new Error('HTTP '+r.status);const txt=await r.text();
+    try{return JSON.parse(txt);}catch(e){throw new Error(/<html|<!doctype/i.test(txt)?'o Google devolveu uma página em vez dos dados (verifique se o acesso está como "Qualquer pessoa")':'resposta inválida');}}
+  catch(e){if(e.name==='AbortError')throw new Error('o Google demorou mais de '+Math.round((ms||90000)/1000)+' s para responder');throw e;}
+  finally{clearTimeout(to);}}
+async function webRefresh(manual){
+  if(!webOn()||webBusy)return;webBusy=true;$('#btnDrive').classList.add('spin');
+  driveStatus('busy','Verificando a planilha…');
+  try{
+    const meta=await getJson(DATA_URL+(DATA_URL.includes('?')?'&':'?')+'meta=1');
+    if(!meta.ok)throw new Error(meta.error||'resposta inválida');
+    const have=DB&&DB._web&&DB._web.mod===meta.modified;
+    if(have&&!manual){driveStatus('ok',`Dados em dia: planilha salva em ${fmtDT(meta.modified)}.`);return;}
+    const t0=Date.now();const tick=setInterval(()=>driveStatus('busy',`Baixando a versão salva em ${fmtDT(meta.modified)}… ${Math.round((Date.now()-t0)/1000)} s`),1000);
+    let j;try{j=await getJson(DATA_URL,120000);}finally{clearInterval(tick);}
+    if(!j.ok||!j.b64)throw new Error(j.error||'a resposta veio sem a planilha');
+    const wb=XLSX.read(j.b64,{type:'base64',cellDates:true});
+    const db=parseWorkbook(wb,j.name||'Plantio.xlsx');
+    if(!db.plantio.length&&!db.talhoes.length&&!db.lotes.length)throw new Error('a planilha não tem as abas esperadas (Diário, DADOS, Teste de Germinação)');
+    db._web={mod:j.modified,at:new Date().toISOString()};
+    store.set('plantio-db-v2',JSON.stringify(db));
+    load(db);
+    driveStatus('ok',`Dados em dia: planilha salva em ${fmtDT(j.modified)}.`);
+    if(manual)toast('Dashboard atualizado.');
+  }catch(err){
+    const offline=!navigator.onLine;
+    driveStatus(offline?'warn':'err',offline?'Sem internet. Mostrando os últimos dados carregados.':'Não foi possível buscar a planilha ('+(err&&err.message||err)+'). Mostrando os últimos dados carregados.');
+    if(!webRetried&&!manual){webRetried=true;setTimeout(()=>{webBusy=false;webRefresh(false);},4000+Math.random()*3000);}
+  }finally{webBusy=false;$('#btnDrive').classList.remove('spin');}
+}
+if(webOn()){
+  $('#btnDrive').hidden=false;
+  $('#btnDrive').lastChild.textContent=' Atualizar';
+  $('#btnDrive').title='Busca a versão mais recente da planilha';
+  setTimeout(()=>webRefresh(false),0);
+  setInterval(()=>{if(document.visibilityState==='visible'){webRetried=false;webRefresh(false);}},WEB_EVERY);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const at=DB&&DB._web&&Date.parse(DB._web.at);if(!at||Date.now()-at>WEB_EVERY){webRetried=false;webRefresh(false);}}});
+}
+
+/* ================= Google Drive (atualização automática) ================= */
+const DRIVE={server:'Google Drive',fileId:'127h7sFgcKgYpqfyLLVJTPDEmcKEZPmLv',
+  query:"title contains 'Plantio Soja 26-27' and mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'",
+  every:10*60*1000};
+let mcp=null,driveBusy=false,driveRetried=false;
+const fmtDT=iso=>{try{const d=new Date(iso);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}};
+function driveStatus(kind,msg){const l=$('#driveLine');l.hidden=false;l.className='drive '+kind;$('#driveTxt').textContent=msg;}
+function driveMsg(err){
+  const c=err&&err.code;
+  switch(c){
+    case 'server_not_connected':return ['err','Google Drive não conectado. Adicione em claude.ai: Configurações, Conectores. Até lá, use Carregar planilha.'];
+    case 'needs_reauth':return ['err','A conexão com o Google Drive expirou. Reconecte em Configurações, Conectores.'];
+    case 'selection_required':return ['warn','Escolha qual conta do Google Drive usar no aviso do Claude.'];
+    case 'not_in_manifest':case 'consent_required':return ['warn','Leitura do Google Drive não permitida nesta página. Mostrando os últimos dados salvos.'];
+    case 'blocked_by_policy':case 'approval_required':return ['err','A política da organização bloqueia a leitura do Google Drive aqui.'];
+    case 'not_granted':case 'capability_disabled':case 'capability_removed':return ['warn','Leitura automática indisponível nesta visualização. Use Carregar planilha.'];
+    case 'tool_error':return ['err','O Google Drive recusou o pedido: '+(err.message||'arquivo não encontrado ou sem acesso')+'.'];
+    case 'server_unavailable':case 'rate_limited':return ['warn','Google Drive fora do ar no momento. Mostrando os últimos dados salvos.'];
+    default:return ['warn','Não foi possível falar com o Google Drive ('+(c||'erro')+'). Mostrando os últimos dados salvos.'];
+  }
+}
+function findBase64(o,depth){ // conteúdo do .xlsx: campo content, ou qualquer string que comece com a assinatura ZIP
+  if(depth>6||o==null)return null;
+  if(typeof o==='string')return o.startsWith('UEsDB')?o:null;
+  if(typeof o==='object'){if(typeof o.content==='string'&&o.content.startsWith('UEsDB'))return o.content;for(const k in o){const r=findBase64(o[k],(depth||0)+1);if(r)return r;}}
+  return null;
+}
+async function driveRefresh(manual){
+  if(!mcp||driveBusy)return;driveBusy=true;$('#btnDrive').classList.add('spin');
+  driveStatus('busy','Verificando a planilha no Google Drive…');
+  try{
+    const sr=await mcp.callTool(DRIVE.server,'search_files',{query:DRIVE.query,pageSize:10,excludeContentSnippets:true},{cache:false});
+    const files=((sr.payload&&sr.payload.files)||[]).filter(f=>f&&f.id);
+    const f=files.find(x=>x.id===DRIVE.fileId)||files.sort((a,b)=>String(b.modifiedTime).localeCompare(String(a.modifiedTime)))[0];
+    if(!f){driveStatus('err','Não encontrei “Plantio Soja 26-27.xlsx” no seu Google Drive. Mostrando os últimos dados salvos.');return;}
+    const last=store.get('plantio-drive-mod'),lastId=store.get('plantio-drive-id');
+    const have=DB&&DB._drive&&DB._drive.id===f.id&&DB._drive.mod===f.modifiedTime;
+    if(!manual&&have&&last===f.modifiedTime&&lastId===f.id){driveStatus('ok',`Planilha em dia no Google Drive (salva em ${fmtDT(f.modifiedTime)}).`);return;}
+    driveStatus('busy','Baixando a versão salva em '+fmtDT(f.modifiedTime)+'…');
+    const dr=await mcp.callTool(DRIVE.server,'download_file_content',{fileId:f.id},{cache:false});
+    const b64=findBase64(dr.payload,0)||findBase64(dr.content,0);
+    if(!b64){driveStatus('err','O Google Drive respondeu, mas sem o conteúdo do Excel. Use Carregar planilha.');return;}
+    const wb=XLSX.read(b64,{type:'base64',cellDates:true});
+    const db=parseWorkbook(wb,f.title||'Plantio Soja 26-27.xlsx');
+    if(!db.plantio.length&&!db.talhoes.length&&!db.lotes.length){driveStatus('err','A planilha do Drive não tem as abas esperadas (Diário, DADOS, Teste de Germinação).');return;}
+    db._drive={id:f.id,mod:f.modifiedTime,at:new Date().toISOString()};
+    store.set('plantio-db-v2',JSON.stringify(db));store.set('plantio-drive-mod',f.modifiedTime);store.set('plantio-drive-id',f.id);
+    const keep={ini:F.ini,fim:F.fim};
+    load(db);
+    driveStatus('ok',`Atualizado do Google Drive: versão salva em ${fmtDT(f.modifiedTime)}.`);
+    if(manual)toast(`Planilha atualizada: ${db.plantio.length} registros, ${db.entradas.length} entradas de sementes.`);
+  }catch(err){
+    const [k,m]=driveMsg(err);driveStatus(k,m);
+    if(err&&err.retryable&&!driveRetried){driveRetried=true;setTimeout(()=>{driveBusy=false;driveRefresh(false);},Math.min(err.retryAfterMs||3000+Math.random()*3000,60000));}
+    if(err&&['server_not_connected','not_granted','capability_disabled','capability_removed'].includes(err.code))$('#btnDrive').hidden=true;
+  }finally{driveBusy=false;$('#btnDrive').classList.remove('spin');}
+}
+$('#btnDrive').onclick=()=>{if(webOn()){webRetried=false;webRefresh(true);}else{driveRetried=false;driveRefresh(true);}};
+(async()=>{
+  try{
+    if(webOn()||!window.claude||typeof window.claude.use!=='function')return;
+    mcp=await window.claude.use('mcp');
+    if(!mcp)return;
+    $('#btnDrive').hidden=false;
+    driveRefresh(false);
+    setInterval(()=>{if(document.visibilityState==='visible'){driveRetried=false;driveRefresh(false);}},DRIVE.every);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const at=DB&&DB._drive&&Date.parse(DB._drive.at);if(!at||Date.now()-at>DRIVE.every)driveRefresh(false);}});
+  }catch(e){}
+})();
+
+const th=store.get('plantio-theme');if(th)document.documentElement.dataset.theme=th;
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{if(!document.documentElement.dataset.theme){themeChart();render();}});
+themeChart();
+let saved=null;try{saved=JSON.parse(store.get('plantio-db-v2')||'null');}catch(e){}
+load(saved&&saved.plantio?saved:ORIGINAL);
+window.addEventListener('beforeprint',()=>Object.values(charts).forEach(c=>c.resize()));
+})();
+</script>
+</body>
+</html>
