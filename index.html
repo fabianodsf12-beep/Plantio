@@ -1279,15 +1279,21 @@ async function getJson(url,ms){const ac=new AbortController();const to=setTimeou
   finally{clearTimeout(to);}}
 async function webRefresh(manual){
   if(!webOn()||webBusy)return;webBusy=true;$('#btnDrive').classList.add('spin');
-  driveStatus('busy','Verificando a planilha…');
+  const cached=DB&&DB._web;
+  driveStatus('busy',cached?`Mostrando dados de ${fmtDT(DB._web.mod)}; verificando se há versão nova…`:'Buscando a planilha…');
   try{
-    const meta=await getJson(DATA_URL+(DATA_URL.includes('?')?'&':'?')+'meta=1');
-    if(!meta.ok)throw new Error(meta.error||'resposta inválida');
-    const have=DB&&DB._web&&DB._web.mod===meta.modified;
-    if(have&&!manual){driveStatus('ok',`Dados em dia: planilha salva em ${fmtDT(meta.modified)}.`);return;}
-    const t0=Date.now();const tick=setInterval(()=>driveStatus('busy',`Baixando a versão salva em ${fmtDT(meta.modified)}… ${Math.round((Date.now()-t0)/1000)} s`),1000);
-    let j;try{j=await getJson(DATA_URL,120000);}finally{clearInterval(tick);}
+    let j;
+    if(cached&&!manual){
+      // já há dados na tela: consulta rápida só da data de alteração
+      const meta=await getJson(DATA_URL+(DATA_URL.includes('?')?'&':'?')+'meta=1',60000);
+      if(!meta.ok)throw new Error(meta.error||'resposta inválida');
+      if(meta.modified===DB._web.mod){driveStatus('ok',`Dados em dia: planilha salva em ${fmtDT(meta.modified)}.`);return;}
+    }
+    // primeira visita, atualização manual ou planilha alterada: baixa direto (uma chamada só)
+    const t0=Date.now();const tick=setInterval(()=>driveStatus('busy',`${cached?'Baixando a versão nova':'Buscando a planilha'}… ${Math.round((Date.now()-t0)/1000)} s`),1000);
+    try{j=await getJson(DATA_URL,120000);}finally{clearInterval(tick);}
     if(!j.ok||!j.b64)throw new Error(j.error||'a resposta veio sem a planilha');
+    if(cached&&!manual&&j.modified===DB._web.mod){driveStatus('ok',`Dados em dia: planilha salva em ${fmtDT(j.modified)}.`);return;}
     const wb=XLSX.read(j.b64,{type:'base64',cellDates:true});
     const db=parseWorkbook(wb,j.name||'Plantio.xlsx');
     if(!db.plantio.length&&!db.talhoes.length&&!db.lotes.length)throw new Error('a planilha não tem as abas esperadas (Diário, DADOS, Teste de Germinação)');
