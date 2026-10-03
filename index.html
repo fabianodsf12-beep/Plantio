@@ -213,10 +213,32 @@ tbody tr.click{cursor:pointer}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 
+/* barra de filtros compacta */
+.filters-in{padding:6px 24px 4px;gap:6px 12px}
+.fg{gap:2px}
+.fg>label,.fg>.lbl{font-size:11.5px}
+.dates input{height:28px;width:128px;padding:2px 6px;font-size:13px}
+.chip{height:28px;font-size:12.5px;padding:2px 9px 2px 7px}
+.ms-btn{height:28px;font-size:13px;min-width:130px;padding:2px 26px 2px 8px}
+.ms-btn::after{top:11px}
+.ms-pop{top:32px}
+select.sel{height:28px;padding:2px 6px;font-size:13px}
+.rainf input[type=range]{width:90px}
+.epocas{padding:0 24px 4px;gap:4px}
+.epocas .lbl{font-size:11.5px}
+.ep{font-size:12px;padding:1px 7px}
+.statusrow{max-width:1480px;margin:0 auto;padding:0 24px 5px;display:flex;gap:10px;align-items:center}
+.statusrow .status{padding:0;margin:0;flex:1;font-size:12px}
+.statusrow .lnk{white-space:nowrap;font-size:12px}
+.filters.folded .filters-in,.filters.folded .epocas{display:none}
+.filters.folded .statusrow{padding-top:5px}
+
 /* Mapa e colheita */
-.mapbox{position:relative;height:560px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);overflow:hidden;touch-action:none}
-.mapbox svg{width:100%;height:100%;display:block;cursor:grab}
-.mapbox svg:active{cursor:grabbing}
+.mapbox{touch-action:auto}
+.mapbox{position:relative;height:calc(100vh - 150px);min-height:600px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);overflow:hidden;}
+.mapbox svg{width:100%;height:100%;display:block}
+.mapbox.zoomed svg{cursor:grab}
+.mapbox.zoomed svg:active{cursor:grabbing}
 .mapbox .mp{cursor:pointer;transition:fill-opacity .15s}
 .mapbox .mp:hover{fill-opacity:.95}
 .mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px;z-index:2}
@@ -235,7 +257,7 @@ tbody tr.click{cursor:pointer}
   .hero{grid-template-columns:1fr}
 }
 @media (max-width:640px){
-  .mapbox{height:420px}
+  .mapbox{height:70vh;min-height:420px}
   .top-in,.tabs,.filters-in,.epocas,.status,main{padding-left:14px;padding-right:14px}
   .kpis{grid-template-columns:repeat(2,1fr)}
   .kpi:nth-child(odd){border-left:0}.kpi:nth-child(4){border-left:1px solid var(--line)}
@@ -331,10 +353,9 @@ tbody tr.click{cursor:pointer}
         <output id="fRainOut" for="fRainMin">1 mm</output>
       </div>
     </div>
-    <div class="fg"><button class="lnk" id="btnClear">Limpar filtros</button></div>
   </div>
   <div class="epocas" id="epocas"></div>
-  <div class="status" id="status"></div>
+  <div class="statusrow"><div class="status" id="status"></div><button class="lnk" id="btnClear">Limpar filtros</button><button class="lnk" id="btnFold" aria-expanded="true">Ocultar filtros</button></div>
 </section>
 
 <main>
@@ -417,7 +438,7 @@ tbody tr.click{cursor:pointer}
   <section class="view" id="v-mapa" role="tabpanel">
     <div class="grid">
       <div class="card s12">
-        <div class="hd"><h2>Mapa dos talhões</h2><p>Área plantada e variedade de cada talhão. Passe o mouse para ver os detalhes; clique para filtrar.</p>
+        <div class="hd"><h2>Mapa dos talhões</h2><p>Área plantada e variedade de cada talhão. Passe o mouse para ver os detalhes; clique para filtrar. Use + e − para aproximar e arraste para mover.</p>
           <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog">% plantado</button><button data-m="jan">Janela pós-colheita</button></div></div></div>
         <div class="mapbox" id="mapBox">
           <svg id="mapSvg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa dos talhões colorido por variedade plantada"></svg>
@@ -1017,7 +1038,8 @@ function varPalette(){const vs=[...new Set(M.rec.filter(r=>r.a>0).map(r=>r.v))].
 function renderMap(){
   const host=$('#mapSvg');if(!MAP){host.innerHTML='';$('#mapEmpty').classList.add('on');return;}
   $('#mapEmpty').classList.remove('on');
-  if(!vb)vb={x:-10,y:-10,w:MAP.w+20,h:MAP.h+20};
+  if(!vb)vb={x:-4,y:-4,w:MAP.w+8,h:MAP.h+8};
+  $('#mapBox').classList.toggle('zoomed',mapZoomed());
   const D=mapTalData(),vp=varPalette();
   const surf=cssv('--surface-2'),line=cssv('--line'),ink=cssv('--ink'),mut=cssv('--muted');
   const fl=F.cult.size!==M.culturas.length||F.vr.size||F.rain!=='all'||F.ini!==M.dMin||F.fim!==M.dMax;
@@ -1036,7 +1058,7 @@ function renderMap(){
     const sel=F.tal.size&&t&&F.tal.has(t.tl);
     return `<path d="${f.d}" data-i="${i}" fill="${fill}" fill-opacity="${dim?.12:op}" stroke="${sel?ink:o?fill:line}" stroke-width="${sel?2.4:1}" vector-effect="non-scaling-stroke" fill-rule="evenodd" class="mp${dim?' dim':''}"/>`;
   }).join('');
-  const z=vb.w/(MAP.w+20);
+  const z=vb.w/(MAP.w+8);
   const labels=MAP.feats.map(f=>{const fs=Math.max(3,Math.min(13,Math.sqrt(f.area)*.16))*Math.max(z,.25);if(Math.sqrt(f.area)<fs*2.2)return '';
     return `<text x="${f.cx.toFixed(1)}" y="${f.cy.toFixed(1)}" font-size="${fs.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${ink}" paint-order="stroke" stroke="${cssv('--surface')}" stroke-width="${(fs*.22).toFixed(2)}" stroke-opacity=".85" pointer-events="none" font-weight="600">${esc(f.name)}</text>`;}).join('');
   host.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
@@ -1068,12 +1090,12 @@ function renderMap(){
   });
 }
 const mapDrag={on:false,moved:false};
-function mapZoom(f,cx,cy){if(!MAP)return;const W0=MAP.w+20;const nw=Math.max(W0/40,Math.min(W0*1.2,vb.w*f));const k=nw/vb.w;
+const mapZoomed=()=>MAP&&vb&&vb.w<MAP.w+7;
+function mapZoom(f,cx,cy){if(!MAP)return;const W0=MAP.w+8;const nw=Math.max(W0/40,Math.min(W0,vb.w*f));if(nw>=W0){vb=null;renderMap();return;}const k=nw/vb.w;
   if(cx==null){cx=vb.x+vb.w/2;cy=vb.y+vb.h/2;}vb={x:cx-(cx-vb.x)*k,y:cy-(cy-vb.y)*k,w:nw,h:vb.h*k};renderMap();}
 function svgPt(e){const s=$('#mapSvg'),r=s.getBoundingClientRect();const k=Math.max(vb.w/r.width,vb.h/r.height);const ox=(r.width*k-vb.w)/2,oy=(r.height*k-vb.h)/2;return [vb.x+(e.clientX-r.left)*k-ox,vb.y+(e.clientY-r.top)*k-oy,k];}
 (function(){const s=$('#mapSvg');
-  s.addEventListener('wheel',e=>{e.preventDefault();const [x,y]=svgPt(e);mapZoom(e.deltaY>0?1.2:1/1.2,x,y);},{passive:false});
-  s.addEventListener('pointerdown',e=>{if(!vb)return;mapDrag.on=true;mapDrag.moved=false;mapDrag.sx=e.clientX;mapDrag.sy=e.clientY;mapDrag.vx=vb.x;mapDrag.vy=vb.y;});
+  s.addEventListener('pointerdown',e=>{if(!vb||!mapZoomed())return;mapDrag.on=true;mapDrag.moved=false;mapDrag.sx=e.clientX;mapDrag.sy=e.clientY;mapDrag.vx=vb.x;mapDrag.vy=vb.y;});
   window.addEventListener('pointermove',e=>{if(!mapDrag.on)return;const dx=e.clientX-mapDrag.sx,dy=e.clientY-mapDrag.sy;if(Math.abs(dx)+Math.abs(dy)>4)mapDrag.moved=true;if(!mapDrag.moved)return;
     const [, ,k]=svgPt(e);vb.x=mapDrag.vx-dx*k;vb.y=mapDrag.vy-dy*k;$('#mapSvg').setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);$('#mapTip').hidden=true;});
   window.addEventListener('pointerup',()=>{if(mapDrag.on&&mapDrag.moved){renderMap();setTimeout(()=>mapDrag.moved=false,0);}mapDrag.on=false;});
@@ -1273,6 +1295,9 @@ $('#gMin').oninput=e=>{L.min=+e.target.value;$('#gMinOut').textContent=L.min+'%'
 $$('.tab').forEach(t=>t.onclick=()=>{view=t.dataset.view;$$('.tab').forEach(x=>x.setAttribute('aria-selected',x===t?'true':'false'));$$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+view));
   $('#filterBar').style.display=view==='sementes'||view==='base'?'none':'';render();});
 $('#btnPrint').onclick=()=>exportPdf();
+function setFold(on){$('#filterBar').classList.toggle('folded',on);$('#btnFold').textContent=on?'Mostrar filtros':'Ocultar filtros';$('#btnFold').setAttribute('aria-expanded',on?'false':'true');store.set('plantio-fold',on?'1':'0');}
+$('#btnFold').onclick=()=>setFold(!$('#filterBar').classList.contains('folded'));
+setFold(store.get('plantio-fold')==='1');
 $('#btnTheme').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark';store.set('plantio-theme',r.dataset.theme);themeChart();render();};
 $('#btnCsv').onclick=()=>{
   let rows,head;
