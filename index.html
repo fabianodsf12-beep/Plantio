@@ -1636,10 +1636,16 @@ async function webRefresh(manual){
     if(!manual&&have){driveStatus('ok',`Planilha em dia no Google Drive (salva em ${fmtDT(meta.modified)}).`);return;}
     driveStatus('busy','Baixando a versão salva em '+fmtDT(meta.modified)+'…');
     const r=await (await fetch(webUrl+sep+'t='+Date.now(),{cache:'no-store'})).json();
-    if(!r||!r.ok||!r.b64)throw new Error(r&&r.error||'sem o conteúdo da planilha');
-    const wb=XLSX.read(r.b64,{type:'base64',cellDates:true});
+    if(!r||!r.ok)throw new Error(r&&r.error||'resposta inválida');
+    const raw=r.b64||r.base64||r.content||r.data;
+    if(typeof raw!=='string'||!raw)throw new Error('a resposta não trouxe a planilha (campos: '+Object.keys(r).join(', ')+')');
+    let s=raw.replace(/^data:[^,]*,/,'').replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';
+    let bytes;try{const bin=atob(s);bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);}catch(e){throw new Error('conteúdo em base64 inválido');}
+    if(!(bytes[0]===0x50&&bytes[1]===0x4B)){const head=new TextDecoder().decode(bytes.slice(0,60)).replace(/[^\x20-\x7E]/g,'.');
+      throw new Error(`o arquivo recebido não é um Excel (.xlsx); ${bytes.length} bytes, começa com "${head}"`);}
+    const wb=XLSX.read(bytes,{type:'array',cellDates:true});
     const db=parseWorkbook(wb,r.name||'Plantio Soja 26-27.xlsx');
-    if(!db.plantio.length&&!db.talhoes.length&&!db.lotes.length){driveStatus('err','A planilha do Drive não tem as abas esperadas (Diário, DADOS, Teste de Germinação).');return;}
+    if(!db.plantio.length&&!db.talhoes.length&&!db.lotes.length){driveStatus('err','A planilha do Drive não tem as abas esperadas (Diário, DADOS, Teste de Germinação). Abas encontradas: '+wb.SheetNames.join(', ')+'.');return;}
     db._drive={id:'webapp',mod:r.modified,at:new Date().toISOString()};
     store.set('plantio-db-v2',JSON.stringify(db));
     load(db);
