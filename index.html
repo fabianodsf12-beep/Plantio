@@ -1618,12 +1618,52 @@ async function driveRefresh(manual){
     if(err&&['server_not_connected','not_granted','capability_disabled','capability_removed'].includes(err.code))$('#btnDrive').hidden=true;
   }finally{driveBusy=false;$('#btnDrive').classList.remove('spin');}
 }
+/* ---- fora do Claude (GitHub Pages): planilha via Apps Script "Dados Dashboard Plantio" ---- */
+const WEBAPP_PADRAO=''; // URL /exec da implantação do Apps Script
+let webUrl=null;
+function getWebUrl(){
+  try{const q=new URLSearchParams(location.search).get('fonte');if(q&&/^https:\/\/script\.google(usercontent)?\.com\//.test(q)){store.set('plantio-webapp',q);return q;}}catch(e){}
+  return store.get('plantio-webapp')||WEBAPP_PADRAO||null;
+}
+async function webRefresh(manual){
+  if(!webUrl||driveBusy)return;driveBusy=true;$('#btnDrive').classList.add('spin');
+  driveStatus('busy','Verificando a planilha no Google Drive…');
+  try{
+    const sep=webUrl.includes('?')?'&':'?';
+    const meta=await (await fetch(webUrl+sep+'meta=1&t='+Date.now(),{cache:'no-store'})).json();
+    if(!meta||!meta.ok)throw new Error(meta&&meta.error||'resposta inválida');
+    const have=DB&&DB._drive&&DB._drive.mod===meta.modified;
+    if(!manual&&have){driveStatus('ok',`Planilha em dia no Google Drive (salva em ${fmtDT(meta.modified)}).`);return;}
+    driveStatus('busy','Baixando a versão salva em '+fmtDT(meta.modified)+'…');
+    const r=await (await fetch(webUrl+sep+'t='+Date.now(),{cache:'no-store'})).json();
+    if(!r||!r.ok||!r.b64)throw new Error(r&&r.error||'sem o conteúdo da planilha');
+    const wb=XLSX.read(r.b64,{type:'base64',cellDates:true});
+    const db=parseWorkbook(wb,r.name||'Plantio Soja 26-27.xlsx');
+    if(!db.plantio.length&&!db.talhoes.length&&!db.lotes.length){driveStatus('err','A planilha do Drive não tem as abas esperadas (Diário, DADOS, Teste de Germinação).');return;}
+    db._drive={id:'webapp',mod:r.modified,at:new Date().toISOString()};
+    store.set('plantio-db-v2',JSON.stringify(db));
+    load(db);
+    driveStatus('ok',`Atualizado do Google Drive: versão salva em ${fmtDT(r.modified)}.`);
+    if(manual)toast(`Planilha atualizada: ${db.plantio.length} registros de plantio.`);
+  }catch(err){driveStatus('err','Não consegui buscar a planilha no Drive ('+(err&&err.message||err)+'). Mostrando os últimos dados salvos.');}
+  finally{driveBusy=false;$('#btnDrive').classList.remove('spin');}
+}
+function startWeb(){
+  webUrl=getWebUrl();
+  if(!webUrl){driveStatus('warn','Atualização automática desligada: falta o endereço do Apps Script.');
+    const b=document.createElement('button');b.className='lnk';b.style.color='#9FE3C4';b.textContent='Configurar';b.onclick=()=>{const u=prompt('Cole o endereço da implantação do Apps Script (termina em /exec):');
+      if(u&&/^https:\/\/script\.google\.com\//.test(u.trim())){store.set('plantio-webapp',u.trim());startWeb();}};$('#driveLine').appendChild(b);return;}
+  $('#btnDrive').hidden=false;$('#btnDrive').onclick=()=>webRefresh(true);
+  webRefresh(false);
+  setInterval(()=>{if(document.visibilityState==='visible')webRefresh(false);},DRIVE.every);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const at=DB&&DB._drive&&Date.parse(DB._drive.at);if(!at||Date.now()-at>DRIVE.every)webRefresh(false);}});
+}
 $('#btnDrive').onclick=()=>{driveRetried=false;driveRefresh(true);};
 (async()=>{
   try{
-    if(!window.claude||typeof window.claude.use!=='function')return;
+    if(!window.claude||typeof window.claude.use!=='function'){startWeb();return;}
     mcp=await window.claude.use('mcp');
-    if(!mcp)return;
+    if(!mcp){startWeb();return;}
     $('#btnDrive').hidden=false;
     driveRefresh(false);
     setInterval(()=>{if(document.visibilityState==='visible'){driveRetried=false;driveRefresh(false);}},DRIVE.every);
