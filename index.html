@@ -1619,11 +1619,11 @@ async function driveRefresh(manual){
   }finally{driveBusy=false;$('#btnDrive').classList.remove('spin');}
 }
 /* ---- fora do Claude (GitHub Pages): planilha via Apps Script "Dados Dashboard Plantio" ---- */
-const WEBAPP_PADRAO='https://script.google.com/macros/s/AKfycbyBntetdeqMFhVowuzDzIL__mDkMSb2Kyc3xAy332KGvTEEepq_ztKkSPip5xQ3DzPnrA/exec'; // URL /exec da implantação do Apps Script
+const WEBAPP_PADRAO='https://script.google.com/macros/s/AKfycbz5_QCzuaya1GKYIdLrrotkpj51H01k99vvgZFWWNq1CONkdmrX3w2iOeDvwp6cn4zEGw/exec'; // URL /exec da implantação do Apps Script
 let webUrl=null;
 function getWebUrl(){
   try{const q=new URLSearchParams(location.search).get('fonte');if(q&&/^https:\/\/script\.google(usercontent)?\.com\//.test(q)){store.set('plantio-webapp',q);return q;}}catch(e){}
-  return store.get('plantio-webapp')||WEBAPP_PADRAO||null;
+  return WEBAPP_PADRAO||store.get('plantio-webapp')||null;
 }
 async function webRefresh(manual){
   if(!webUrl||driveBusy)return;driveBusy=true;$('#btnDrive').classList.add('spin');
