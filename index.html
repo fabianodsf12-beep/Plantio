@@ -1564,7 +1564,7 @@ function load(db){
 /* ================= Google Drive (atualização automática) ================= */
 const DRIVE={server:'Google Drive',fileId:'127h7sFgcKgYpqfyLLVJTPDEmcKEZPmLv',
   query:"title contains 'Plantio Soja 26-27' and mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'",
-  every:10*60*1000};
+  every:2*60*1000};
 let mcp=null,driveBusy=false,driveRetried=false;
 const fmtDT=iso=>{try{const d=new Date(iso);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}};
 function driveStatus(kind,msg){const l=$('#driveLine');l.hidden=false;l.className='drive '+kind;$('#driveTxt').textContent=msg;}
@@ -1627,7 +1627,7 @@ function getWebUrl(){
 }
 async function webRefresh(manual){
   if(!webUrl||driveBusy)return;driveBusy=true;$('#btnDrive').classList.add('spin');
-  driveStatus('busy','Verificando a planilha no Google Drive…');
+  if(manual||!(DB&&DB._drive))driveStatus('busy','Verificando a planilha no Google Drive…');
   try{
     const sep=webUrl.includes('?')?'&':'?';
     const meta=await (await fetch(webUrl+sep+'meta=1&t='+Date.now(),{cache:'no-store'})).json();
@@ -1661,8 +1661,10 @@ function startWeb(){
       if(u&&/^https:\/\/script\.google\.com\//.test(u.trim())){store.set('plantio-webapp',u.trim());startWeb();}};$('#driveLine').appendChild(b);return;}
   $('#btnDrive').hidden=false;$('#btnDrive').onclick=()=>webRefresh(true);
   webRefresh(false);
-  setInterval(()=>{if(document.visibilityState==='visible')webRefresh(false);},DRIVE.every);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const at=DB&&DB._drive&&Date.parse(DB._drive.at);if(!at||Date.now()-at>DRIVE.every)webRefresh(false);}});
+  // consulta leve (só a data de alteração) a cada 15 s; baixa a planilha só quando ela mudou
+  setInterval(()=>{if(document.visibilityState==='visible')webRefresh(false);},15*1000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')webRefresh(false);});
+  window.addEventListener('focus',()=>webRefresh(false));
 }
 $('#btnDrive').onclick=()=>{driveRetried=false;driveRefresh(true);};
 (async()=>{
