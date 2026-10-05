@@ -922,27 +922,31 @@ function renderTalhoes(){
 const L={vr:new Set(),sem:new Set(),min:90};
 const SEMPAL=['#3D6B78','#C9A66B','#8C5E3C','#9FB8BF','#5E4B8B','#7A8F3A'];
 function varColor(v){const all=[...new Set([...(DB.lotes||[]),...(DB.entradas||[])].map(l=>l.v))].sort();return PAL[Math.max(0,all.indexOf(v))%PAL.length];}
+const lotFin=l=>!!(l&&l.med&&l.med[4]!=null);
+const lotG7=l=>lotFin(l)?(l.tot??l.med[4]):null;
 function renderSementes(){
   const lots=(DB.lotes||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
   const ents=(DB.entradas||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
   const kgT=ents.reduce((s,e)=>s+(e.kg||0),0),qT=ents.reduce((s,e)=>s+(e.q||0),0);
-  const g7=l=>l.tot??(l.med&&l.med[4]);
-  const ok=lots.filter(l=>g7(l)>=L.min);
-  const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
+  // só entram nas médias e na aprovação os testes com a contagem do 7º dia lançada
+  const fin=lotFin,g7=lotG7,lastDay=l=>{if(!l.med)return null;let d=null;l.med.forEach((x,i)=>{if(x!=null)d=i+3;});return d;};
+  const done=lots.filter(fin),run=lots.filter(l=>!fin(l));
+  const ok=done.filter(l=>g7(l)>=L.min);
+  const avg=a=>{a=a.filter(x=>x!=null&&!isNaN(x));return a.length?a.reduce((s,x)=>s+x,0)/a.length:0;};
   $('#kpisL').innerHTML=[
-    ['Lotes testados',lots.length,'',`${new Set(lots.map(l=>l.v)).size} variedades`],
-    ['Aprovados',ok.length,`de ${lots.length}`,`germinação ≥ ${L.min}%`],
-    ['Reprovados',lots.length-ok.length,'',lots.length-ok.length?'revisar antes do plantio':'nenhum abaixo do mínimo'],
-    ['Germinação média',nf1.format(avg(lots.map(g7))),'%','no 7º dia'],
-    ['Vigor médio (IVG)',nf1.format(avg(lots.map(l=>l.ivgp||0))),'%','do IVG máximo possível'],
+    ['Testes',lots.length,'',`${done.length} finalizados, ${run.length} em andamento`],
+    ['Aprovados',ok.length,`de ${done.length}`,`germinação ≥ ${L.min}% no 7º dia`],
+    ['Reprovados',done.length-ok.length,'',done.length-ok.length?'revisar antes do plantio':'nenhum abaixo do mínimo'],
+    ['Germinação média',nf1.format(avg(done.map(g7))),'%',`7º dia, só os ${done.length} testes finalizados`],
+    ['Vigor médio (IVG)',nf1.format(avg(done.map(l=>l.ivgp))),'%','só testes finalizados'],
     ['Sementes recebidas',nf1.format(kgT/1000),'t',`${nf0.format(qT)} embalagens em ${ents.length} entradas`]
-  ].map(([k,v,u,d],i)=>`<div class="kpi ${i===2&&lots.length-ok.length?'bad':''}"><div class="k">${k}</div><div class="v" ${i===2&&lots.length-ok.length?'style="color:var(--bad)"':''}>${v}<small>${u}</small></div><div class="d">${d}</div></div>`).join('');
+  ].map(([k,v,u,d],i)=>`<div class="kpi ${i===2&&done.length-ok.length?'bad':''}"><div class="k">${k}</div><div class="v" ${i===2&&done.length-ok.length?'style="color:var(--bad)"':''}>${v}<small>${u}</small></div><div class="d">${d}</div></div>`).join('');
   const labs=lots.map(l=>l.lote);
   mk('chLot',{data:{labels:labs,datasets:[
-    {type:'bar',label:'Germinação 7º dia (%)',unit:'%',data:lots.map(g7),backgroundColor:lots.map(l=>g7(l)>=L.min?cssv('--brand'):cssv('--bad')),borderRadius:2,maxBarThickness:26,order:2},
-    {type:'line',label:'IVG (%)',unit:'%',data:lots.map(l=>l.ivgp),borderColor:cssv('--c-milho'),backgroundColor:cssv('--c-milho'),showLine:false,pointRadius:5,pointStyle:'rectRot',order:1}
-  ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:70,minRotation:50,font:{size:11}}},y:{min:Math.max(0,Math.floor(Math.min(70,...lots.map(g7),...lots.map(l=>l.ivgp||100))/10)*10),max:100,title:{display:true,text:'%'}}},
-    plugins:{legend:{position:'bottom'},goalLine:{v:L.min},tooltip:{callbacks:{title:it=>{const l=lots[it[0].dataIndex];return `${l.v}  |  lote ${l.lote}`;},afterTitle:it=>{const l=lots[it[0].dataIndex];return `${l.sem}, teste em ${fmtDY(l.d)}`;},label:c=>`${c.dataset.label}: ${nf1.format(c.parsed.y)}`}}}},plugins:[goalLine]});
+    {type:'bar',label:'Germinação 7º dia (%)',unit:'%',data:lots.map(l=>fin(l)?g7(l):(l.med?l.med[lastDay(l)-3]:null)),backgroundColor:lots.map(l=>!fin(l)?'#A7B6BA':g7(l)>=L.min?cssv('--brand'):cssv('--bad')),borderRadius:2,maxBarThickness:26,order:2},
+    {type:'line',label:'IVG (%)',unit:'%',data:lots.map(l=>fin(l)?l.ivgp:null),borderColor:cssv('--c-milho'),backgroundColor:cssv('--c-milho'),showLine:false,pointRadius:5,pointStyle:'rectRot',order:1}
+  ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:70,minRotation:50,font:{size:11}}},y:{min:Math.max(0,Math.floor(Math.min(70,...done.map(g7),...done.map(l=>l.ivgp||100))/10)*10),max:100,title:{display:true,text:'%'}}},
+    plugins:{legend:{position:'bottom'},goalLine:{v:L.min},tooltip:{callbacks:{title:it=>{const l=lots[it[0].dataIndex];return `${l.v}  |  lote ${l.lote}`;},afterTitle:it=>{const l=lots[it[0].dataIndex];return `${l.sem}, teste em ${fmtDY(l.d)}`+(fin(l)?'':`\nEm andamento: contagem até o ${lastDay(l)||'—'}º dia (fora das médias)`);},label:c=>{const l=lots[c.dataIndex];return fin(l)||c.datasetIndex?`${c.dataset.label}: ${nf1.format(c.parsed.y)}`:`Germinação parcial: ${nf1.format(c.parsed.y)}%`;}}}}},plugins:[goalLine]});
   empty('eLot',!lots.length);
   // curva por variedade
   const vs=[...new Set(lots.map(l=>l.v))];
@@ -950,7 +954,7 @@ function renderSementes(){
   mk('chCurve',{type:'line',data:{labels:['3º','4º','5º','6º','7º dia'],datasets:vs.map((v,i)=>{const ls=lots.filter(l=>l.v===v);return{label:v,data:[0,1,2,3,4].map(j=>{const x=ls.map(l=>l.med&&l.med[j]).filter(n=>n!=null);return x.length?avg(x):(j===0?0:null);}),borderColor:varColor(v),backgroundColor:varColor(v),tension:.3,pointRadius:3,spanGaps:true};})},
     options:{scales:{y:{min:0,max:100,title:{display:true,text:'% germinado (acum.)'}},x:{grid:{display:false}}},plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${nf1.format(c.parsed.y)}%`}}}}});
   // ---------- entradas ----------
-  const gByLote=new Map((DB.lotes||[]).map(l=>[norm(l.lote),l]));
+  const gByLote=new Map();[...(DB.lotes||[])].sort((a,b)=>(lotFin(a)-lotFin(b))||String(a.d||'').localeCompare(String(b.d||''))).forEach(l=>gByLote.set(norm(l.lote),l));
   const evs=[...new Set(ents.map(e=>e.v))];const kv=sumBy(ents,e=>e.v,'kg');evs.sort((a,b)=>kv.get(b)-kv.get(a));
   const sems=[...new Set(ents.map(e=>e.sem))].sort();
   mk('chEntVar',{type:'bar',data:{labels:evs,datasets:sems.map((s,i)=>{const m=sumBy(ents.filter(e=>e.sem===s),e=>e.v,'kg');return{label:s,data:evs.map(v=>(m.get(v)||0)/1000),backgroundColor:SEMPAL[i%SEMPAL.length],borderRadius:2,maxBarThickness:24};})},
@@ -972,16 +976,16 @@ function renderSementes(){
     {k:'kg',t:'Peso de nota (kg)',n:1,f:v=>v!=null?nf0.format(v):'—'},{k:'q',t:'Embalagens',n:1,f:v=>v??'—'},
     {k:'kgq',t:'kg/embalagem',n:1,f:v=>v?nf0.format(v):'—'},
     {k:'g7',t:'Germinação 7º dia (%)',n:1,f:v=>v??'—'},
-    {k:'st',t:'Situação',f:v=>`<span class="pill ${v==='Aprovado'?'ok':v==='Sem teste'?'mid':'bad'}">${v}</span>`}
-  ],ents.map((e,i)=>{const g=gByLote.get(norm(e.lote));const g7v=g?(g.tot??(g.med&&g.med[4])):null;return{...e,i,kgq:e.kg&&e.q?e.kg/e.q:null,g7:g7v,st:!g?'Sem teste':g7v>=L.min?'Aprovado':'Abaixo do mínimo'};}),{sort:'d',dir:'asc'});
+    {k:'st',t:'Situação',f:v=>`<span class="pill ${v==='Aprovado'?'ok':v==='Sem teste'||v==='Em teste'?'mid':'bad'}">${v}</span>`}
+  ],ents.map((e,i)=>{const g=gByLote.get(norm(e.lote));const g7v=g?g7(g):null;return{...e,i,kgq:e.kg&&e.q?e.kg/e.q:null,g7:g7v,st:!g?'Sem teste':!fin(g)?'Em teste':g7v>=L.min?'Aprovado':'Abaixo do mínimo'};}),{sort:'d',dir:'asc'});
 
-  $('#lotCount').textContent=`${lots.length} lotes. Dados da aba Teste de Germinação.`;
+  $('#lotCount').textContent=`${lots.length} testes (${done.length} finalizados, ${run.length} em andamento). Médias e aprovação usam só os testes com a contagem do 7º dia; os em andamento aparecem em cinza no gráfico.`;
   table('#tbLot',[
     {k:'v',t:'Variedade'},{k:'lote',t:'Lote'},{k:'sem',t:'Sementeira'},{k:'d',t:'Data do teste',f:fmtDY},
     {k:'p4',t:'4º dia (%)',n:1,f:v=>v??'—'},{k:'tot',t:'7º dia (%)',n:1,f:v=>v??'—'},
     {k:'ivg',t:'IVG',n:1,f:v=>v!=null?nf2.format(v):'—'},{k:'ivgp',t:'IVG (%)',n:1,f:v=>v!=null?nf1.format(v):'—'},
-    {k:'st',t:'Situação',f:v=>`<span class="pill ${v==='Aprovado'?'ok':'bad'}">${v}</span>`}
-  ],lots.map(l=>({...l,tot:g7(l),p4:l.med?l.med[1]:null,st:g7(l)>=L.min?'Aprovado':'Abaixo do mínimo'})),{sort:'d',dir:'asc'});
+    {k:'st',t:'Situação',f:v=>`<span class="pill ${v==='Aprovado'?'ok':v.startsWith('Em andamento')?'mid':'bad'}">${v}</span>`}
+  ],lots.map(l=>({...l,tot:g7(l),ivg:fin(l)?l.ivg:null,ivgp:fin(l)?l.ivgp:null,p4:l.med?l.med[1]:null,st:!fin(l)?`Em andamento (${lastDay(l)?lastDay(l)+'º dia':'sem contagem'})`:g7(l)>=L.min?'Aprovado':'Abaixo do mínimo'})),{sort:'d',dir:'asc'});
 }
 
 /* ================= Previsão de colheita e janelas ================= */
@@ -1304,7 +1308,7 @@ $('#btnCsv').onclick=()=>{
   let rows,head;
   if(view==='talhoes'){const r=talRows();head=['Talhão','Fazenda','Bloco','Área total (ha)','Plantada (ha)','% plantado','Cultura','Cultivar','Início','Fim','Chuva 7 dias (mm)','Sementes/ha','Emergência'];rows=r.map(x=>[x.tl,x.f,x.b,x.at,x.ap,x.pct.toFixed(1),x.c,x.v,x.ini,x.fim,x.ch7,x.pop,x.em]);}
   else if(view==='mapa'){head=['Janela','Talhão','Fazenda','Cultivar','Área plantada (ha)','Plantio início','Plantio fim','Ciclo (dias)','Colheita prevista início','Colheita prevista fim'];rows=colheitaRows(M.rec).sort((a,b)=>String(a.hIni).localeCompare(String(b.hIni))).map(r=>[r.jl,r.tl,r.f,r.v,r.a,r.pIni,r.pFim,r.cic,r.hIni,r.hFim]);}
-  else if(view==='sementes'){head=['Variedade','Lote','Sementeira','Data','Germinação 7º dia (%)','IVG','IVG (%)'];rows=(DB.lotes||[]).map(l=>[l.v,l.lote,l.sem,l.d,l.tot,l.ivg,l.ivgp]);}
+  else if(view==='sementes'){head=['Variedade','Lote','Sementeira','Data','Situação','Germinação 7º dia (%)','IVG','IVG (%)'];rows=(DB.lotes||[]).map(l=>[l.v,l.lote,l.sem,l.d,lotFin(l)?'Finalizado':'Em andamento',lotG7(l),lotFin(l)?l.ivg:null,lotFin(l)?l.ivgp:null]);}
   else{head=['Data','Turno','Cultura','Cultivar','Fazenda','Talhão','Área (ha)','Chuva no dia (mm)'];rows=filtered().map(r=>[r.d,r.t,r.c,r.v,r.f,r.tl,r.a,r.mm]);}
   const csv=[head,...rows].map(r=>r.map(v=>{v=v==null?'':String(v).replace('.',typeof v==='number'?',':'.');return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(';')).join('\n');
   saveFile(`plantio_${view}.csv`,'\ufeff'+csv,'text/csv;charset=utf-8').then(ok=>{if(!ok&&navigator.clipboard)navigator.clipboard.writeText(csv).then(()=>toast('Não foi possível baixar; o CSV foi copiado para a área de transferência.'),()=>{});});
