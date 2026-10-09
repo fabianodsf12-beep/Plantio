@@ -207,6 +207,24 @@ tbody tr.click{cursor:pointer}
 .note b{font-weight:700}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--petrol);color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:100;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw}
 .toast.on{opacity:1}
+.now{margin:0 0 16px}
+.nowh{display:flex;align-items:baseline;gap:10px;font-weight:700;font-size:14px;margin:0 2px 6px;color:var(--ink)}
+.nowg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.nowc{position:relative;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:8px;padding:10px 14px 12px;box-shadow:var(--shadow)}
+button.nowc{cursor:pointer;transition:transform .12s,box-shadow .12s}
+button.nowc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,35,43,.12);border-color:var(--brand)}
+.nowc .k{font-size:12.5px;color:var(--muted);font-weight:600}
+.nowc .v{font-family:var(--cond);font-weight:600;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.nowc .v small{font-size:15px;color:var(--muted);font-weight:500;margin-left:4px}
+.nowc .d{font-size:12.5px;color:var(--muted);margin-top:1px}
+.nowgo{display:inline-block;margin-top:6px;font-size:12px;font-weight:700;color:var(--brand-deep)}
+:root[data-theme="dark"] .nowgo{color:var(--brand)}
+.nowc.warn{border-left-color:var(--warn)}.nowc.bad{border-left-color:var(--bad)}.nowc.bad .v{color:var(--bad)}.nowc.rain{border-left-color:var(--rain)}.nowc.rain .v{color:var(--rain)}.nowc.milho{border-left-color:#E0A100}.nowc.ok{border-left-color:var(--brand)}
+@media(max-width:900px){.nowg{grid-template-columns:1fr 1fr}}
+.tipbox{position:fixed;z-index:150;max-width:260px;background:var(--petrol);color:#fff;font-size:12.5px;line-height:1.35;padding:7px 10px;border-radius:6px;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.toast.act.on{pointer-events:auto}
+.toast.act{display:flex;align-items:center;gap:14px}
+.toast button{background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:5px;padding:3px 10px;font-weight:700;cursor:pointer;font-size:13px}
 .busyov{position:fixed;inset:0;background:rgba(0,35,43,.55);z-index:200;display:flex;align-items:center;justify-content:center}
 .busyov>div{background:var(--surface);color:var(--ink);padding:16px 22px;border-radius:10px;display:flex;gap:12px;align-items:center;font-weight:600}
 .spinner{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite}
@@ -236,6 +254,25 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 /* Mapa e colheita */
 .mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:14px;align-items:start}
 .mapside .leg{flex-direction:column;gap:6px;margin-top:0}
+.harvhd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
+.harvhd .tag button{background:none;border:0;cursor:pointer;font-size:15px;line-height:1;color:var(--muted);padding:0 3px}
+.tline{display:grid;grid-template-columns:auto auto 1fr auto auto auto;gap:10px;align-items:center;margin-top:10px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2)}
+.tline input[type=range]{width:100%;accent-color:var(--brand)}
+.tline #tSum{grid-column:1/-1;margin:0}
+.tplay{width:34px;height:34px;border-radius:50%;border:0;background:var(--brand);color:#fff;cursor:pointer;font-size:13px}
+.tout{font-size:14px;min-width:84px;text-align:center}
+@media(max-width:640px){.tline{grid-template-columns:auto 1fr auto}.tline #tStart,.tline #tEnd{display:none}}
+.selchip{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;padding:8px 10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);font-size:13px}
+.tcard h3{margin:0;font-size:18px}
+.tchd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-top:12px}
+.tcx{background:none;border:1px solid var(--line);border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:17px;line-height:1;color:var(--ink)}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.cgrid>div{background:var(--surface-2);border-radius:6px;padding:7px 9px;display:flex;flex-direction:column}
+.cgrid span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.cgrid b{font-size:15px}.cgrid small{font-size:11.5px;color:var(--muted)}
+.cjan{border-left:4px solid;border-radius:4px;padding:6px 9px;font-size:13px}
+.tcard table{margin-top:10px;font-size:12.5px;width:100%}
+.mapside .tcard td,.mapside .tcard th{padding:5px 4px;white-space:normal}
 .mapside table{font-size:13px;margin-top:12px}
 .mapside td,.mapside th{padding:5px 6px;cursor:default}
 .mapbox{position:relative;height:calc(100vh - 210px);min-height:380px;max-height:900px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);overflow:hidden;}
@@ -357,10 +394,11 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
     </div>
   </div>
   <div class="epocas" id="epocas"></div>
-  <div class="statusrow"><div class="status" id="status"></div><button class="lnk" id="btnClear">Limpar filtros</button><button class="lnk" id="btnFold" aria-expanded="true">Ocultar filtros</button></div>
+  <div class="statusrow"><div class="status" id="status"></div><button class="lnk" id="btnBack" hidden data-tip="Desfaz o último filtro aplicado por clique">↶ Voltar</button><button class="lnk" id="btnClear">Limpar filtros</button><button class="lnk" id="btnFold" aria-expanded="true">Ocultar filtros</button></div>
 </section>
 
 <main>
+  <div class="now noprint" id="now" hidden></div>
   <!-- ============ PLANTIO ============ -->
   <section class="view on" id="v-plantio" role="tabpanel">
     <div class="note noprint" id="noteSoja" hidden></div>
@@ -440,8 +478,8 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
   <section class="view" id="v-mapa" role="tabpanel">
     <div class="grid">
       <div class="card s12">
-        <div class="hd"><h2>Mapa dos talhões</h2><p>Safra inteira. Passe o mouse para ver os detalhes; clique num talhão para destacá-lo na tabela de colheita.</p>
-          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog">% plantado</button><button data-m="jan">Janela pós-colheita</button></div></div></div>
+        <div class="hd"><h2>Mapa dos talhões</h2><p>Safra inteira. Passe o mouse para ver os detalhes; clique num talhão para abrir a ficha. Em Linha do tempo, arraste a data para ver o avanço do plantio e da colheita.</p>
+          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button></div></div></div>
         <div class="mapwrap">
         <div class="mapbox" id="mapBox">
           <svg id="mapSvg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa dos talhões colorido por variedade plantada"></svg>
@@ -449,6 +487,15 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
           <div class="empty" id="mapEmpty">Nenhum limite de talhão carregado. Use Carregar GeoJSON.</div>
         </div>
         <aside class="mapside"><div class="leg" id="mapLeg"></div><div id="mapSum"></div></aside>
+        </div>
+        <div class="tline noprint" id="tLine" hidden>
+          <button class="tplay" id="tPlay" aria-label="Reproduzir">▶</button>
+          <span class="help" id="tStart"></span>
+          <input type="range" id="tRange" min="0" max="1" value="0" aria-label="Data da linha do tempo">
+          <span class="help" id="tEnd"></span>
+          <b class="tout" id="tOut"></b>
+          <button class="lnk" id="tToday">Hoje</button>
+          <p class="help" id="tSum"></p>
         </div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">
           <p class="help" id="mapNote" style="margin:0;flex:1;min-width:240px"></p>
@@ -465,6 +512,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
           <div class="fg"><label for="janGer">Gergelim: colheita até</label><input type="date" id="janGer"></div>
         </div>
         <div class="kpis" id="kpisM" style="margin-top:0"></div>
+        <div class="harvhd"><b>Área a colher</b><div class="seg" id="segHarv"><button data-m="d" data-tip="Área a colher em cada dia">Dia</button><button class="on" data-m="w" data-tip="Área a colher por semana, de segunda a domingo">Semana</button></div><div id="harvSel"></div></div>
         <div class="cv h300"><canvas id="chHarv"></canvas><div class="empty" id="eHarv">Sem plantio com ciclo cadastrado nos filtros atuais.</div></div>
       </div>
 
@@ -553,7 +601,7 @@ const addDays=(s,n)=>{const d=parseD(s);d.setUTCDate(d.getUTCDate()+n);return d.
 const dayDiff=(a,b)=>Math.round((parseD(b)-parseD(a))/864e5);
 const MES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),3200);}
+function toast(m,act){const t=$('#toast');t.textContent=m;t.classList.toggle('act',!!act);if(act){const b=document.createElement('button');b.textContent=act.lab;b.onclick=()=>{t.classList.remove('on');act.fn();};t.appendChild(b);}t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),act?6000:3200);}
 const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
 
 function cultColor(c){
@@ -772,7 +820,7 @@ function renderPlantio(){
   $('#tCult').textContent=oneC?`Variedade${cults[0]?' ('+cults[0]+')':''}`:'Cultura';
   mk('chCult',{type:'doughnut',data:{labels:pk,datasets:[{data:pv,backgroundColor:pc,borderColor:cssv('--surface'),borderWidth:2}]},
     options:{cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.label}: ${nf1.format(c.parsed)} ha (${nf1.format(c.parsed/tot*100)}%)`}}},
-    onClick:(e,els)=>{if(els.length){const k=pk[els[0].index];if(oneC)F.vr=new Set([k]);else F.cult=new Set([k]);syncUI();render();}}},
+    onClick:(e,els)=>{if(els.length){const k=pk[els[0].index];setTimeout(()=>applyF(()=>{if(oneC)F.vr=new Set([k]);else F.cult=new Set([k]);},k));}}},
     plugins:[{id:'center',afterDraw(ch){const {ctx,chartArea:a}=ch;if(!tot)return;ctx.save();ctx.textAlign='center';ctx.fillStyle=cssv('--ink');ctx.font=`700 22px ${cssv('--cond')}`;const cx=(a.left+a.right)/2,cy=(a.top+a.bottom)/2;ctx.fillText(nf0.format(tot),cx,cy+2);ctx.font=`500 12px ${cssv('--sans')}`;ctx.fillStyle=cssv('--muted');ctx.fillText('ha',cx,cy+18);ctx.restore();}}]});
   empty('eCult',!tot);
 
@@ -785,7 +833,7 @@ function renderPlantio(){
     mk('chTurno',{type:'bar',data:{labels:fzT,datasets:tns.map((tn,i)=>{const m=sumBy(R.filter(r=>r.t===tn),r=>r.f);return{label:turnoLab(tn),full:tn,data:fzT.map(f=>m.get(f)||0),backgroundColor:tn?(document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches))&&i===1?'#9FC4B6':tcol[i%3]:cssv('--c-outro'),borderRadius:2,maxBarThickness:22};})},
       options:{indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'ha'}},y:{stacked:true,grid:{display:false}}},
         plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.full||c.dataset.label}: ${nf1.format(c.parsed.x)} ha`},filter:i=>i.parsed.x>0}},
-        onClick:(e,els)=>{if(els.length){const tn=tns[els[0].datasetIndex];F.tn=new Set([tn]);syncUI();render();}}}});
+        onClick:(e,els)=>{if(els.length){const tn=tns[els[0].datasetIndex];setTimeout(()=>applyF(()=>{F.tn=new Set([tn]);},turnoLab(tn)));}}}});
     empty('eTurno',!R.length);}
 
   // ---------- fazenda (barras empilhadas por cultura) ----------
@@ -793,7 +841,7 @@ function renderPlantio(){
   mk('chFaz',{type:'bar',data:{labels:fz,datasets:cults.map(c=>{const m=sumBy(R.filter(r=>r.c===c),r=>r.f);return{label:c,data:fz.map(f=>m.get(f)||0),backgroundColor:cultColor(c),stack:'f',borderRadius:2,maxBarThickness:44};})},
     options:{scales:{x:{stacked:true,grid:{display:false},ticks:{autoSkip:false,maxRotation:45,minRotation:0}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'ha'}}},
       plugins:{legend:{display:cults.length>1,position:'bottom'},tooltip:{callbacks:{label:haTip,footer:it=>'Total: '+nf1.format(byF.get(fz[it[0].dataIndex]))+' ha'},filter:i=>i.parsed.y>0}},
-      onClick:(e,els)=>{if(els.length){const f=fz[els[0].index];F.faz=new Set([f]);syncUI();render();}}},
+      onClick:(e,els)=>{if(els.length){const f=fz[els[0].index];setTimeout(()=>applyF(()=>{F.faz=new Set([f]);},f));}}},
     plugins:[{id:'tot',afterDatasetsDraw(ch){const {ctx}=ch;const last=ch.getDatasetMeta(ch.data.datasets.length-1);if(!last)return;ctx.save();ctx.font=`600 11.5px ${cssv('--sans')}`;ctx.fillStyle=cssv('--ink');ctx.textAlign='center';
       fz.forEach((f,i)=>{let top=Infinity,x=0;ch.data.datasets.forEach((d,di)=>{const m=ch.getDatasetMeta(di);if(m.hidden)return;const el=m.data[i];if(el&&d.data[i]){top=Math.min(top,el.y);x=el.x;}});if(top<Infinity)ctx.fillText(nf0.format(byF.get(f)),x,top-4);});ctx.restore();}}]});
   empty('eFaz',!fz.length);
@@ -811,7 +859,7 @@ function renderPlantio(){
   mk('chVar',{type:'bar',data:{labels:vs,datasets:[{label:'Área plantada',data:vs.map(v=>byV.get(v)),backgroundColor:vcol,borderRadius:3,maxBarThickness:26}]},
     options:{indexAxis:'y',layout:{padding:{right:40}},scales:{x:{beginAtZero:true,title:{display:true,text:'ha'}},y:{grid:{display:false},ticks:{autoSkip:false}}},
       plugins:{legend:{display:false},valueLabels:{on:true},tooltip:{callbacks:{label:c=>`${nf1.format(c.parsed.x)} ha, ${new Set(RV.filter(r=>r.v===vs[c.dataIndex]).map(r=>r.tl)).size} talhões`}}},
-      onClick:(e,els)=>{if(els.length){F.vr=new Set([vs[els[0].index]]);syncUI();render();}}},plugins:[valueLabels]});
+      onClick:(e,els)=>{if(els.length){const v=vs[els[0].index];setTimeout(()=>applyF(()=>{F.vr=new Set([v]);},v));}}},plugins:[valueLabels]});
   empty('eVar',!vs.length);
 
   // ---------- semanal ----------
@@ -846,7 +894,8 @@ function renderStatus(n){
   F.vr.forEach(v=>tags.push(['var:'+v,v]));
   if(F.rain!=='all')tags.push(['rain',F.rain==='dry'?'Dias secos':`Chuva ≥ ${F.rmin} mm`]);
   $('#status').innerHTML=`<span><b>${n}</b> registros de plantio</span>`+(tags.length?tags.map(([k,t])=>`<span class="tag">${esc(t)}<button data-k="${esc(k)}" aria-label="Remover filtro ${esc(t)}">×</button></span>`).join(''):'<span class="help">Sem filtros ativos. Use os campos acima; clicar nos gráficos também filtra.</span>');
-  $('#status').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;
+  $('#btnBack').hidden=!FHIST.length;
+  $('#status').querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=b.dataset.k;FHIST.push(snapF());
     if(k==='per'){F.ini=M.dMin;F.fim=M.dMax;}else if(k==='cult'){F.cult=new Set(M.culturas);}else if(k==='rain'){F.rain='all';}
     else{const[t,...v]=k.split(':');({faz:F.faz,tal:F.tal,var:F.vr,tn:F.tn})[t].delete(v.join(':'));}
     syncUI();render();});
@@ -898,11 +947,12 @@ function renderTalhoes(){
   const fzs=[...byF.keys()].sort((a,b)=>a.localeCompare(b,'pt'));
   $('#mosaic').innerHTML=fzs.map(f=>{const rs=byF.get(f).sort((a,b)=>a.tl.localeCompare(b.tl,'pt',{numeric:true}));const at=rs.reduce((s,r)=>s+r.at,0),ap=rs.reduce((s,r)=>s+r.ap,0);
     return `<div class="mrow"><h3>${esc(f)}<small>${nf0.format(ap)} de ${nf0.format(at)} ha</small></h3><div class="tiles">${rs.map(r=>`<button class="tile ${F.tal.has(r.tl)?'sel':''}" data-tl="${esc(r.tl)}" title="${esc(r.tl)}: ${nf1.format(r.ap)} de ${nf1.format(r.at)} ha${r.v!=='—'?' | '+esc(r.v):''}"><span class="fill" style="width:${Math.min(r.pct,100)}%;background:${r.cc?cultColor(r.cc):'transparent'}"></span><b>${esc(r.tl)}</b><small>${r.at?nf0.format(Math.min(r.pct,999))+'%':nf0.format(r.ap)+' ha'}</small></button>`).join('')}</div></div>`;}).join('')||'<p class="help">Nenhum talhão com os filtros atuais.</p>';
-  $('#mosaic').querySelectorAll('.tile').forEach(b=>b.onclick=()=>{const t=b.dataset.tl;F.tal.has(t)?F.tal.delete(t):F.tal.add(t);syncUI();render();});
+  $('#mosaic').querySelectorAll('.tile').forEach(b=>b.onclick=()=>{const t=b.dataset.tl;applyF(()=>{F.tal.has(t)?F.tal.delete(t):F.tal.add(t);},'talhão '+t);});
   let rows=all;
   if(talMode==='done')rows=all.filter(r=>r.pct>=98);
   if(talMode==='part')rows=all.filter(r=>r.ap>0&&r.pct<98);
   if(talMode==='none')rows=all.filter(r=>!r.ap);
+  if(talMode==='dry')rows=all.filter(r=>r.ch7!=null&&!r.ch7p&&r.ch7<5);
   const done=all.filter(r=>r.pct>=98).length,part=all.filter(r=>r.ap>0&&r.pct<98).length,none=all.filter(r=>!r.ap).length;
   $('#talCount').textContent=`${all.length} talhões: ${done} concluídos, ${part} em andamento, ${none} sem plantio.`;
   table('#tbTal',[
@@ -915,7 +965,7 @@ function renderTalhoes(){
     {k:'pop',t:'Sementes/ha',n:1,f:v=>v?nf0.format(v):'—'},{k:'cic',t:'Ciclo (d)',n:1,f:v=>v??'—'},
     {k:'em',t:'Emergência',f:fmtDY},{k:'dae',t:'Dias p/ emergir',n:1,f:v=>v??'—'},
     {k:'hIni',t:'Colheita prevista',f:(v,r)=>v?fmtDY(v)+(r.hFim!==v?' a '+fmtDY(r.hFim):''):'—'}
-  ],rows,{sort:'tl',id:'tl',click:tl=>{F.tal=new Set([tl]);syncUI();render();toast('Filtro aplicado: talhão '+tl);}});
+  ],rows,{sort:'tl',id:'tl',click:tl=>{applyF(()=>{F.tal=new Set([tl]);},'talhão '+tl);}});
 }
 
 /* ================= Sementes ================= */
@@ -1031,59 +1081,70 @@ function buildMap(){
     f.d=d;f.cx=best[0];f.cy=best[1];f.area=bestA;});
   MAP={feats,w:W,h:H};
 }
-let vb=null;
+let vb=null,harvMode='w';
 function mapTalData(){
   const R=M.rec;const g=new Map();
-  R.forEach(r=>{if(!(r.a>0))return;if(!g.has(r.k))g.set(r.k,{ap:0,vs:new Map(),js:new Map(),ini:r.d,fim:r.d,hIni:null,hFim:null,c:new Map()});
-    const o=g.get(r.k);o.ap+=r.a;o.vs.set(r.v,(o.vs.get(r.v)||0)+r.a);o.c.set(r.c,(o.c.get(r.c)||0)+r.a);
+  R.forEach(r=>{if(!(r.a>0))return;if(!g.has(r.k))g.set(r.k,{ap:0,vs:new Map(),js:new Map(),ini:r.d,fim:r.d,hIni:null,hFim:null,c:new Map(),rs:[]});
+    const o=g.get(r.k);o.ap+=r.a;o.vs.set(r.v,(o.vs.get(r.v)||0)+r.a);o.c.set(r.c,(o.c.get(r.c)||0)+r.a);o.rs.push(r);
     const h=harvestOf(r),j=janela(h);o.js.set(j,(o.js.get(j)||0)+r.a);
     if(r.d<o.ini)o.ini=r.d;if(r.d>o.fim)o.fim=r.d;if(h&&(!o.hIni||h<o.hIni))o.hIni=h;if(h&&(!o.hFim||h>o.hFim))o.hFim=h;});
   return g;
 }
 const top1=m=>[...m.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0];
 function varPalette(){const vs=[...new Set(M.rec.filter(r=>r.a>0).map(r=>r.v))].sort();const m=new Map();vs.forEach((v,i)=>m.set(v,PAL[i%PAL.length]));return m;}
+const READY='#C2410C'; // pronto para colher (linha do tempo)
+/* seleção: talhões destacados (mapa, gráfico de colheita ou tabela) */
+const MSEL=new Set();let selLab='',HP=null,CARD=null;
+function clearSel(){MSEL.clear();selLab='';HP=null;CARD=null;}
+function pickTal(k){if(CARD===k){clearSel();}else{clearSel();MSEL.add(k);CARD=k;const t=M.tal.get(k);selLab='Talhão '+(t?t.tl:k);}renderMapa();}
+/* linha do tempo */
+let tDate=null,tTimer=null;
+function tBounds(){const ds=M.rec.filter(r=>r.a>0).map(r=>r.d).sort();if(!ds.length)return null;
+  const hs=M.rec.filter(r=>r.a>0).map(harvestOf).filter(Boolean).sort();const today=new Date().toISOString().slice(0,10);
+  return {a:ds[0],b:[hs[hs.length-1]||ds[ds.length-1],today].sort().pop()};}
+function tStatus(o,D){let ap=0,ready=0;const vs=new Map();o.rs.forEach(r=>{if(r.d<=D){ap+=r.a;vs.set(r.v,(vs.get(r.v)||0)+r.a);const h=harvestOf(r);if(h&&h<=D)ready+=r.a;}});return {ap,ready,v:top1(vs)};}
+
 function renderMap(){
   const host=$('#mapSvg');if(!MAP){host.innerHTML='';$('#mapEmpty').classList.add('on');return;}
   $('#mapEmpty').classList.remove('on');
   vb={x:-4,y:-4,w:MAP.w+8,h:MAP.h+8};
   const D=mapTalData(),vp=varPalette();
-  const surf=cssv('--surface-2'),line=cssv('--line'),ink=cssv('--ink'),mut=cssv('--muted');
-  const fl=false;
-  const legend=new Map();
+  const surf=cssv('--surface-2'),line=cssv('--line'),ink=cssv('--ink');
+  const tempo=mapMode==='tempo';
+  $('#tLine').hidden=!tempo;
+  let tb=null;if(tempo){tb=tBounds();if(tb){if(!tDate||tDate<tb.a||tDate>tb.b){const today=new Date().toISOString().slice(0,10);tDate=today<tb.a?tb.a:today>tb.b?tb.b:today;}
+    const n=dayDiff(tb.a,tb.b);$('#tRange').max=n;$('#tRange').value=dayDiff(tb.a,tDate);$('#tOut').textContent=fmtDY(tDate);
+    $('#tStart').textContent=fmtD(tb.a);$('#tEnd').textContent=fmtD(tb.b);}}
+  const legend=new Map();let tAp=0,tReady=0,tAt=0;
   const paths=MAP.feats.map((f,i)=>{
     const t=M.tal.get(f.k),o=D.get(f.k);
-    const dim=false;
-    const at=t&&t.a?t.a:(+f.props.area_mapa||0);
+    const at=t&&t.a?t.a:(+f.props.area_mapa||0);tAt+=at;
     const pct=o&&at?Math.min(o.ap/at,1):(o?1:0);
-    let fill=surf,op=1;
+    let fill=surf,op=1,has=!!o;
     if(o){
-      if(mapMode==='var'){const v=top1(o.vs);fill=vp.get(v)||PAL[0];legend.set(v,fill);op=.35+.6*pct;}
+      if(tempo&&tDate){const s=tStatus(o,tDate);tAp+=s.ap;tReady+=s.ready;has=s.ap>0;
+        if(s.ready>0){fill=READY;op=.4+.55*Math.min(s.ready/(at||s.ready),1);legend.set('Pronto para colher',READY);}
+        else if(s.ap>0){fill=vp.get(s.v)||PAL[0];op=.35+.6*Math.min(s.ap/(at||s.ap),1);legend.set(s.v,fill);}}
+      else if(mapMode==='var'){const v=top1(o.vs);fill=vp.get(v)||PAL[0];legend.set(v,fill);op=.35+.6*pct;}
       else if(mapMode==='jan'){const j=top1(o.js);fill=JANCOL[j];legend.set(JANLAB[j],fill);op=.35+.6*pct;}
       else {fill=cssv('--brand');op=.15+.8*pct;}
     }
-    const sel=MSEL.has(f.k);
-    return `<path d="${f.d}" data-i="${i}" fill="${fill}" fill-opacity="${dim?.12:op}" stroke="${sel?ink:o?fill:line}" stroke-width="${sel?2.4:1}" vector-effect="non-scaling-stroke" fill-rule="evenodd" class="mp${dim?' dim':''}"/>`;
+    const sel=MSEL.has(f.k),dim=MSEL.size&&!sel;
+    return `<path d="${f.d}" data-i="${i}" fill="${fill}" fill-opacity="${has?(dim?op*.35:op):1}" stroke="${sel?ink:has?fill:line}" stroke-width="${sel?2.6:1}" vector-effect="non-scaling-stroke" fill-rule="evenodd" class="mp"/>`;
   }).join('');
-  const z=1;
-  const labels=MAP.feats.map(f=>{const fs=Math.max(3,Math.min(13,Math.sqrt(f.area)*.16))*Math.max(z,.25);if(Math.sqrt(f.area)<fs*2.2)return '';
-    return `<text x="${f.cx.toFixed(1)}" y="${f.cy.toFixed(1)}" font-size="${fs.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${ink}" paint-order="stroke" stroke="${cssv('--surface')}" stroke-width="${(fs*.22).toFixed(2)}" stroke-opacity=".85" pointer-events="none" font-weight="600">${esc(f.name)}</text>`;}).join('');
+  const labels=MAP.feats.map(f=>{const fs=Math.max(3,Math.min(13,Math.sqrt(f.area)*.16));const sel=MSEL.has(f.k);if(!sel&&Math.sqrt(f.area)<fs*2.2)return '';
+    const z=sel?Math.max(fs,7):fs;
+    return `<text x="${f.cx.toFixed(1)}" y="${f.cy.toFixed(1)}" font-size="${z.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${ink}" paint-order="stroke" stroke="${cssv('--surface')}" stroke-width="${(z*.22).toFixed(2)}" stroke-opacity=".85" pointer-events="none" font-weight="${sel?700:600}">${esc(f.name)}</text>`;}).join('');
   host.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
   host.innerHTML=`<g>${paths}</g><g>${labels}</g>`;
+  if(tempo&&tDate)$('#tSum').innerHTML=`Em <b>${fmtDY(tDate)}</b>: <b>${nf0.format(tAp)} ha</b> plantados (${tAt?nf0.format(tAp/tAt*100):0}% da área), <b style="color:${READY}">${nf0.format(tReady)} ha</b> prontos para colher.`;
   // legenda
   let lg='';
   if(mapMode==='prog')lg=`<span><i style="background:linear-gradient(90deg,${cssv('--brand')}26,${cssv('--brand')})"></i>0% a 100% plantado</span>`;
   else if(mapMode==='jan')lg=['milho','gergelim','fora','sem'].filter(j=>legend.has(JANLAB[j])).map(j=>`<span><i style="background:${JANCOL[j]}"></i>${JANLAB[j]}</span>`).join('');
-  else lg=[...legend.entries()].map(([v,c])=>`<span><i style="background:${c}"></i>${esc(v)}</span>`).join('');
-  $('#mapLeg').innerHTML=lg+`<span><i style="background:${surf};border:1px solid ${line}"></i>Sem plantio${fl?' no filtro':''}</span>`+(mapMode!=='prog'?`<span class="help">Cor mais forte = maior % plantado do talhão</span>`:'');
-  {const groups=new Map();let ap=0,at=0;M.tal.forEach(t=>at+=t.a||0);
-    D.forEach((o,k)=>{ap+=o.ap;const src=mapMode==='jan'?[...o.js.entries()].map(([j,a])=>[JANLAB[j],a]):[...o.vs.entries()];
-      src.forEach(([g,a])=>{if(!groups.has(g))groups.set(g,{a:0,t:new Set()});const x=groups.get(g);x.a+=a;x.t.add(k);});});
-    const col=g=>mapMode==='jan'?JANCOL[Object.keys(JANLAB).find(j=>JANLAB[j]===g)]:(vp.get(g)||PAL[0]);
-    $('#mapSum').innerHTML=`<table><thead><tr><th>${mapMode==='jan'?'Janela':'Variedade'}</th><th class="n">ha</th><th class="n">Talhões</th></tr></thead><tbody>`+
-      [...groups.entries()].sort((a,b)=>b[1].a-a[1].a).map(([g,x])=>`<tr><td><span class="cdot" style="background:${col(g)}"></span>${esc(g)}</td><td class="n">${nf0.format(x.a)}</td><td class="n">${x.t.size}</td></tr>`).join('')+
-      `</tbody><tfoot><tr><th>Plantado</th><th class="n">${nf0.format(ap)}</th><th class="n">${D.size}</th></tr><tr><th>Área total</th><th class="n">${nf0.format(at)}</th><th class="n">${M.tal.size}</th></tr></tfoot></table>`+
-      (MSEL.size?`<p class="help" style="margin:8px 0 0">${MSEL.size} talhão(ões) destacado(s). <button class="lnk" id="mselClr">Limpar</button></p>`:'');
-    const mc=$('#mselClr');if(mc)mc.onclick=()=>{MSEL.clear();renderMapa();};}
+  else lg=[...legend.entries()].sort((a,b)=>(a[0]==='Pronto para colher')-(b[0]==='Pronto para colher')).map(([v,c])=>`<span><i style="background:${c}"></i>${esc(v)}</span>`).join('');
+  $('#mapLeg').innerHTML=lg+`<span><i style="background:${surf};border:1px solid ${line}"></i>Sem plantio${tempo?' nessa data':''}</span>`+(mapMode!=='prog'?`<span class="help">Cor mais forte = maior % do talhão</span>`:'');
+  if(CARD)renderCard(CARD,D);else renderSum(D,vp);
   const semGeo=[...M.tal.values()].filter(t=>!MAP.feats.some(f=>f.k===norm(t.tl))).map(t=>t.tl);
   const semCad=MAP.feats.filter(f=>!M.tal.has(f.k)).map(f=>f.name);
   $('#mapNote').textContent=`Limites: ${geoSrc}, ${MAP.feats.length} polígonos.`+(semGeo.length?` Sem polígono no mapa: ${semGeo.join(', ')}.`:'')+(semCad.length?` No mapa, mas fora do cadastro de talhões: ${semCad.join(', ')}.`:'');
@@ -1091,22 +1152,62 @@ function renderMap(){
   const tip=$('#mapTip');
   host.querySelectorAll('.mp').forEach(p=>{
     p.onmousemove=e=>{const f=MAP.feats[+p.dataset.i],t=M.tal.get(f.k),o=D.get(f.k);const at=t&&t.a?t.a:(+f.props.area_mapa||0);
-      const vs=o?[...o.vs.entries()].sort((a,b)=>b[1]-a[1]).map(([v,a])=>`${esc(v)}: ${nf1.format(a)} ha`).join('<br>'):'';
-      const js=o?[...o.js.entries()].sort((a,b)=>b[1]-a[1]).map(([j,a])=>`<span class="cdot" style="background:${JANCOL[j]}"></span>${JANLAB[j]}: ${nf1.format(a)} ha`).join('<br>'):'';
+      let extra='';if(tempo&&tDate&&o){const s=tStatus(o,tDate);extra=`<br><b>Em ${fmtD(tDate)}:</b> ${nf1.format(s.ap)} ha plantados`+(s.ready?`, <b style="color:${READY}">${nf1.format(s.ready)} ha prontos</b>`:'');}
       tip.innerHTML=`<b>${esc(f.name)}</b> <span class="help">${esc(t?t.f:(f.props.bloco||''))}</span><br>`+
-        `Área total: ${at?nf1.format(at)+' ha':'—'}<br>`+
-        (o?`Plantado: <b>${nf1.format(o.ap)} ha</b> (${at?nf0.format(o.ap/at*100):'—'}%)<br>Plantio: ${fmtDY(o.ini)}${o.fim!==o.ini?' a '+fmtDY(o.fim):''}<br><span class="help">Variedades</span><br>${vs}<br><span class="help">Colheita prevista: ${o.hIni?fmtDY(o.hIni)+(o.hFim!==o.hIni?' a '+fmtDY(o.hFim):''):'sem ciclo'}</span><br>${js}`:'<span class="help">Sem plantio'+(fl?' no filtro atual':'')+'</span>');
+        (o?`${esc([...o.vs.keys()].join(', '))}<br>Plantado: <b>${nf1.format(o.ap)} ha</b> de ${at?nf1.format(at):'—'} ha<br><span class="help">Colheita: ${o.hIni?fmtDY(o.hIni)+(o.hFim!==o.hIni?' a '+fmtDY(o.hFim):''):'sem ciclo'}</span>${extra}`:`Área total: ${at?nf1.format(at)+' ha':'—'}<br><span class="help">Sem plantio</span>`)+
+        `<br><span class="help" style="font-size:11.5px">Clique para abrir a ficha</span>`;
       const r=$('#mapBox').getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top+14;tip.hidden=false;
       if(x+tip.offsetWidth>r.width-6)x=e.clientX-r.left-tip.offsetWidth-14;if(y+tip.offsetHeight>r.height-6)y=Math.max(6,e.clientY-r.top-tip.offsetHeight-14);
       tip.style.left=x+'px';tip.style.top=y+'px';};
     p.onmouseleave=()=>{tip.hidden=true;};
-    p.onclick=()=>{const f=MAP.feats[+p.dataset.i];MSEL.has(f.k)?MSEL.delete(f.k):MSEL.add(f.k);renderMapa();};
+    p.onclick=()=>{tip.hidden=true;pickTal(MAP.feats[+p.dataset.i].k);};
   });
 }
-const MSEL=new Set();
+function renderSum(D,vp){
+  const groups=new Map();let ap=0,at=0;M.tal.forEach(t=>at+=t.a||0);
+  const byJan=mapMode==='jan';
+  D.forEach((o,k)=>{ap+=o.ap;const src=byJan?[...o.js.entries()].map(([j,a])=>[JANLAB[j],a]):[...o.vs.entries()];
+    src.forEach(([g,a])=>{if(!groups.has(g))groups.set(g,{a:0,t:new Set()});const x=groups.get(g);x.a+=a;x.t.add(k);});});
+  const col=g=>byJan?JANCOL[Object.keys(JANLAB).find(j=>JANLAB[j]===g)]:(vp.get(g)||PAL[0]);
+  $('#mapSum').innerHTML=(MSEL.size?`<div class="selchip"><span><b>${esc(selLab)}</b><br>${MSEL.size} talhão(ões) destacado(s)</span><button class="lnk" id="mselClr">Limpar</button></div>`:'')+
+    `<table><thead><tr><th>${byJan?'Janela':'Variedade'}</th><th class="n">ha</th><th class="n">Talhões</th></tr></thead><tbody>`+
+    [...groups.entries()].sort((a,b)=>b[1].a-a[1].a).map(([g,x])=>`<tr><td><span class="cdot" style="background:${col(g)}"></span>${esc(g)}</td><td class="n">${nf0.format(x.a)}</td><td class="n">${x.t.size}</td></tr>`).join('')+
+    `</tbody><tfoot><tr><th>Plantado</th><th class="n">${nf0.format(ap)}</th><th class="n">${D.size}</th></tr><tr><th>Área total</th><th class="n">${nf0.format(at)}</th><th class="n">${M.tal.size}</th></tr></tfoot></table>`+
+    `<p class="help" style="margin:10px 0 0">Clique num talhão para ver a ficha completa.</p>`;
+  const mc=$('#mselClr');if(mc)mc.onclick=()=>{clearSel();renderMapa();};
+}
+function renderCard(k,D){
+  const t=M.tal.get(k),o=D.get(k),f=MAP&&MAP.feats.find(x=>x.k===k);
+  const name=t?t.tl:(f?f.name:k),at=t&&t.a?t.a:(f?+f.props.area_mapa||0:0);
+  let body='';
+  if(!o){body=`<p class="help" style="margin:8px 0">Talhão ainda sem plantio lançado.</p>`;}
+  else{
+    let ch7=0;for(let i=0;i<7;i++)ch7+=M.rain.get(addDays(o.ini,i))||0;const ch7p=addDays(o.ini,6)>M.dMax;
+    const jm=top1(o.js),fol=jm==='milho'&&o.hFim?dayDiff(o.hFim,JAN.milhoFim):jm==='gergelim'&&o.hFim?dayDiff(o.hFim,JAN.gerFim):null;
+    const vrows=colheitaRows(o.rs).sort((a,b)=>String(a.pIni).localeCompare(String(b.pIni)));
+    body=`<div class="cgrid">
+      <div><span>Plantado</span><b>${nf1.format(o.ap)} ha</b><small>${at?nf0.format(Math.min(o.ap/at*100,999))+'% de '+nf1.format(at)+' ha':'sem área total'}</small></div>
+      <div><span>Plantio</span><b>${fmtD(o.ini)}${o.fim!==o.ini?' a '+fmtD(o.fim):''}</b><small>${dayDiff(o.ini,o.fim)+1} dia(s)</small></div>
+      <div><span>Chuva 7 dias</span><b>${nf0.format(ch7)} mm</b><small>${ch7p?'parcial, ':''}desde ${fmtD(o.ini)}</small></div>
+      <div><span>Colheita prevista</span><b>${o.hIni?fmtD(o.hIni)+(o.hFim!==o.hIni?' a '+fmtD(o.hFim):''):'—'}</b><small>${o.hIni?fmtDY(o.hIni).slice(6):'sem ciclo'}</small></div>
+    </div>
+    <div class="cjan" style="border-color:${JANCOL[jm]};background:${JANCOL[jm]}1A"><span class="cdot" style="background:${JANCOL[jm]}"></span><b>${JANLAB[jm]}</b>${fol!=null?` · folga de ${fol} dias até o fim da janela`:''}</div>
+    <table><thead><tr><th>Cultivar</th><th class="n">ha</th><th>Colheita</th></tr></thead><tbody>${vrows.map(r=>`<tr title="Plantio ${fmtDY(r.pIni)}${r.pFim!==r.pIni?' a '+fmtDY(r.pFim):''}, ciclo ${r.cic??'—'} dias"><td>${esc(r.v)}<br><small class="help">plantio ${fmtD(r.pIni)}${r.pFim!==r.pIni?'–'+fmtD(r.pFim):''} · ${r.cic??'—'} d</small></td><td class="n">${nf1.format(r.a)}</td><td>${r.hIni?fmtD(r.hIni)+(r.hFim!==r.hIni?'–'+fmtD(r.hFim):''):'—'}</td></tr>`).join('')}</tbody></table>`;
+  }
+  $('#mapSum').innerHTML=`<div class="tcard"><div class="tchd"><div><h3>${esc(name)}</h3><span class="help">${esc(t?t.f:(f&&f.props.bloco)||'')}</span></div><button class="tcx" id="cardX" aria-label="Fechar ficha">×</button></div>${body}
+    ${o?`<button class="lnk" id="cardTbl" style="margin-top:8px;padding-left:0">Ver na tabela de colheita ↓</button>`:''}</div>`;
+  $('#cardX').onclick=()=>{clearSel();renderMapa();};
+  const ct=$('#cardTbl');if(ct)ct.onclick=()=>$('#tbHarv').closest('.card').scrollIntoView({behavior:'smooth'});
+}
 (function(){
-  $('#segMap').onclick=e=>{const b=e.target.closest('button');if(!b)return;mapMode=b.dataset.m;$$('#segMap button').forEach(x=>x.classList.toggle('on',x===b));renderMap();};
+  $('#segMap').onclick=e=>{const b=e.target.closest('button');if(!b)return;mapMode=b.dataset.m;$$('#segMap button').forEach(x=>x.classList.toggle('on',x===b));if(mapMode!=='tempo')tStop();renderMap();};
   $('#segJan').onclick=e=>{const b=e.target.closest('button');if(!b)return;janMode=b.dataset.m;$$('#segJan button').forEach(x=>x.classList.toggle('on',x===b));renderMapa();};
+  $('#segHarv').onclick=e=>{const b=e.target.closest('button');if(!b)return;harvMode=b.dataset.m;$$('#segHarv button').forEach(x=>x.classList.toggle('on',x===b));if(HP){clearSel();}renderMapa();};
+  $('#tRange').oninput=e=>{const tb=tBounds();if(!tb)return;tDate=addDays(tb.a,+e.target.value);renderMap();};
+  $('#tToday').onclick=()=>{tStop();tDate=null;renderMap();};
+  $('#tPlay').onclick=()=>{if(tTimer){tStop();return;}const tb=tBounds();if(!tb)return;if(!tDate||tDate>=tb.b)tDate=tb.a;
+    const step=Math.max(1,Math.round(dayDiff(tb.a,tb.b)/90));$('#tPlay').textContent='❚❚';$('#tPlay').setAttribute('aria-label','Pausar');
+    tTimer=setInterval(()=>{tDate=addDays(tDate,step);if(tDate>=tb.b){tDate=tb.b;renderMap();tStop();return;}renderMap();},140);};
   $('#btnGeo').onclick=()=>$('#geoIn').click();
   $('#geoIn').onchange=async e=>{const f=e.target.files[0];if(!f)return;
     try{const g=JSON.parse(await f.text());if(!g||!Array.isArray(g.features)||!g.features.length)throw new Error('o arquivo não tem features');
@@ -1118,6 +1219,7 @@ const MSEL=new Set();
   try{const j=JSON.parse(store.get('plantio-jan')||'null');if(j&&j.milhoFim&&j.gerFim){JAN.milhoFim=j.milhoFim;JAN.gerFim=j.gerFim;}}catch(e){}
   $('#janMilho').value=JAN.milhoFim;$('#janGer').value=JAN.gerFim;
 })();
+function tStop(){if(tTimer){clearInterval(tTimer);tTimer=null;}const b=$('#tPlay');if(b){b.textContent='▶';b.setAttribute('aria-label','Reproduzir');}}
 
 function renderMapa(){
   renderMap();
@@ -1136,29 +1238,41 @@ function renderMapa(){
     ['Última colheita',hs.length?fmtD(hs[hs.length-1]):'—','',hs.length?fmtDY(hs[hs.length-1]):'sem previsão'],
     ['Sem ciclo',nf0.format(semA),'ha',semA?'cadastre o ciclo da cultivar':'todas as cultivares com ciclo']
   ].map(([k,v,u,d,j])=>`<div class="kpi"><div class="k">${j?`<span class="cdot" style="background:${JANCOL[j]}"></span>`:''}${k}</div><div class="v">${v}<small>${u}</small></div><div class="d">${d}</div></div>`).join('');
-  // gráfico semanal de colheita prevista
-  const rs=R.filter(r=>r.a>0).map(r=>({h:harvestOf(r),a:r.a})).filter(x=>x.h);
+  // gráfico de colheita prevista, por dia ou por semana
+  const rs=R.filter(r=>r.a>0).map(r=>({h:harvestOf(r),a:r.a,k:r.k})).filter(x=>x.h);
   if(rs.length){
-    const a0=[rs.reduce((m,x)=>x.h<m?x.h:m,rs[0].h),addDays(JAN.milhoFim,-14)].sort()[0],b0=[rs.reduce((m,x)=>x.h>m?x.h:m,rs[0].h),addDays(JAN.gerFim,7)].sort().pop();
-    const wk=weeks(dateRange(a0,b0));const idx=new Map();wk.forEach((w,i)=>w.days.forEach(d=>idx.set(d,i)));
-    const by={milho:wk.map(()=>0),gergelim:wk.map(()=>0),fora:wk.map(()=>0)};
-    rs.forEach(x=>{const j=janela(x.h);if(by[j])by[j][idx.get(x.h)]+=x.a;});
-    const wl=wk.map(w=>'sem. '+fmtD(w.k<a0?a0:w.k));
+    const hMin=rs.reduce((m,x)=>x.h<m?x.h:m,rs[0].h),hMax=rs.reduce((m,x)=>x.h>m?x.h:m,rs[0].h);
+    const a0=harvMode==='d'?addDays(hMin,-2):[hMin,addDays(JAN.milhoFim,-14)].sort()[0],b0=harvMode==='d'?addDays(hMax,2):[hMax,addDays(JAN.gerFim,7)].sort().pop();
+    const days=dateRange(a0,b0);
+    const bins=harvMode==='d'?days.map(d=>({lab:fmtD(d),a:d,b:d,days:[d]})):weeks(days).map(w=>({lab:'sem. '+fmtD(w.k<a0?a0:w.k),a:w.days[0],b:w.days[w.days.length-1],days:w.days}));
+    const idx=new Map();bins.forEach((w,i)=>w.days.forEach(d=>idx.set(d,i)));
+    const by={milho:bins.map(()=>0),gergelim:bins.map(()=>0),fora:bins.map(()=>0)};
+    rs.forEach(x=>{const j=janela(x.h);if(by[j]&&idx.has(x.h))by[j][idx.get(x.h)]+=x.a;});
+    const selI=HP?bins.findIndex(w=>w.a===HP.a&&w.b===HP.b):-1;
     const mi=idx.get(JAN.milhoFim),gi=idx.get(JAN.gerFim);
-    mk('chHarv',{type:'bar',data:{labels:wl,datasets:['milho','gergelim','fora'].map(j=>({label:JANLAB[j],data:by[j],backgroundColor:JANCOL[j],stack:'h',borderRadius:2,maxBarThickness:30}))},
-      options:{scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:8}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'ha a colher na semana'}}},
-        plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip},filter:i=>i.parsed.y>0},janMarks:{m:mi,g:gi}}},
+    mk('chHarv',{type:'bar',data:{labels:bins.map(w=>w.lab),datasets:['milho','gergelim','fora'].map(j=>({label:JANLAB[j],data:by[j],backgroundColor:bins.map((w,i)=>selI<0||i===selI?JANCOL[j]:JANCOL[j]+'40'),stack:'h',borderRadius:2,maxBarThickness:harvMode==='d'?14:30}))},
+      options:{onHover:(e,els)=>{e.native&&(e.native.target.style.cursor=els.length?'pointer':'default');},
+        onClick:(e,els)=>{if(!els.length)return;const i=els[0].index,w=bins[i];
+          if(HP&&HP.a===w.a&&HP.b===w.b){clearSel();setTimeout(renderMapa);return;}
+          clearSel();HP={a:w.a,b:w.b};rs.forEach(x=>{if(x.h>=w.a&&x.h<=w.b)MSEL.add(x.k);});
+          selLab=harvMode==='d'?`Colheita em ${fmtDY(w.a)}`:`Colheita de ${fmtD(w.a)} a ${fmtD(w.b)}`;setTimeout(renderMapa);},
+        scales:{x:{stacked:true,grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:8}},y:{stacked:true,beginAtZero:true,title:{display:true,text:harvMode==='d'?'ha a colher no dia':'ha a colher na semana'}}},
+        plugins:{legend:{position:'bottom',labels:{generateLabels:ch=>ch.data.datasets.map((d,i)=>({text:d.label,fillStyle:JANCOL[['milho','gergelim','fora'][i]],strokeStyle:'transparent',hidden:!ch.isDatasetVisible(i),datasetIndex:i,fontColor:cssv('--ink')}))}},tooltip:{callbacks:{title:it=>{const w=bins[it[0].dataIndex];return harvMode==='d'?fmtDY(w.a):`${fmtDY(w.a)} a ${fmtDY(w.b)}`;},label:haTip,
+          footer:it=>{const w=bins[it[0].dataIndex];const n=new Set(rs.filter(x=>x.h>=w.a&&x.h<=w.b).map(x=>x.k)).size;return n?`${n} talhão(ões) · clique para ver no mapa`:'';}},filter:i=>i.parsed.y>0},janMarks:{m:mi,g:gi}}},
       plugins:[{id:'janMarks',afterDatasetsDraw(ch,a,o){const x=ch.scales.x,{ctx,chartArea:ca}=ch;ctx.save();ctx.setLineDash([5,4]);ctx.lineWidth=1.4;ctx.font=`600 11px ${cssv('--sans')}`;
-        [[o.m,JANCOL.milho,'fim milho '+fmtD(JAN.milhoFim)],[o.g,JANCOL.gergelim,'fim gergelim '+fmtD(JAN.gerFim)]].forEach(([i,c,t])=>{if(i==null)return;const px=x.getPixelForValue(i)+(x.getPixelForValue(1)-x.getPixelForValue(0))/2;
+        [[o.m,JANCOL.milho,'fim milho '+fmtD(JAN.milhoFim)],[o.g,JANCOL.gergelim,'fim gergelim '+fmtD(JAN.gerFim)]].forEach(([i,c,t])=>{if(i==null)return;const px=x.getPixelForValue(i)+(bins.length>1?(x.getPixelForValue(1)-x.getPixelForValue(0))/2:0);
           ctx.strokeStyle=c;ctx.beginPath();ctx.moveTo(px,ca.top);ctx.lineTo(px,ca.bottom);ctx.stroke();ctx.fillStyle=c;ctx.textAlign='right';ctx.fillText(t,px-4,ca.top+11);});ctx.restore();}}]});
   } else if(charts.chHarv){charts.chHarv.destroy();delete charts.chHarv;}
   empty('eHarv',!rs.length);
+  $('#harvSel').innerHTML=HP?`<span class="tag">${esc(selLab)}: ${MSEL.size} talhão(ões)<button id="harvClr" aria-label="Limpar seleção">×</button></span>`:'<span class="help">Clique numa barra para ver os talhões no mapa e na tabela.</span>';
+  const hc=$('#harvClr');if(hc)hc.onclick=()=>{clearSel();renderMapa();};
   // tabela
-  let T=MSEL.size?rows.filter(r=>MSEL.has(r.k)):rows;
-  if(janMode==='jan')T=rows.filter(r=>r.j==='milho'||r.j==='gergelim');
-  else if(janMode!=='all')T=rows.filter(r=>r.j===janMode);
+  let T=rows;
+  if(janMode==='jan')T=T.filter(r=>r.j==='milho'||r.j==='gergelim');
+  else if(janMode!=='all')T=T.filter(r=>r.j===janMode);
+  if(MSEL.size)T=T.filter(r=>MSEL.has(r.k)&&(!HP||(r.hIni&&r.hIni<=HP.b&&r.hFim>=HP.a)));
   const ta=T.reduce((s,r)=>s+r.a,0);
-  $('#harvCount').textContent=`${new Set(T.map(r=>r.tl)).size} talhões, ${nf1.format(ta)} ha. Colheita prevista = data de plantio + ciclo da cultivar (aba DADOS ou planejamento).`;
+  $('#harvCount').textContent=`${new Set(T.map(r=>r.tl)).size} talhões, ${nf1.format(ta)} ha${MSEL.size?' ('+selLab.toLowerCase()+')':''}. Colheita prevista = data de plantio + ciclo da cultivar.`;
   table('#tbHarv',[
     {k:'jl',t:'Janela',f:(v,r)=>`<span class="pill" style="background:${JANCOL[r.j]}26;color:${r.j==='sem'?'var(--muted)':JANCOL[r.j]==='#E0A100'?'#8A6400':JANCOL[r.j]}">${esc(v)}</span>`},
     {k:'tl',t:'Talhão'},{k:'f',t:'Fazenda'},{k:'v',t:'Cultivar / híbrido'},
@@ -1166,7 +1280,7 @@ function renderMapa(){
     {k:'pIni',t:'Plantio',f:(v,r)=>fmtDY(v)+(r.pFim!==v?' a '+fmtDY(r.pFim):'')},{k:'cic',t:'Ciclo (d)',n:1,f:v=>v??'—'},
     {k:'hIni',t:'Colheita prevista',f:(v,r)=>v?`<b>${fmtDY(v)}</b>`+(r.hFim!==v?' a <b>'+fmtDY(r.hFim)+'</b>':''):'—'},
     {k:'folga',t:'Folga até o fim da janela',n:1,f:v=>v==null?'—':`${v} dias`}
-  ],T,{sort:'hIni',dir:'asc',id:'tl',click:tl=>{const k=norm(tl);MSEL.has(k)?MSEL.delete(k):MSEL.add(k);renderMapa();}});
+  ],T,{sort:'hIni',dir:'asc',id:'tl',click:tl=>{pickTal(norm(tl));$('#mapBox').scrollIntoView({behavior:'smooth',block:'center'});}});
 }
 function mapImage(){return new Promise(res=>{try{if(!MAP)return res(null);const s=$('#mapSvg').cloneNode(true);s.setAttribute('xmlns','http://www.w3.org/2000/svg');
   const w=1600,h=Math.round(w*vb.h/vb.w);s.setAttribute('width',w);s.setAttribute('height',h);
@@ -1233,7 +1347,7 @@ function renderEpocas(){
     d=first?d.slice(0,8)+'16':new Date(Date.UTC(y,m,1)).toISOString().slice(0,10);}
   $('#epocas').innerHTML=`<span class="lbl">Épocas de plantio</span><button class="ep ${F.ini===M.dMin&&F.fim===M.dMax?'on':''}" data-a="${M.dMin}" data-b="${M.dMax}">Safra inteira</button>`+
     out.map(e=>`<button class="ep ${F.ini===e.a&&F.fim===e.b?'on':''}" data-a="${e.a}" data-b="${e.b}" title="${fmtDY(e.a)} a ${fmtDY(e.b)}">${e.lab}</button>`).join('');
-  $('#epocas').querySelectorAll('.ep').forEach(b=>b.onclick=()=>{F.ini=b.dataset.a;F.fim=b.dataset.b;syncUI();render();});
+  $('#epocas').querySelectorAll('.ep').forEach(b=>b.onclick=()=>{applyF(()=>{F.ini=b.dataset.a;F.fim=b.dataset.b;},b.textContent);});
 }
 
 /* ================= UI sync ================= */
@@ -1276,6 +1390,91 @@ function syncUI(){
   [msFaz,msTal,msVar].forEach(m=>m&&m.paint());
 }
 let view='plantio';
+/* ================= Agora: resumo do que importa em cada aba ================= */
+const hoje=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const emDias=n=>n===0?'hoje':n===1?'amanhã':n===-1?'ontem':n>0?`em ${n} dias`:`há ${-n} dias`;
+let NOWACT=[];
+function nowCard(k,v,u,d,o={}){const i=NOWACT.length;if(o.go)NOWACT.push(o.go);else NOWACT.push(null);
+  return `<${o.go?'button':'div'} class="nowc ${o.cl||''}" ${o.go?`data-i="${i}"`:''} data-tip="${esc(o.tip||'')}"><div class="k">${k}</div><div class="v">${v}${u?`<small>${u}</small>`:''}</div><div class="d">${d}</div>${o.go?`<span class="nowgo">${esc(o.lab||'ver')} →</span>`:''}</${o.go?'button':'div'}>`;}
+function renderNow(){
+  const el=$('#now');NOWACT=[];const H=hoje();let cs=[],tit='';
+  if(view==='plantio'){
+    tit='Agora no plantio';
+    const R=filtered().filter(r=>r.a>0),tot=R.reduce((s,r)=>s+r.a,0),plan=totalPlanned();
+    const w0=addDays(H,-6),r7=R.filter(r=>r.d>=w0&&r.d<=H),a7=r7.reduce((s,r)=>s+r.a,0),d7=new Set(r7.map(r=>r.d)).size;
+    const byD=sumBy(R,r=>r.d);const ds=[...byD.keys()].sort();const last=ds[ds.length-1];
+    const rec=ds.slice(-7),pace=rec.length?rec.reduce((s,d)=>s+byD.get(d),0)/rec.length:0,rest=Math.max(plan-tot,0);
+    let ch=0;for(let i=0;i<7;i++)ch+=M.rain.get(addDays(H,-i))||0;
+    const rd=[...M.rain.entries()].filter(([d,v])=>v>0&&d<=H).sort((a,b)=>a[0]<b[0]?1:-1)[0];
+    cs.push(nowCard('Plantado nos últimos 7 dias',nf0.format(a7),'ha',d7?`${d7} dia(s) com plantio`:'nenhum plantio na semana',
+      {go:()=>applyF(()=>{F.ini=w0<M.dMin?M.dMin:w0;F.fim=H>M.dMax?M.dMax:H;if(F.ini>F.fim)F.ini=F.fim;},'últimos 7 dias'),lab:'filtrar semana',tip:'Área plantada de '+fmtD(w0)+' até hoje, dentro dos filtros atuais.'}));
+    if(plan)cs.push(nowCard('Falta plantar',nf0.format(rest),'ha',rest&&pace?`~${Math.ceil(rest/pace)} dias de plantio no ritmo atual (${nf0.format(pace)} ha/dia)`:rest?'sem ritmo recente':'área total plantada',
+      {tip:'Área total dos talhões selecionados menos a área plantada. O ritmo é a média dos últimos 7 dias com plantio.',cl:rest?'':'ok'}));
+    cs.push(nowCard('Chuva nos últimos 7 dias',nf0.format(ch),'mm',rd?`última chuva ${fmtD(rd[0])}, ${nf0.format(rd[1])} mm (${emDias(dayDiff(H,rd[0]))})`:'sem chuva registrada',{cl:'rain',tip:'Soma da pluviometria de '+fmtD(addDays(H,-6))+' até hoje.'}));
+    if(last)cs.push(nowCard('Último plantio',fmtD(last),'',`${nf0.format(byD.get(last))} ha, ${emDias(dayDiff(H,last))}`,
+      {go:()=>applyF(()=>{F.ini=last;F.fim=last;},'dia '+fmtD(last)),lab:'ver o dia',tip:'Último dia com plantio lançado na aba Diário.'}));
+  }
+  else if(view==='talhoes'){
+    tit='Agora nos talhões';
+    const all=talRows(),part=all.filter(r=>r.ap>0&&r.pct<98),none=all.filter(r=>!r.ap),done=all.filter(r=>r.pct>=98),dry=all.filter(r=>r.ch7!=null&&!r.ch7p&&r.ch7<5);
+    const setT=m=>()=>{talMode=m;$$('#segTal button').forEach(x=>x.classList.toggle('on',x.dataset.m===m));renderTalhoes();$('#tbTal').closest('.card').scrollIntoView({behavior:'smooth'});};
+    cs.push(nowCard('Em andamento',part.length,'talhões',`faltam ${nf0.format(part.reduce((s,r)=>s+Math.max(r.at-r.ap,0),0))} ha neles`,{go:setT('part'),lab:'listar',tip:'Talhões com plantio iniciado e menos de 98% da área plantada.'}));
+    cs.push(nowCard('Sem plantio',none.length,'talhões',`${nf0.format(none.reduce((s,r)=>s+(r.at||0),0))} ha ainda livres`,{go:setT('none'),lab:'listar',tip:'Talhões cadastrados sem nenhum plantio lançado.'}));
+    cs.push(nowCard('Concluídos',done.length,`de ${all.length}`,`${nf0.format(done.reduce((s,r)=>s+r.ap,0))} ha`,{go:setT('done'),lab:'listar',cl:'ok',tip:'Talhões com 98% ou mais da área plantada.'}));
+    cs.push(nowCard('Pouca chuva após o plantio',dry.length,'talhões',dry.length?'menos de 5 mm nos 7 dias, acompanhar a emergência':'todos com 5 mm ou mais',{go:dry.length?setT('dry'):null,lab:'listar',cl:dry.length?'warn':'',tip:'Talhões com 7 dias completos desde o primeiro plantio e menos de 5 mm de chuva nesse período.'}));
+  }
+  else if(view==='mapa'){
+    tit='Agora na colheita';
+    const rs=M.rec.filter(r=>r.a>0).map(r=>({h:harvestOf(r),a:r.a,k:r.k})).filter(x=>x.h);
+    const dow=(parseD(H).getUTCDay()+6)%7,wa=addDays(H,-dow),wb=addDays(wa,6);
+    const inW=(a,b)=>rs.filter(x=>x.h>=a&&x.h<=b);let wA=wa,wB=wb,now=inW(wa,wb),lab='Colheita nesta semana';
+    if(!now.length){const nx=rs.filter(x=>x.h>wb).sort((a,b)=>a.h<b.h?-1:1)[0];if(nx){const d2=(parseD(nx.h).getUTCDay()+6)%7;wA=addDays(nx.h,-d2);wB=addDays(wA,6);now=inW(wA,wB);lab='Próxima semana com colheita';}}
+    const selWeek=()=>{harvMode='w';$$('#segHarv button').forEach(x=>x.classList.toggle('on',x.dataset.m==='w'));clearSel();HP={a:wA,b:wB};now.forEach(x=>MSEL.add(x.k));selLab=`Colheita de ${fmtD(wA)} a ${fmtD(wB)}`;renderMapa();$('#chHarv').closest('.card').scrollIntoView({behavior:'smooth'});};
+    cs.push(nowCard(lab,nf0.format(now.reduce((s,x)=>s+x.a,0)),'ha',`${fmtD(wA)} a ${fmtD(wB)}, ${new Set(now.map(x=>x.k)).size} talhão(ões)`,{go:now.length?selWeek:null,lab:'ver no mapa',tip:'Área com colheita prevista (plantio + ciclo) na semana de segunda a domingo.'}));
+    const nx=rs.filter(x=>x.h>=H).sort((a,b)=>a.h<b.h?-1:1)[0];
+    if(nx){const ks=[...new Set(rs.filter(x=>x.h===nx.h).map(x=>x.k))],t=M.tal.get(ks[0]);
+      cs.push(nowCard('Próxima colheita',fmtD(nx.h),'',`${emDias(dayDiff(H,nx.h))}, ${esc(t?t.tl:ks[0])}${ks.length>1?' e mais '+(ks.length-1):''}`,{go:()=>{pickTal(ks[0]);$('#mapBox').scrollIntoView({behavior:'smooth',block:'center'});},lab:'abrir ficha',tip:'Primeiro talhão com colheita prevista a partir de hoje.'}));}
+    const dm=dayDiff(H,JAN.milhoFim),dg=dayDiff(H,JAN.gerFim);
+    cs.push(nowCard('Janela do milho fecha',dm>=0?dm:'fechada',dm>=0?'dias':'',`${fmtDY(JAN.milhoFim)} · gergelim ${dg>=0?'em '+dg+' dias':'fechado'}`,{cl:'milho',tip:'Dias até a data limite de colheita para semear o milho safrinha e o gergelim. As datas podem ser ajustadas abaixo.'}));
+    const rows=colheitaRows(M.rec),short=rows.filter(r=>(r.j==='milho'||r.j==='gergelim')&&r.folga!=null&&r.folga<10),fora=rows.filter(r=>r.j==='fora');
+    const ks=new Set(short.map(r=>r.k));
+    cs.push(nowCard('Folga curta na janela',ks.size,'talhões',ks.size?`menos de 10 dias de folga, ${nf0.format(short.reduce((s,r)=>s+r.a,0))} ha`:`nenhum apertado${fora.length?', '+nf0.format(fora.reduce((s,r)=>s+r.a,0))+' ha fora das janelas':''}`,
+      {go:ks.size?()=>{clearSel();ks.forEach(k=>MSEL.add(k));selLab='Folga menor que 10 dias';renderMapa();$('#mapBox').scrollIntoView({behavior:'smooth',block:'center'});}:null,lab:'ver no mapa',cl:ks.size?'warn':'ok',tip:'Talhões dentro da janela de milho ou gergelim, mas com menos de 10 dias entre a colheita prevista e o fim da janela.'}));
+  }
+  else if(view==='sementes'){
+    tit='Agora nos lotes';
+    const lots=DB.lotes||[],run=lots.filter(l=>!lotFin(l)),done=lots.filter(lotFin),bad=done.filter(l=>lotG7(l)<L.min);
+    const tested=new Set(lots.map(l=>norm(l.lote))),semT=[...new Map((DB.entradas||[]).filter(e=>!tested.has(norm(e.lote))).map(e=>[norm(e.lote),e])).values()];
+    const prox=run.map(l=>l.d&&addDays(l.d,7)).filter(Boolean).sort()[0];
+    const lastF=[...done].sort((a,b)=>String(a.d).localeCompare(String(b.d))).pop();
+    const goTab=sel=>()=>{const e=$(sel);if(e)e.closest('.card').scrollIntoView({behavior:'smooth'});};
+    cs.push(nowCard('Aguardando o 7º dia',run.length,'testes',prox?`próximo resultado ${fmtD(prox)} (${emDias(dayDiff(H,prox))})`:'nenhum teste em andamento',{tip:'Testes ainda sem a contagem do 7º dia. Eles não entram na média nem na aprovação.'}));
+    cs.push(nowCard('Abaixo do mínimo',bad.length,'lotes',bad.length?esc(bad.slice(0,2).map(l=>l.v+' '+l.lote).join(', '))+(bad.length>2?'…':''):`todos ≥ ${L.min}% no 7º dia`,{cl:bad.length?'bad':'ok',go:bad.length?goTab('#chLot'):null,lab:'ver gráfico',tip:'Lotes com teste finalizado e germinação no 7º dia abaixo do mínimo escolhido.'}));
+    cs.push(nowCard('Lotes sem teste',semT.length,'lotes',semT.length?esc(semT.slice(0,2).map(e=>e.v+' '+e.lote).join(', '))+(semT.length>2?'…':''):'todos os lotes recebidos têm teste',{cl:semT.length?'warn':'ok',go:semT.length?goTab('#tbEnt'):null,lab:'ver entradas',tip:'Lotes da aba Entrada de sementes que ainda não aparecem no teste de germinação.'}));
+    if(lastF)cs.push(nowCard('Último resultado',nf1.format(lotG7(lastF)),'%',`${esc(lastF.v)}, lote ${esc(lastF.lote)}, teste de ${fmtD(lastF.d)}`,{cl:lotG7(lastF)>=L.min?'ok':'bad',tip:'Germinação no 7º dia do teste finalizado mais recente.'}));
+  }
+  el.hidden=!cs.length;if(!cs.length)return;
+  el.innerHTML=`<div class="nowh">${tit}<span class="help">${fmtDY(H)}</span></div><div class="nowg">${cs.join('')}</div>`;
+  el.querySelectorAll('button.nowc').forEach(b=>b.onclick=()=>{const f=NOWACT[+b.dataset.i];f&&f();});
+}
+/* filtros com "voltar" */
+const FHIST=[];
+const snapF=()=>({ini:F.ini,fim:F.fim,tn:new Set(F.tn),cult:new Set(F.cult),faz:new Set(F.faz),tal:new Set(F.tal),vr:new Set(F.vr),rain:F.rain,rmin:F.rmin});
+function applyF(fn,lab){FHIST.push(snapF());if(FHIST.length>20)FHIST.shift();fn();syncUI();render();toast('Filtro: '+lab,{lab:'Voltar',fn:backF});}
+function backF(){const s=FHIST.pop();if(!s)return;Object.assign(F,s);syncUI();render();toast('Filtro anterior restaurado.');}
+/* dicas ao passar o mouse */
+const TIPS={'Ritmo médio':'Área plantada dividida pelos dias em que houve plantio.','Dias com plantio':'Dias com algum plantio lançado no período filtrado.','Maior dia':'Dia com a maior área plantada.',
+  'Talhões plantados':'Talhões com algum plantio, sobre os talhões com área total cadastrada.','Chuva no período':'Soma da pluviometria no período filtrado.','Cultivares':'Cultivares e híbridos diferentes plantados.',
+  'Janela milho safrinha':'Área com colheita prevista até o fim da janela do milho safrinha.','Janela gergelim':'Área com colheita prevista entre o fim da janela do milho e o fim da janela do gergelim.',
+  'Após as janelas':'Área com colheita prevista depois da janela do gergelim.','Primeira colheita':'Data de colheita prevista mais cedo (plantio + ciclo).','Última colheita':'Data de colheita prevista mais tarde.',
+  'Sem ciclo':'Área de cultivares sem ciclo cadastrado; não entra na previsão.','Testes':'Testes de germinação lançados.','Aprovados':'Testes finalizados com germinação no 7º dia igual ou acima do mínimo.',
+  'Reprovados':'Testes finalizados abaixo do mínimo.','Germinação média':'Média do 7º dia, só dos testes finalizados.','Vigor médio (IVG)':'Índice de velocidade de germinação, só dos testes finalizados.','Sementes recebidas':'Peso de nota somado das entradas de sementes.'};
+function applyTips(){$$('.kpi').forEach(k=>{const t=k.querySelector('.k');if(t&&!k.dataset.tip){const s=TIPS[t.textContent.trim()];if(s)k.dataset.tip=s;}});}
+(function(){const tb=document.createElement('div');tb.className='tipbox';tb.hidden=true;document.body.appendChild(tb);let cur=null;
+  document.addEventListener('mouseover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t===cur)return;cur=t;if(!t||!t.dataset.tip){tb.hidden=true;return;}
+    tb.textContent=t.dataset.tip;tb.hidden=false;const r=t.getBoundingClientRect();let x=r.left+r.width/2-tb.offsetWidth/2;x=Math.max(8,Math.min(x,innerWidth-tb.offsetWidth-8));
+    let y=r.bottom+8;if(y+tb.offsetHeight>innerHeight-8)y=r.top-tb.offsetHeight-8;tb.style.left=x+'px';tb.style.top=y+'px';});
+  addEventListener('scroll',()=>{tb.hidden=true;cur=null;},{passive:true});})();
 function render(){
   if(!M.rec.length&&!M.dMin){$('#status').innerHTML='<span class="help">A planilha não tem registros de plantio. Preencha a aba Diário e carregue novamente.</span>';}
   renderEpocas();
@@ -1285,6 +1484,7 @@ function render(){
   if(view==='sementes')renderSementes();
   if(view==='base')renderBase();
   [msFaz,msTal,msVar].forEach(m=>m&&m.paint());
+  renderNow();applyTips();
 }
 
 /* ================= eventos ================= */
@@ -1292,7 +1492,8 @@ $('#fIni').onchange=e=>{if(e.target.value){F.ini=e.target.value;if(F.ini>F.fim)F
 $('#fFim').onchange=e=>{if(e.target.value){F.fim=e.target.value;if(F.fim<F.ini)F.ini=F.fim;}syncUI();render();};
 $('#fRain').onchange=e=>{F.rain=e.target.value;syncUI();render();};
 $('#fRainMin').oninput=e=>{F.rmin=+e.target.value;$('#fRainOut').textContent=F.rmin+' mm';render();};
-$('#btnClear').onclick=()=>{resetFilters();syncUI();render();};
+$('#btnClear').onclick=()=>applyF(resetFilters,'todos limpos');
+$('#btnBack').onclick=backF;
 $('#segDaily').onclick=e=>{const b=e.target.closest('button');if(!b)return;dailyMode=b.dataset.m;$$('#segDaily button').forEach(x=>x.classList.toggle('on',x===b));renderPlantio();};
 $('#segRain').onclick=e=>{const b=e.target.closest('button');if(!b)return;rainMode=b.dataset.m;$$('#segRain button').forEach(x=>x.classList.toggle('on',x===b));renderPlantio();};
 $('#segTal').onclick=e=>{const b=e.target.closest('button');if(!b)return;talMode=b.dataset.m;$$('#segTal button').forEach(x=>x.classList.toggle('on',x===b));renderTalhoes();};
