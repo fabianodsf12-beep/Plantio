@@ -285,6 +285,8 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px;z-index:2}
 .mapctl button{width:32px;height:32px;border:1px solid var(--line);background:var(--surface);border-radius:6px;cursor:pointer;font-size:17px;font-weight:700;line-height:1;color:var(--ink)}
 .mapctl button:hover{border-color:var(--brand)}
+.mapfull{position:absolute;top:10px;left:10px;z-index:2;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font:600 13px var(--sans);cursor:pointer;box-shadow:0 2px 8px rgba(0,35,43,.12)}
+.mapfull[hidden]{display:none}
 .maptip{position:absolute;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,35,43,.18);padding:8px 11px;font-size:13px;line-height:1.5;pointer-events:none;max-width:280px}
 .janbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
 .janbar input[type=date]{border:1px solid var(--line);background:var(--surface-2);border-radius:6px;padding:5px 8px;height:34px}
@@ -487,6 +489,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
         <div class="mapbox" id="mapBox">
           <svg id="mapSvg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa dos talhões colorido por variedade plantada"></svg>
           <div class="maptip" id="mapTip" hidden></div>
+          <button class="mapfull noprint" id="mapFull" hidden>⤢ Mapa inteiro</button>
           <div class="empty" id="mapEmpty">Nenhum limite de talhão carregado. Use Carregar GeoJSON.</div>
         </div>
         <aside class="mapside"><div class="leg" id="mapLeg"></div><div id="mapSum"></div></aside>
@@ -1116,11 +1119,11 @@ function buildMap(){
   if(!feats.length){MAP=null;return;}
   const kx=Math.cos(((y0+y1)/2)*Math.PI/180),W=1000,sc=W/((x1-x0)*kx),H=(y1-y0)*sc;
   const P=([x,y])=>[(x-x0)*kx*sc,(y1-y)*sc];
-  feats.forEach(f=>{let d='',best=null,bestA=-1;
-    f.polys.forEach(p=>p.forEach((r,ri)=>{const pts=r.map(P);d+='M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L')+'Z';
+  feats.forEach(f=>{let d='',best=null,bestA=-1;const bb=[Infinity,Infinity,-Infinity,-Infinity];
+    f.polys.forEach(p=>p.forEach((r,ri)=>{const pts=r.map(P);pts.forEach(([x,y])=>{if(x<bb[0])bb[0]=x;if(y<bb[1])bb[1]=y;if(x>bb[2])bb[2]=x;if(y>bb[3])bb[3]=y;});d+='M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L')+'Z';
       if(ri===0){let A=0,cx=0,cy=0;for(let i=0,n=pts.length-1;i<n;i++){const [a,b]=pts[i],[c,e]=pts[i+1];const cr=a*e-c*b;A+=cr;cx+=(a+c)*cr;cy+=(b+e)*cr;}
         A/=2;if(Math.abs(A)>bestA){bestA=Math.abs(A);best=A?[cx/(6*A),cy/(6*A)]:pts[0];}}}));
-    f.d=d;f.cx=best[0];f.cy=best[1];f.area=bestA;});
+    f.d=d;f.cx=best[0];f.cy=best[1];f.area=bestA;f.bb=bb;});
   MAP={feats,w:W,h:H,P};
 }
 let vb=null,harvMode='w';
@@ -1146,10 +1149,19 @@ function tBounds(){const ds=M.rec.filter(r=>r.a>0).map(r=>r.d).sort();if(!ds.len
   return {a:ds[0],b:[hs[hs.length-1]||ds[ds.length-1],today].sort().pop()};}
 function tStatus(o,D){let ap=0,ready=0;const vs=new Map();o.rs.forEach(r=>{if(r.d<=D){ap+=r.a;vs.set(r.v,(vs.get(r.v)||0)+r.a);const h=harvestOf(r);if(h&&h<=D)ready+=r.a;}});return {ap,ready,v:top1(vs)};}
 
+let vbCur=null,vbAnim=0;
+function setVB(host,t){const set=v=>host.setAttribute('viewBox',`${v.x} ${v.y} ${v.w} ${v.h}`);cancelAnimationFrame(vbAnim);
+  if(!vbCur||matchMedia('(prefers-reduced-motion: reduce)').matches){vbCur={...t};set(t);return;}
+  const a={...vbCur},t0=performance.now(),D=380;if(a.x===t.x&&a.y===t.y&&a.w===t.w&&a.h===t.h){set(t);return;}
+  const step=n=>{let k=Math.min(1,(n-t0)/D);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;vbCur={x:a.x+(t.x-a.x)*k,y:a.y+(t.y-a.y)*k,w:a.w+(t.w-a.w)*k,h:a.h+(t.h-a.h)*k};set(vbCur);if(k<1)vbAnim=requestAnimationFrame(step);};
+  vbAnim=requestAnimationFrame(step);}
 function renderMap(){
   const host=$('#mapSvg');if(!MAP){host.innerHTML='';$('#mapEmpty').classList.add('on');return;}
   $('#mapEmpty').classList.remove('on');
-  vb={x:-4,y:-4,w:MAP.w+8,h:MAP.h+8};
+  const full={x:-4,y:-4,w:MAP.w+8,h:MAP.h+8},cf=CARD&&MAP.feats.find(f=>f.k===CARD);let tgt=full;
+  if(cf){const [a,b,c,d]=cf.bb;let w=c-a,h=d-b;const pad=Math.max(w,h)*.3+10;w+=2*pad;h+=2*pad;const bx=$('#mapBox').getBoundingClientRect(),ar=bx.width&&bx.height?bx.width/bx.height:full.w/full.h;
+    if(w/h<ar)w=h*ar;else h=w/ar;tgt={x:(a+c)/2-w/2,y:(b+d)/2-h/2,w,h};}
+  vb=tgt;const zm=!!cf,zf=tgt.w/full.w;$('#mapFull').hidden=!zm;
   const D=mapTalData(),vp=varPalette();
   const surf=cssv('--surface-2'),line=cssv('--line'),ink=cssv('--ink');
   const tempo=mapMode==='tempo';
@@ -1177,17 +1189,23 @@ function renderMap(){
     const sel=MSEL.has(f.k),dim=MSEL.size&&!sel;
     return `<path d="${f.d}" data-i="${i}" fill="${fill}" fill-opacity="${has?(dim?op*.35:op):1}" stroke="${sel?ink:has?fill:line}" stroke-width="${sel?2.6:1}" vector-effect="non-scaling-stroke" fill-rule="evenodd" class="mp"/>`;
   }).join('');
-  const labels=MAP.feats.map(f=>{const fs=Math.max(3,Math.min(13,Math.sqrt(f.area)*.16));const sel=MSEL.has(f.k);if(!sel&&Math.sqrt(f.area)<fs*2.2)return '';
-    const z=sel?Math.max(fs,7):fs;
+  const labels=MAP.feats.map(f=>{let fs=Math.max(3,Math.min(13,Math.sqrt(f.area)*.16));const sel=MSEL.has(f.k);
+    if(zm){if(!sel&&Math.sqrt(f.area)/zf<45)return '';if(sel&&kmlTal.has(f.k))return '';fs=(sel?15:11)*zf;}else if(!sel&&Math.sqrt(f.area)<fs*2.2)return '';
+    const z=zm?fs:sel?Math.max(fs,7):fs;
     return `<text x="${f.cx.toFixed(1)}" y="${f.cy.toFixed(1)}" font-size="${z.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" fill="${ink}" paint-order="stroke" stroke="${cssv('--surface')}" stroke-width="${(z*.22).toFixed(2)}" stroke-opacity=".85" pointer-events="none" font-weight="${sel?700:600}">${esc(f.name)}</text>`;}).join('');
-  host.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  setVB(host,tgt);
   let kp='',ko='';
   if(kml){const bg=cssv('--surface');
     kp=VARGEO.map((q,i)=>{const d=q.c.map(poly=>poly.map(r=>'M'+r.map(c=>{const [x,y]=MAP.P(c);return x.toFixed(1)+' '+y.toFixed(1);}).join('L')+'Z').join('')).join('');
       const col=vp.get(q.v)||PAL[[...q.v].reduce((h,ch)=>h+ch.charCodeAt(0),0)%PAL.length];legend.set(q.v,col);const k=norm(q.tl),dim=MSEL.size&&!MSEL.has(k);
       return `<path d="${d}" data-p="${i}" fill="${col}" fill-opacity="${dim?.3:.9}" stroke="${bg}" stroke-width=".8" vector-effect="non-scaling-stroke" fill-rule="evenodd" class="kp"/>`;}).join('');
     ko=MAP.feats.filter(f=>kmlTal.has(f.k)).map(f=>`<path d="${f.d}" fill="none" stroke="${MSEL.has(f.k)?ink:line}" stroke-width="${MSEL.has(f.k)?2.6:1.2}" vector-effect="non-scaling-stroke" pointer-events="none"/>`).join('');}
-  host.innerHTML=`<g>${paths}</g><g>${kp}</g><g>${ko}</g><g>${labels}</g>`;
+  let kl='';
+  if(kml&&zm){const bg=cssv('--surface');
+    kl=VARGEO.filter(q=>norm(q.tl)===CARD).map(q=>{let best=null,bA=0;q.c.forEach(poly=>{const pts=poly[0].map(c=>MAP.P(c));let A=0,cx=0,cy=0;for(let i=0;i<pts.length-1;i++){const [a,b]=pts[i],[c,e]=pts[i+1],cr=a*e-c*b;A+=cr;cx+=(a+c)*cr;cy+=(b+e)*cr;}A/=2;if(Math.abs(A)>bA){bA=Math.abs(A);best=[cx/(6*A),cy/(6*A)];}});
+      if(!best)return '';const z=12*zf;
+      return `<text x="${best[0].toFixed(2)}" y="${best[1].toFixed(2)}" font-size="${z.toFixed(2)}" text-anchor="middle" fill="${ink}" paint-order="stroke" stroke="${bg}" stroke-width="${(z*.3).toFixed(2)}" pointer-events="none" font-weight="700"><tspan x="${best[0].toFixed(2)}" dy="-0.2em">${esc(q.v)}</tspan><tspan x="${best[0].toFixed(2)}" dy="1.2em" font-weight="500">${nf1.format(q.ha)} ha</tspan></text>`;}).join('');}
+  host.innerHTML=`<g>${paths}</g><g>${kp}</g><g>${ko}</g><g>${labels}</g><g>${kl}</g>`;
   if(tempo&&tDate)$('#tSum').innerHTML=`Em <b>${fmtDY(tDate)}</b>: <b>${nf0.format(tAp)} ha</b> plantados (${tAt?nf0.format(tAp/tAt*100):0}% da área), <b style="color:${READY}">${nf0.format(tReady)} ha</b> prontos para colher.`;
   // legenda
   let lg='';
@@ -1265,6 +1283,7 @@ function renderCard(k,D){
   const ct=$('#cardTbl');if(ct)ct.onclick=()=>$('#tbHarv').closest('.card').scrollIntoView({behavior:'smooth'});
 }
 (function(){
+  $('#mapFull').onclick=()=>{clearSel();renderMapa();};
   $('#kmlOn').onchange=e=>{KMLON=e.target.checked;store.set('plantio-kml',KMLON?'1':'0');renderMap();};
   $('#segMap').onclick=e=>{const b=e.target.closest('button');if(!b)return;mapMode=b.dataset.m;$$('#segMap button').forEach(x=>x.classList.toggle('on',x===b));if(mapMode!=='tempo')tStop();renderMap();};
   $('#segJan').onclick=e=>{const b=e.target.closest('button');if(!b)return;janMode=b.dataset.m;$$('#segJan button').forEach(x=>x.classList.toggle('on',x===b));renderMapa();};
@@ -1349,7 +1368,7 @@ function renderMapa(){
   ],T,{sort:'hIni',dir:'asc',id:'tl',click:tl=>{pickTal(norm(tl));$('#mapBox').scrollIntoView({behavior:'smooth',block:'center'});}});
 }
 function mapImage(){return new Promise(res=>{try{if(!MAP)return res(null);const s=$('#mapSvg').cloneNode(true);s.setAttribute('xmlns','http://www.w3.org/2000/svg');
-  const w=1600,h=Math.round(w*vb.h/vb.w);s.setAttribute('width',w);s.setAttribute('height',h);
+  const w=1600,h=Math.round(w*vb.h/vb.w);s.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);s.setAttribute('width',w);s.setAttribute('height',h);
   const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);res({src:c.toDataURL('image/jpeg',.92),w,h});};
   im.onerror=()=>res(null);im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(s));}catch(e){res(null);}});}
 
