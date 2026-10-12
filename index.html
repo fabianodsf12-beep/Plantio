@@ -534,6 +534,11 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
     </div>
     <div class="kpis" id="kpisL"></div>
     <div class="grid">
+      <div class="card s12">
+        <div class="hd"><h2>Área que cada semente planta</h2><p id="haTxt"></p></div>
+        <div class="tw"><table id="tbHaSem"></table></div>
+        <p class="help" style="margin:8px 2px 0">Área possível = peso de nota (kg) × 1.000.000 ÷ PMS (g) ÷ sementes por hectare. Os dados vêm das colunas PMS e SEMENTES/ha da aba Entrada de sementes; lote sem PMS ou sem população não entra na conta. Plantado vem da aba Diário.</p>
+      </div>
       <div class="card s8">
         <div class="hd"><h2>Germinação por lote</h2><p>Germinação final (7º dia) e vigor (IVG %). A linha tracejada é o mínimo exigido.</p></div>
         <div class="cv h380"><canvas id="chLot"></canvas><div class="empty" id="eLot">Nenhum lote com esses filtros.</div></div>
@@ -974,6 +979,20 @@ const SEMPAL=['#3D6B78','#C9A66B','#8C5E3C','#9FB8BF','#5E4B8B','#7A8F3A'];
 function varColor(v){const all=[...new Set([...(DB.lotes||[]),...(DB.entradas||[])].map(l=>l.v))].sort();return PAL[Math.max(0,all.indexOf(v))%PAL.length];}
 const lotFin=l=>!!(l&&l.med&&l.med[4]!=null);
 const lotG7=l=>lotFin(l)?(l.tot??l.med[4]):null;
+/* área possível: kg × 1e6 ÷ PMS (g/1000 sementes) ÷ sementes/ha */
+const entSha=e=>e.sha||(e.sm?e.sm*20000:null);
+const entHa=e=>{const sh=entSha(e);return e.kg&&e.pms&&sh?e.kg*1e6/e.pms/sh:null;};
+function semHa(ents){
+  const pl=new Map();M.rec.forEach(r=>{if(r.a>0)pl.set(norm(r.v),(pl.get(norm(r.v))||0)+r.a);});
+  const byV=new Map();let ok=false;
+  ents.forEach(e=>{const k=norm(e.v);if(!byV.has(k))byV.set(k,{v:e.v,kg:0,n:0,semPms:0,ha:0,mi:0,_pk:0,_sk:0,_kp:0,_ks:0});const x=byV.get(k);
+    x.kg+=e.kg||0;x.n++;const sh=entSha(e),ha=entHa(e);
+    if(e.pms&&e.kg){x._pk+=e.pms*e.kg;x._kp+=e.kg;x.mi+=e.kg*1e6/e.pms;}
+    if(sh&&e.kg){x._sk+=sh*e.kg;x._ks+=e.kg;}
+    if(ha!=null){x.ha+=ha;ok=true;}else x.semPms++;});
+  byV.forEach((x,k)=>{x.pms=x._kp?x._pk/x._kp:null;x.sha=x._ks?x._sk/x._ks:null;x.pl=pl.get(k)||0;x.sal=x.ha-x.pl;x.uso=x.ha?x.pl/x.ha*100:0;});
+  return {byV,ok};
+}
 function renderSementes(){
   const lots=(DB.lotes||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
   const ents=(DB.entradas||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
@@ -1020,14 +1039,33 @@ function renderSementes(){
   ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,title:{display:true,text:'t no dia'}},y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'t acumuladas'}}},
     plugins:{legend:{position:'bottom',labels:{font:{size:11}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${nf2.format(c.parsed.y)} t`},filter:i=>i.parsed.y>0}}}});
   empty('eEntDate',!ents.length);
+  // ---------- área possível por semente (PMS + sementes/ha) ----------
+  const HS=semHa(ents);
+  const hv=[...HS.byV.values()].sort((a,b)=>b.kg-a.kg);
+  const hT=hv.reduce((s,x)=>s+x.ha,0),pT=hv.filter(x=>x.ha).reduce((s,x)=>s+x.pl,0),falta=hv.reduce((s,x)=>s+x.semPms,0);
+  $('#haTxt').innerHTML=HS.ok?`As sementes com PMS lançado plantam <b>${nf0.format(hT)} ha</b>; já foram plantados ${nf0.format(pT)} ha dessas variedades.`+(falta?` <span style="color:var(--warn)">${falta} entrada(s) sem PMS ou população ainda.</span>`:''):'Preencha as colunas PMS e SEMENTES/ha na aba Entrada de sementes para calcular a área de cada semente.';
+  const hmax=Math.max(1,...hv.map(x=>Math.max(x.ha,x.pl)));
+  table('#tbHaSem',[
+    {k:'v',t:'Variedade',f:(v)=>`<span class="cdot" style="background:${varColor(v)}"></span>${esc(v)}`},
+    {k:'kg',t:'Recebido (t)',n:1,f:v=>nf1.format(v/1000)},
+    {k:'pms',t:'PMS médio (g)',n:1,f:v=>v?nf1.format(v):'<span class="help">falta</span>'},
+    {k:'sha',t:'Sementes/ha',n:1,f:v=>v?nf0.format(v):'<span class="help">falta</span>'},
+    {k:'mi',t:'Sementes (milhões)',n:1,f:v=>v?nf1.format(v/1e6):'—'},
+    {k:'ha',t:'Área possível (ha)',n:1,f:(v,r)=>r.semPms===r.n?'—':`<b>${nf0.format(v)}</b>`+(r.semPms?` <span class="help" title="${r.semPms} entrada(s) sem PMS ou população">+?</span>`:'')},
+    {k:'pl',t:'Plantado (ha)',n:1,f:v=>nf0.format(v)},
+    {k:'sal',t:'Saldo (ha)',n:1,f:(v,r)=>r.semPms===r.n?'—':`<b style="color:${v<0?'var(--bad)':'var(--brand-deep)'}">${v>0?'+':''}${nf0.format(v)}</b>`},
+    {k:'uso',t:'Uso da semente',f:(v,r)=>r.semPms===r.n?'—':`<span class="bar" title="${nf0.format(r.pl)} de ${nf0.format(r.ha)} ha"><i style="width:${Math.min(v,100)}%;background:${v>100?'var(--bad)':varColor(r.v)}"></i></span>${nf0.format(v)}%`}
+  ],hv,{sort:'kg',dir:'desc',id:'v',click:v=>{L.vr=new Set([v]);msLVar.paint();renderSementes();}});
   $('#entCount').textContent=`${ents.length} entradas, ${nf1.format(kgT/1000)} t. A germinação vem do teste do mesmo lote.`;
   table('#tbEnt',[
     {k:'d',t:'Chegada',f:fmtDY},{k:'v',t:'Variedade'},{k:'lote',t:'Lote'},{k:'sem',t:'Sementeira'},
     {k:'kg',t:'Peso de nota (kg)',n:1,f:v=>v!=null?nf0.format(v):'—'},{k:'q',t:'Embalagens',n:1,f:v=>v??'—'},
     {k:'kgq',t:'kg/embalagem',n:1,f:v=>v?nf0.format(v):'—'},
+    {k:'pms',t:'PMS (g)',n:1,f:v=>v?nf1.format(v):'—'},{k:'shaE',t:'Sementes/ha',n:1,f:v=>v?nf0.format(v):'—'},
+    {k:'haE',t:'Área possível (ha)',n:1,f:v=>v?nf1.format(v):'—'},
     {k:'g7',t:'Germinação 7º dia (%)',n:1,f:v=>v??'—'},
     {k:'st',t:'Situação',f:v=>`<span class="pill ${v==='Aprovado'?'ok':v==='Sem teste'||v==='Em teste'?'mid':'bad'}">${v}</span>`}
-  ],ents.map((e,i)=>{const g=gByLote.get(norm(e.lote));const g7v=g?g7(g):null;return{...e,i,kgq:e.kg&&e.q?e.kg/e.q:null,g7:g7v,st:!g?'Sem teste':!fin(g)?'Em teste':g7v>=L.min?'Aprovado':'Abaixo do mínimo'};}),{sort:'d',dir:'asc'});
+  ],ents.map((e,i)=>{const g=gByLote.get(norm(e.lote));const g7v=g?g7(g):null;return{...e,i,kgq:e.kg&&e.q?e.kg/e.q:null,shaE:entSha(e),haE:entHa(e),g7:g7v,st:!g?'Sem teste':!fin(g)?'Em teste':g7v>=L.min?'Aprovado':'Abaixo do mínimo'};}),{sort:'d',dir:'asc'});
 
   $('#lotCount').textContent=`${lots.length} testes (${done.length} finalizados, ${run.length} em andamento). Médias e aprovação usam só os testes com a contagem do 7º dia; os em andamento aparecem em cinza no gráfico.`;
   table('#tbLot',[
@@ -1322,7 +1360,7 @@ function renderBase(){
     talhoes:{n:'Talhões',src:'aba DADOS',rows:[...M.tal.values()],cols:[['tl','Talhão'],['f','Fazenda'],['a','Área total (ha)']],keys:{tl:'PK'}},
     cultivares:{n:'Cultivares',src:'aba DADOS (lista suspensa)',rows:DB.cultivares||[],cols:[['v','Cultivar'],['ciclo','Ciclo (dias)']],keys:{v:'PK'}},
     plano:{n:'Planejamento por talhão',src:DB._planSrc||'aba de planejamento',rows:DB.plano||[],cols:[['tl','Talhão'],['f','Fazenda'],['c','Cultura'],['v','Cultivar'],['ap','Área plantada'],['sm','Sem./m'],['sha','Sem./ha'],['ciclo','Ciclo'],['ini','Início',fmtDY],['fim','Final',fmtDY],['em','Emergência',fmtDY]],keys:{tl:'FK',v:'FK'}},
-    entradas:{n:'Entrada de sementes',src:'aba Entrada de sementes',rows:DB.entradas||[],cols:[['d','Chegada',fmtDY],['v','Variedade'],['lote','Lote'],['sem','Sementeira'],['kg','Peso de nota (kg)'],['q','Quantidade'],['c','Cultura']],keys:{lote:'FK',v:'FK'}},
+    entradas:{n:'Entrada de sementes',src:'aba Entrada de sementes',rows:DB.entradas||[],cols:[['d','Chegada',fmtDY],['v','Variedade'],['lote','Lote'],['sem','Sementeira'],['kg','Peso de nota (kg)'],['pms','PMS (g)'],['sha','Sementes/ha'],['q','Quantidade'],['c','Cultura']],keys:{lote:'FK',v:'FK'}},
     lotes:{n:'Lotes de sementes',src:'aba Teste de Germinação',rows:DB.lotes||[],cols:[['lote','Lote'],['v','Variedade'],['sem','Sementeira'],['d','Data',fmtDY],['tot','Germ. 7º dia'],['ivgp','IVG %']],keys:{lote:'PK',v:'FK'}}
   };
   const lists=[['Culturas',DB.culturas],['Fazendas',DB.fazendas],['Turnos',DB.turnos]].filter(x=>x[1]&&x[1].length);
@@ -1451,7 +1489,10 @@ function renderNow(){
     cs.push(nowCard('Aguardando o 7º dia',run.length,'testes',prox?`próximo resultado ${fmtD(prox)} (${emDias(dayDiff(H,prox))})`:'nenhum teste em andamento',{tip:'Testes ainda sem a contagem do 7º dia. Eles não entram na média nem na aprovação.'}));
     cs.push(nowCard('Abaixo do mínimo',bad.length,'lotes',bad.length?esc(bad.slice(0,2).map(l=>l.v+' '+l.lote).join(', '))+(bad.length>2?'…':''):`todos ≥ ${L.min}% no 7º dia`,{cl:bad.length?'bad':'ok',go:bad.length?goTab('#chLot'):null,lab:'ver gráfico',tip:'Lotes com teste finalizado e germinação no 7º dia abaixo do mínimo escolhido.'}));
     cs.push(nowCard('Lotes sem teste',semT.length,'lotes',semT.length?esc(semT.slice(0,2).map(e=>e.v+' '+e.lote).join(', '))+(semT.length>2?'…':''):'todos os lotes recebidos têm teste',{cl:semT.length?'warn':'ok',go:semT.length?goTab('#tbEnt'):null,lab:'ver entradas',tip:'Lotes da aba Entrada de sementes que ainda não aparecem no teste de germinação.'}));
-    if(lastF)cs.push(nowCard('Último resultado',nf1.format(lotG7(lastF)),'%',`${esc(lastF.v)}, lote ${esc(lastF.lote)}, teste de ${fmtD(lastF.d)}`,{cl:lotG7(lastF)>=L.min?'ok':'bad',tip:'Germinação no 7º dia do teste finalizado mais recente.'}));
+    const HS=semHa(DB.entradas||[]);
+    if(HS.ok){const hv=[...HS.byV.values()],ha=hv.reduce((s,x)=>s+x.ha,0),pl=hv.filter(x=>x.ha).reduce((s,x)=>s+x.pl,0);
+      cs.push(nowCard('Sementes plantam',nf0.format(ha),'ha',`${nf0.format(pl)} ha já plantados, saldo de ${nf0.format(ha-pl)} ha`,{go:goTab('#tbHaSem'),lab:'ver por variedade',cl:ha-pl<0?'bad':'ok',tip:'Área possível somando os lotes com PMS e sementes/ha lançados.'}));}
+    else if(lastF)cs.push(nowCard('Último resultado',nf1.format(lotG7(lastF)),'%',`${esc(lastF.v)}, lote ${esc(lastF.lote)}, teste de ${fmtD(lastF.d)}`,{cl:lotG7(lastF)>=L.min?'ok':'bad',tip:'Germinação no 7º dia do teste finalizado mais recente.'}));
   }
   el.hidden=!cs.length;if(!cs.length)return;
   el.innerHTML=`<div class="nowh">${tit}<span class="help">${fmtDY(H)}</span></div><div class="nowg">${cs.join('')}</div>`;
@@ -1747,8 +1788,8 @@ function parseWorkbook(wb,fname){
     db._planSrc='aba '+s;break;}
   // Entrada de sementes
   const sE=find(/^ENTRADA/);const rE=aoa(sE);const hE=hdrIdx(rE,['VARIEDADE','LOTE']);
-  if(hE>=0){const h=rE[hE];const c={d:col(h,'DATA DA CHEGADA','DATA'),v:col(h,'VARIEDADE'),l:col(h,'LOTE'),s:col(h,'SEMENTEIRA'),kg:col(h,'PESO'),q:col(h,'QUANTIDADE'),c:col(h,'CULTURA')};const g=i=>i>=0?i:9999;
-    rE.slice(hE+1).forEach(r=>{const v=str(r[g(c.v)]),lote=str(r[g(c.l)]);if(!v||!lote)return;db.entradas.push({d:ds(r[g(c.d)]),v,lote,sem:str(r[g(c.s)]),kg:num(r[g(c.kg)]),q:num(r[g(c.q)]),c:str(r[g(c.c)])});});}
+  if(hE>=0){const h=rE[hE];const c={d:col(h,'DATA DA CHEGADA','DATA'),v:col(h,'VARIEDADE'),l:col(h,'LOTE'),s:col(h,'SEMENTEIRA'),kg:col(h,'PESO'),q:col(h,'QUANTIDADE'),c:col(h,'CULTURA'),pms:col(h,'PMS'),sm:col(h,'SEMENTES/M','SEMENTE/M'),sha:col(h,'SEMENTES/HA','SEMENTE/HA','POPULACAO')};const g=i=>i>=0?i:9999;
+    rE.slice(hE+1).forEach(r=>{const v=str(r[g(c.v)]),lote=str(r[g(c.l)]);if(!v||!lote)return;db.entradas.push({d:ds(r[g(c.d)]),v,lote,sem:str(r[g(c.s)]),kg:num(r[g(c.kg)]),q:num(r[g(c.q)]),c:str(r[g(c.c)]),pms:num(r[g(c.pms)]),sm:num(r[g(c.sm)]),sha:num(r[g(c.sha)])});});}
   // Teste de germinação
   const sG=find(/^TESTE DE GERM/);const rG=aoa(sG);const hG=hdrIdx(rG,['VARIEDADE','LOTE']);
   if(hG>=0){for(const r of rG.slice(hG+1)){const v=str(r[0]),lote=str(r[1]);if(!v||!lote)continue;
