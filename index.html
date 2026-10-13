@@ -254,6 +254,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 /* Mapa e colheita */
 .mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:14px;align-items:start}
 .mapside .leg{flex-direction:column;gap:6px;margin-top:0}
+.leg[hidden]{display:none}
 .harvhd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
 .harvhd .tag button{background:none;border:0;cursor:pointer;font-size:15px;line-height:1;color:var(--muted);padding:0 3px}
 .tline{display:grid;grid-template-columns:auto auto 1fr auto auto auto;gap:10px;align-items:center;margin-top:10px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2)}
@@ -1243,6 +1244,7 @@ function renderMap(){
   else if(mapMode==='jan')lg=['milho','gergelim','fora','sem'].filter(j=>legend.has(JANLAB[j])).map(j=>`<span><i style="background:${JANCOL[j]}"></i>${JANLAB[j]}</span>`).join('');
   else lg=[...legend.entries()].sort((a,b)=>(a[0]==='Pronto para colher')-(b[0]==='Pronto para colher')).map(([v,c])=>`<span><i style="background:${c}"></i>${esc(v)}</span>`).join('');
   $('#mapLeg').innerHTML=lg+`<span><i style="background:${surf};border:1px solid ${line}"></i>Sem plantio${tempo?' nessa data':''}</span>`+(mapMode!=='prog'?`<span class="help">Cor mais forte = maior % do talhão</span>`:'');
+  $('#mapLeg').hidden=!CARD&&(mapMode==='var'||mapMode==='jan');
   if(CARD)renderCard(CARD,D);else renderSum(D,vp);
   const semGeo=[...M.tal.values()].filter(t=>!MAP.feats.some(f=>f.k===norm(t.tl))).map(t=>t.tl);
   const semCad=MAP.feats.filter(f=>!M.tal.has(f.k)).map(f=>f.name);
@@ -1281,7 +1283,7 @@ function renderSum(D,vp){
     `<table><thead><tr><th>${byJan?'Janela':'Variedade'}</th><th class="n">ha</th><th class="n">Talhões</th></tr></thead><tbody>`+
     [...groups.entries()].sort((a,b)=>b[1].a-a[1].a).map(([g,x])=>`<tr><td><span class="cdot" style="background:${col(g)}"></span>${esc(g)}</td><td class="n">${nf0.format(x.a)}</td><td class="n">${x.t.size}</td></tr>`).join('')+
     `</tbody><tfoot><tr><th>Plantado</th><th class="n">${nf0.format(ap)}</th><th class="n">${D.size}</th></tr><tr><th>Área total</th><th class="n">${nf0.format(at)}</th><th class="n">${M.tal.size}</th></tr></tfoot></table>`+
-    `<p class="help" style="margin:10px 0 0">Clique num talhão para ver a ficha completa.</p>`;
+    `<p class="help" style="margin:10px 0 0">${mapMode==='var'||mapMode==='jan'?'Cor mais forte = maior % do talhão plantado; talhão em branco = sem plantio. ':''}Clique num talhão para ver a ficha completa.</p>`;
   const mc=$('#mselClr');if(mc)mc.onclick=()=>{clearSel();renderMapa();};
 }
 let KMLON=true;try{KMLON=store.get('plantio-kml')!=='0';}catch(e){}
