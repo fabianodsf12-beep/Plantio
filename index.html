@@ -631,6 +631,10 @@ const PAL=['#019A62','#E0A100','#1C8FD0','#D4454C','#7D5BA6','#8A6A2E','#2E9E5B'
 const isCover=c=>{const n=norm(c);return n.startsWith('PASTO')||n.startsWith('MIX')||n.includes('MILHETO')||n.includes('BRACH')||n.includes('CROTAL');};
 
 /* ================= modelo de dados ================= */
+// Talhões que são pastagem (pecuária) ficam fora da área de soja. Na aba DADOS, uma coluna "Uso" com PASTAGEM
+// ou SOJA manda; sem essa coluna, vale esta lista.
+const PASTO_PADRAO=['G-03','G-05'],PASTO_COR='#5E8C3A';
+const isPasto=t=>{const u=norm(t.uso||'');if(u)return u.startsWith('PAST')||u.startsWith('PECU');return PASTO_PADRAO.some(x=>norm(x)===norm(t.tl));};
 let DB, M; // M = modelo derivado
 function buildModel(db){
   const tal=new Map();
@@ -641,11 +645,13 @@ function buildModel(db){
   const tf=new Map(),tr=new Map();
   (db.plano||[]).forEach(p=>{const f=toFaz(p.f);if(p.tl&&f&&!tf.has(norm(p.tl)))tf.set(norm(p.tl),f);});
   (db.plantio||[]).forEach(p=>{if(p.tl&&p.f&&!tr.has(norm(p.tl)))tr.set(norm(p.tl),p.f);});
+  const pasto=new Map();
   (db.talhoes||[]).forEach(t=>{
-    const k=norm(t.tl); if(tal.has(k))return;
+    const k=norm(t.tl); if(tal.has(k)||pasto.has(k))return;
+    if(isPasto(t)){pasto.set(k,{tl:t.tl,f:toFaz(t.f)||tf.get(k)||toFaz(t.b)||'—',a:t.a||0});return;}
     tal.set(k,{tl:t.tl,b:t.b||t.f||'—',f:toFaz(t.f)||tf.get(k)||toFaz(t.b)||tr.get(k)||'—',a:t.a||0});
   });
-  (db.plantio||[]).forEach(p=>{const k=norm(p.tl);if(p.tl&&!tal.has(k))tal.set(k,{tl:p.tl,b:'—',f:tf.get(k)||p.f||'—',a:0,semCad:true});});
+  (db.plantio||[]).forEach(p=>{const k=norm(p.tl);if(p.tl&&!tal.has(k)&&!pasto.has(k))tal.set(k,{tl:p.tl,b:'—',f:tf.get(k)||p.f||'—',a:0,semCad:true});});
   const rain=new Map();(db.chuva||[]).forEach(r=>rain.set(r.d,(rain.get(r.d)||0)+(+r.mm||0)));
   const rec=(db.plantio||[]).filter(p=>p.d).map((p,i)=>{
     const t=tal.get(norm(p.tl));
@@ -657,7 +663,7 @@ function buildModel(db){
   const ord=['MILHO','SOJA','FEIJ','PASTO','MIX'];
   culturas.sort((a,b)=>{const ia=ord.findIndex(o=>norm(a).startsWith(o)),ib=ord.findIndex(o=>norm(b).startsWith(o));return (ia<0?9:ia)-(ib<0?9:ib)||a.localeCompare(b);});
   const turnos=[...new Set(rec.map(r=>r.t).filter(Boolean))].sort();
-  return {tal,rain,rec,plano,culturas,turnos,dMin:dates[0],dMax:dates[dates.length-1],
+  return {tal,pasto,rain,rec,plano,culturas,turnos,dMin:dates[0],dMax:dates[dates.length-1],
     fazendas:[...new Set([...(db.fazendas||[]),...[...tal.values()].map(t=>t.f)])].filter(f=>f&&f!=='—').sort((a,b)=>a.localeCompare(b,'pt'))};
 }
 
@@ -1215,6 +1221,7 @@ function renderMap(){
       else {fill=cssv('--brand');op=.15+.8*pct;}
     }
     if(kmlTal.has(f.k)){const rest=kmlRest(f.k,o);if(rest.size){const v=top1(rest);fill=vp.get(v)||PAL[0];legend.set(v,fill);op=.35+.6*pct;}else{fill=surf;op=1;}has=true;}
+    if(M.pasto.has(f.k)){legend.set('Pastagem (pecuária)',PASTO_COR);return `<path d="${f.d}" data-i="${i}" fill="url(#pastoPat)" fill-opacity="${MSEL.size?.4:1}" stroke="${PASTO_COR}" stroke-width="1" vector-effect="non-scaling-stroke" fill-rule="evenodd" class="mp"/>`;}
     const sel=MSEL.has(f.k),dim=MSEL.size&&!sel;
     return `<path d="${f.d}" data-i="${i}" fill="${fill}" fill-opacity="${has?(dim?op*.35:op):1}" stroke="${sel?ink:has?fill:line}" stroke-width="${sel?2.6:1}" vector-effect="non-scaling-stroke" fill-rule="evenodd" class="mp"/>`;
   }).join('');
@@ -1236,7 +1243,7 @@ function renderMap(){
       `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" font-size="${z.toFixed(2)}" text-anchor="middle" dominant-baseline="middle" fill="${ink}" paint-order="stroke" stroke="${bg}" stroke-width="${(z*.3).toFixed(2)}" pointer-events="none" font-weight="700"><tspan x="${x.toFixed(2)}" dy="-0.55em">${esc(L.q.v)}</tspan><tspan x="${x.toFixed(2)}" dy="1.15em" font-weight="500">${nf1.format(L.q.ha)} ha</tspan></text>`;}).join('');}
   const hit=(a,b)=>a[0]<b[2]&&a[2]>b[0]&&a[1]<b[3]&&a[3]>b[1],tl=[];
   labels.forEach(l=>{if(placed.some(b=>hit(b,l.b))||tl.some(b=>hit(b,l.b)))return;tl.push(l.b);l.ok=1;});
-  host.innerHTML=`<g>${paths}</g><g>${kp}</g><g>${ko}</g><g>${labels.filter(l=>l.ok).map(l=>l.s).join('')}</g><g>${kl}</g>`;
+  host.innerHTML=`<defs><pattern id="pastoPat" patternUnits="userSpaceOnUse" width="${(6*zf).toFixed(3)}" height="${(6*zf).toFixed(3)}" patternTransform="rotate(45)"><rect width="100%" height="100%" fill="${PASTO_COR}" fill-opacity=".28"/><line x1="0" y1="0" x2="0" y2="${(6*zf).toFixed(3)}" stroke="${PASTO_COR}" stroke-width="${(2.2*zf).toFixed(3)}"/></pattern></defs><g>${paths}</g><g>${kp}</g><g>${ko}</g><g>${labels.filter(l=>l.ok).map(l=>l.s).join('')}</g><g>${kl}</g>`;
   if(tempo&&tDate)$('#tSum').innerHTML=`Em <b>${fmtDY(tDate)}</b>: <b>${nf0.format(tAp)} ha</b> plantados (${tAt?nf0.format(tAp/tAt*100):0}% da área), <b style="color:${READY}">${nf0.format(tReady)} ha</b> prontos para colher.`;
   // legenda
   let lg='';
@@ -1247,7 +1254,7 @@ function renderMap(){
   $('#mapLeg').hidden=!CARD&&(mapMode==='var'||mapMode==='jan');
   if(CARD)renderCard(CARD,D);else renderSum(D,vp);
   const semGeo=[...M.tal.values()].filter(t=>!MAP.feats.some(f=>f.k===norm(t.tl))).map(t=>t.tl);
-  const semCad=MAP.feats.filter(f=>!M.tal.has(f.k)).map(f=>f.name);
+  const semCad=MAP.feats.filter(f=>!M.tal.has(f.k)&&!M.pasto.has(f.k)).map(f=>f.name);
   $('#mapNote').textContent=`Limites: ${geoSrc}, ${MAP.feats.length} polígonos.`+(VARGEO.length?` Áreas por variedade (KML): ${[...new Set(VARGEO.map(q=>q.tl))].join(', ')}.`:'')+(semGeo.length?` Sem polígono no mapa: ${semGeo.join(', ')}.`:'')+(semCad.length?` No mapa, mas fora do cadastro de talhões: ${semCad.join(', ')}.`:'');
   // interação
   const tip=$('#mapTip');
@@ -1262,6 +1269,7 @@ function renderMap(){
     p.onmouseleave=()=>{tip.hidden=true;};p.onclick=()=>{tip.hidden=true;pickTal(norm(q.tl));};});
   host.querySelectorAll('.mp').forEach(p=>{
     p.onmousemove=e=>{const f=MAP.feats[+p.dataset.i],t=M.tal.get(f.k),o=D.get(f.k);const at=t&&t.a?t.a:(+f.props.area_mapa||0);
+      const pz=M.pasto.get(f.k);if(pz){tip.innerHTML=`<b>${esc(f.name)}</b> <span class="help">${esc(pz.f)}</span><br><b style="color:${PASTO_COR}">Pastagem (pecuária)</b><br>${nf1.format(pz.a||+f.props.area_mapa||0)} ha, fora da área de soja`;tipAt(e);return;}
       let extra='';if(tempo&&tDate&&o){const s=tStatus(o,tDate);extra=`<br><b>Em ${fmtD(tDate)}:</b> ${nf1.format(s.ap)} ha plantados`+(s.ready?`, <b style="color:${READY}">${nf1.format(s.ready)} ha prontos</b>`:'');}
       tip.innerHTML=`<b>${esc(f.name)}</b> <span class="help">${esc(t?t.f:(f.props.bloco||''))}</span><br>`+
         (o?`${esc([...o.vs.keys()].join(', '))}<br>Plantado: <b>${nf1.format(o.ap)} ha</b> de ${at?nf1.format(at):'—'} ha<br><span class="help">Colheita: ${o.hIni?fmtDY(o.hIni)+(o.hFim!==o.hIni?' a '+fmtDY(o.hFim):''):'sem ciclo'}</span>${extra}`:`Área total: ${at?nf1.format(at)+' ha':'—'}<br><span class="help">Sem plantio</span>`)+
@@ -1270,7 +1278,7 @@ function renderMap(){
       if(x+tip.offsetWidth>r.width-6)x=e.clientX-r.left-tip.offsetWidth-14;if(y+tip.offsetHeight>r.height-6)y=Math.max(6,e.clientY-r.top-tip.offsetHeight-14);
       tip.style.left=x+'px';tip.style.top=y+'px';};
     p.onmouseleave=()=>{tip.hidden=true;};
-    p.onclick=()=>{tip.hidden=true;pickTal(MAP.feats[+p.dataset.i].k);};
+    p.onclick=()=>{const k=MAP.feats[+p.dataset.i].k;if(M.pasto.has(k))return;tip.hidden=true;pickTal(k);};
   });
 }
 function renderSum(D,vp){
@@ -1282,8 +1290,8 @@ function renderSum(D,vp){
   $('#mapSum').innerHTML=(MSEL.size?`<div class="selchip"><span><b>${esc(selLab)}</b><br>${MSEL.size} talhão(ões) destacado(s)</span><button class="lnk" id="mselClr">Limpar</button></div>`:'')+
     `<table><thead><tr><th>${byJan?'Janela':'Variedade'}</th><th class="n">ha</th><th class="n">Talhões</th></tr></thead><tbody>`+
     [...groups.entries()].sort((a,b)=>b[1].a-a[1].a).map(([g,x])=>`<tr><td><span class="cdot" style="background:${col(g)}"></span>${esc(g)}</td><td class="n">${nf0.format(x.a)}</td><td class="n">${x.t.size}</td></tr>`).join('')+
-    `</tbody><tfoot><tr><th>Plantado</th><th class="n">${nf0.format(ap)}</th><th class="n">${D.size}</th></tr><tr><th>Área total</th><th class="n">${nf0.format(at)}</th><th class="n">${M.tal.size}</th></tr></tfoot></table>`+
-    `<p class="help" style="margin:10px 0 0">${mapMode==='var'||mapMode==='jan'?'Cor mais forte = maior % do talhão plantado; talhão em branco = sem plantio. ':''}Clique num talhão para ver a ficha completa.</p>`;
+    `</tbody><tfoot><tr><th>Plantado</th><th class="n">${nf0.format(ap)}</th><th class="n">${D.size}</th></tr><tr><th>Área de soja</th><th class="n">${nf0.format(at)}</th><th class="n">${M.tal.size}</th></tr>${M.pasto.size?`<tr><td><span class="cdot" style="background:${PASTO_COR}"></span>Pastagem</td><td class="n">${nf0.format([...M.pasto.values()].reduce((s,t)=>s+t.a,0))}</td><td class="n">${M.pasto.size}</td></tr>`:''}</tfoot></table>`+
+    `<p class="help" style="margin:10px 0 0">${mapMode==='var'||mapMode==='jan'?'Cor mais forte = maior % do talhão plantado; talhão em branco = sem plantio. ':''}${M.pasto.size?'Pastagem (listrado) fica fora da área de soja. ':''}Clique num talhão para ver a ficha completa.</p>`;
   const mc=$('#mselClr');if(mc)mc.onclick=()=>{clearSel();renderMapa();};
 }
 let KMLON=true;try{KMLON=store.get('plantio-kml')!=='0';}catch(e){}
@@ -1853,10 +1861,10 @@ function parseWorkbook(wb,fname){
     const iV=h.findIndex(c=>c.startsWith('VARIEDADE ')||c==='VARIEDADE'||c.startsWith('CULTIVAR')||c.startsWith('HIBRIDO'));
     const iVL=h.findIndex(c=>c.startsWith('VARIEDADES'));
     const iC=h.findIndex(c=>c==='CULTURA'),iTu=h.findIndex(c=>c.startsWith('TURNO')),iCi=h.findIndex(c=>c==='CICLO');
-    const iA=iT>=0?(h.slice(iT+1).findIndex(c=>c.startsWith('AREA'))+iT+1):-1;
+    const iA=iT>=0?(h.slice(iT+1).findIndex(c=>c.startsWith('AREA'))+iT+1):-1,iU=h.findIndex(c=>c==='USO'||c.startsWith('USO DA')||c==='FINALIDADE');
     const fz=new Set();
     rX.slice(1).forEach(r=>{
-      if(iT>=0&&str(r[iT])){const f=iFT>=0?str(r[iFT]):null;if(f)fz.add(f);db.talhoes.push({b:iB>=0?str(r[iB]):(f||'—'),f,tl:str(r[iT]),a:iA>iT?num(r[iA])||0:0});}
+      if(iT>=0&&str(r[iT])){const f=iFT>=0?str(r[iFT]):null;if(f)fz.add(f);db.talhoes.push({b:iB>=0?str(r[iB]):(f||'—'),f,tl:str(r[iT]),a:iA>iT?num(r[iA])||0:0,uso:iU>=0?str(r[iU]):null});}
       if(iV>=0&&str(r[iV]))db.cultivares.push({v:str(r[iV]),ciclo:iCi>=0?num(r[iCi]):null});
       if(iC>=0&&str(r[iC]))db.culturas.push(str(r[iC]));
       if(iF>=0&&str(r[iF]))fz.add(str(r[iF]));
