@@ -286,6 +286,8 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px;z-index:2}
 .mapctl button{width:32px;height:32px;border:1px solid var(--line);background:var(--surface);border-radius:6px;cursor:pointer;font-size:17px;font-weight:700;line-height:1;color:var(--ink)}
 .mapctl button:hover{border-color:var(--brand)}
+#btnMapPdf{margin-left:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:13px;padding:6px 12px}
+#btnMapPdf:hover{border-color:var(--brand);color:var(--brand)}
 .mapfull{position:absolute;top:10px;left:10px;z-index:2;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font:600 13px var(--sans);cursor:pointer;box-shadow:0 2px 8px rgba(0,35,43,.12)}
 .mapfull[hidden]{display:none}
 .maptip{position:absolute;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,35,43,.18);padding:8px 11px;font-size:13px;line-height:1.5;pointer-events:none;max-width:280px}
@@ -485,7 +487,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
     <div class="grid">
       <div class="card s12">
         <div class="hd"><h2>Mapa dos talhões</h2><p>Safra inteira. Passe o mouse para ver os detalhes; clique num talhão para abrir a ficha. Em Linha do tempo, arraste a data para ver o avanço do plantio e da colheita.</p>
-          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button></div><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label></div></div>
+          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button></div><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 só com o mapa por variedade e a tabela de áreas">Baixar mapa (PDF)</button></div></div>
         <div class="mapwrap">
         <div class="mapbox" id="mapBox">
           <svg id="mapSvg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa dos talhões colorido por variedade plantada"></svg>
@@ -1414,7 +1416,7 @@ function renderMapa(){
     {k:'folga',t:'Folga até o fim da janela',n:1,f:v=>v==null?'—':`${v} dias`}
   ],T,{sort:'hIni',dir:'asc',id:'tl',click:tl=>{pickTal(norm(tl));$('#mapBox').scrollIntoView({behavior:'smooth',block:'center'});}});
 }
-function mapImage(){return new Promise(res=>{try{if(!MAP)return res(null);const s=$('#mapSvg').cloneNode(true);s.setAttribute('xmlns','http://www.w3.org/2000/svg');
+function mapImage(){return new Promise(res=>{try{if(!MAP)return res(null);const s=$('#mapSvg').cloneNode(true);s.setAttribute('xmlns','http://www.w3.org/2000/svg');s.setAttribute('font-family','Arial, Helvetica, sans-serif');
   const w=3200,h=Math.round(w*vb.h/vb.w);s.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);s.setAttribute('width',w);s.setAttribute('height',h);
   const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);res({src:c.toDataURL('image/jpeg',.92),w,h});};
   im.onerror=()=>res(null);im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(s));}catch(e){res(null);}});}
@@ -1636,6 +1638,7 @@ $('#gMin').oninput=e=>{L.min=+e.target.value;$('#gMinOut').textContent=L.min+'%'
 $$('.tab').forEach(t=>t.onclick=()=>{view=t.dataset.view;$$('.tab').forEach(x=>x.setAttribute('aria-selected',x===t?'true':'false'));$$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+view));
   $('#filterBar').style.display=view==='sementes'||view==='base'||view==='mapa'?'none':'';render();});
 $('#btnPrint').onclick=()=>exportPdf();
+$('#btnMapPdf').onclick=()=>exportMapPdf();
 function setFold(on){$('#filterBar').classList.toggle('folded',on);$('#btnFold').textContent=on?'Mostrar filtros':'Ocultar filtros';$('#btnFold').setAttribute('aria-expanded',on?'false':'true');store.set('plantio-fold',on?'1':'0');}
 $('#btnFold').onclick=()=>setFold(!$('#filterBar').classList.contains('folded'));
 setFold(store.get('plantio-fold')==='1');
@@ -1652,6 +1655,61 @@ $('#btnCsv').onclick=()=>{
 
 /* ================= entrega de arquivos ================= */
 let dlNs;
+// PDF de uma página: só o mapa por variedade e a tabela de áreas
+async function exportMapPdf(){
+  if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
+  if(!MAP){toast('O mapa ainda não carregou.');return;}
+  const ov=$('#busyOv');ov.hidden=false;
+  const prevTheme=document.documentElement.dataset.theme,prevMode=mapMode,prevK=KMLON;
+  try{
+    document.documentElement.dataset.theme='light';mapMode='var';KMLON=true;vbCur=null;renderMap();await sleep(60);
+    const im=await mapImage();if(!im)throw new Error('não consegui desenhar o mapa');
+    const D=mapTalData(),vp=varPalette(),groups=new Map();let ap=0,at=0;M.tal.forEach(t=>at+=t.a||0);
+    const Ds=CARD?new Map([...D].filter(([k])=>k===CARD)):D;
+    Ds.forEach((o,k)=>{ap+=o.ap;o.vs.forEach((a,v)=>{if(!groups.has(v))groups.set(v,{a:0,t:new Set()});const g=groups.get(v);g.a+=a;g.t.add(k);});});
+    const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),W=297,H=210,MG=10;
+    const clean=s=>String(s??'').replace(/[–—]/g,'-').replace(/[^\x20-\xFF]/g,'');
+    const INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225],BR=[1,154,98];
+    const hex=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');return m?[0,2,4].map(i=>parseInt(m[1].substr(i,2),16)):[150,150,150];};
+    try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.addImage(lc.toDataURL('image/png'),'PNG',MG,7,30,12.5);}catch(e){}
+    const tName=CARD?(M.tal.get(CARD)||{}).tl||CARD:'';
+    doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text(clean('Mapa de plantio por variedade'+(tName?' - talhão '+tName:'')),MG+35,12.5);
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...MUT);doc.text(clean((DB.safra||'Safra')+' · Fazenda Reata e unidades'),MG+35,17.5);
+    doc.setFontSize(8.5);doc.text(clean('Gerado em '+fmtDY(new Date().toISOString().slice(0,10))),W-MG,12.5,{align:'right'});
+    if(M.dMax)doc.text(clean('Plantio lançado até '+fmtDY(M.dMax)),W-MG,17,{align:'right'});
+    doc.setDrawColor(...BR);doc.setLineWidth(.6);doc.line(MG,22,W-MG,22);
+    // mapa
+    const mx=MG,my=26,mw=205,mh=H-my-12;doc.setDrawColor(...LINE);doc.setLineWidth(.25);doc.roundedRect(mx,my,mw,mh,1.5,1.5,'S');
+    const sc=Math.min((mw-4)/im.w,(mh-4)/im.h),iw=im.w*sc,ih=im.h*sc;doc.addImage(im.src,'JPEG',mx+(mw-iw)/2,my+(mh-ih)/2,iw,ih,undefined,'FAST');
+    // tabela
+    const tx=mx+mw+7,tw=W-MG-tx;let y=my+3;
+    doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.text('Área por variedade',tx,y);y+=6;
+    doc.setFontSize(7.5);doc.setTextColor(...MUT);doc.text('VARIEDADE',tx,y);doc.text('HA',tx+tw-15,y,{align:'right'});doc.text('TALHÕES',tx+tw,y,{align:'right'});y+=2;
+    doc.setDrawColor(...LINE);doc.line(tx,y,tx+tw,y);y+=4.6;
+    const row=(lab,ha,n,col,bold)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(9);doc.setTextColor(...INK);
+      if(col){doc.setFillColor(...hex(col));doc.rect(tx,y-2.6,2.8,2.8,'F');}
+      doc.text(clean(lab),tx+(col?4.5:0),y);doc.text(ha,tx+tw-15,y,{align:'right'});doc.text(String(n),tx+tw,y,{align:'right'});y+=2;doc.line(tx,y,tx+tw,y);y+=4.6;};
+    [...groups.entries()].sort((a,b)=>b[1].a-a[1].a).forEach(([v,g])=>row(v,nf1.format(g.a),g.t.size,vp.get(v)||PAL[0]));
+    row('Plantado',nf1.format(ap),Ds.size,null,true);
+    if(!CARD){row('Área de soja',nf1.format(at),M.tal.size,null,true);
+      if(M.pasto.size)row('Pastagem',nf1.format([...M.pasto.values()].reduce((s,t)=>s+t.a,0)),M.pasto.size,PASTO_COR);}
+    else{const t=M.tal.get(CARD);if(t&&t.a)row('Área do talhão',nf1.format(t.a),1,null,true);}
+    // áreas KML do talhão
+    const qs=CARD?VARGEO.filter(q=>norm(q.tl)===CARD):[];
+    if(qs.length){y+=2;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text('Áreas no mapa (KML)',tx,y);y+=5;
+      qs.forEach(q=>row(q.v+(q.fora>.5?' (área a mais)':''),nf1.format(q.ha),'',vp.get(q.v)||PAL[0]));}
+    y+=3;doc.setFont('helvetica','normal');doc.setFontSize(7.8);doc.setTextColor(...MUT);
+    const notes=[];if(M.pasto.size&&!CARD)notes.push('Listrado verde: pastagem (pecuária), fora da área de soja.');
+    notes.push('Branco: talhão sem plantio lançado. Cor mais forte = maior parte do talhão plantada.');
+    if(VARGEO.length)notes.push('Talhões com mais de uma variedade aparecem divididos pelas áreas dos arquivos KML: '+[...new Set(VARGEO.map(q=>q.tl))].join(', ')+'.');
+    notes.forEach(n=>{const l=doc.splitTextToSize(clean(n),tw);doc.text(l,tx,y);y+=l.length*3.4+1.5;});
+    doc.setFontSize(7.5);doc.text(clean('Limites: '+geoSrc+' · Áreas por variedade: KML de campo · Plantio: aba Diário'),MG,H-6);doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});
+    const d=new Date(),stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    ov.hidden=true;
+    await saveFile(`Mapa_variedades_${tName?tName.replace(/[^\w\-]+/g,'_')+'_':''}${stamp}.pdf`,doc.output('blob'),'application/pdf');
+  }catch(err){console.error(err);toast('Não foi possível gerar o PDF do mapa: '+(err&&err.message||err));}
+  finally{ov.hidden=true;if(prevTheme)document.documentElement.dataset.theme=prevTheme;else delete document.documentElement.dataset.theme;mapMode=prevMode;KMLON=prevK;renderMapa();}
+}
 async function saveFile(filename,data,mime){
   try{if(dlNs===undefined)dlNs=(window.claude&&typeof window.claude.use==='function')?await window.claude.use('downloads'):null;}catch(e){dlNs=null;}
   if(dlNs){
