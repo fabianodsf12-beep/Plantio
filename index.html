@@ -1698,11 +1698,7 @@ async function exportMapPdf(){
     const qs=CARD?VARGEO.filter(q=>norm(q.tl)===CARD):[];
     if(qs.length){y+=2;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text('Áreas no mapa (KML)',tx,y);y+=5;
       qs.forEach(q=>row(q.v+(q.fora>.5?' (área a mais)':''),nf1.format(q.ha),'',vp.get(q.v)||PAL[0]));}
-    y+=3;doc.setFont('helvetica','normal');doc.setFontSize(7.8);doc.setTextColor(...MUT);
-    const notes=[];if(M.pasto.size&&!CARD)notes.push('Listrado verde: pastagem (pecuária), fora da área de soja.');
-    notes.push('Branco: talhão sem plantio lançado. Cor mais forte = maior parte do talhão plantada.');
-    if(VARGEO.length)notes.push('Talhões com mais de uma variedade aparecem divididos pelas áreas dos arquivos KML: '+[...new Set(VARGEO.map(q=>q.tl))].join(', ')+'.');
-    notes.forEach(n=>{const l=doc.splitTextToSize(clean(n),tw);doc.text(l,tx,y);y+=l.length*3.4+1.5;});
+    doc.setFont('helvetica','normal');doc.setTextColor(...MUT);
     doc.setFontSize(7.5);doc.text(clean('Limites: '+geoSrc+' · Áreas por variedade: KML de campo · Plantio: aba Diário'),MG,H-6);doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});
     const d=new Date(),stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     ov.hidden=true;
