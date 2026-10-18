@@ -267,6 +267,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .tcard h3{margin:0;font-size:18px}
 .tchd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-top:12px}
 .tcx{background:none;border:1px solid var(--line);border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:17px;line-height:1;color:var(--ink)}
+.fb{margin-top:12px;padding-top:8px;border-top:1px solid var(--line)}.fb.on{border-top:none;border-left:3px solid var(--brand);padding:8px 0 4px 10px;background:color-mix(in srgb,var(--brand) 6%,transparent);border-radius:0 6px 6px 0}.fb h4{margin:0;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.fb.on h4{color:var(--brand-deep)}.fb .cgrid{margin:8px 0 6px}
 .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
 .cgrid>div{background:var(--surface-2);border-radius:6px;padding:7px 9px;display:flex;flex-direction:column}
 .cgrid span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
@@ -1304,8 +1305,10 @@ function renderMap(){
   if(tempo&&tDate)$('#tSum').innerHTML=`Em <b>${fmtDY(tDate)}</b>: <b>${nf0.format(tAp)} ha</b> plantados (${tAt?nf0.format(tAp/tAt*100):0}% da área), <b style="color:${READY}">${nf0.format(tReady)} ha</b> prontos para colher.`;
   // legenda
   let lg='';
-  if(AGR)lg=`<span style="display:block;width:100%"><i style="display:block;width:100%;height:10px;border-radius:3px;background:linear-gradient(90deg,${AGRAMP.map(([t,c])=>c+' '+t*100+'%').join(',')})"></i><span class="help" style="display:flex;justify-content:space-between;font-size:11px"><span>0% seco</span><span>30%</span><span>50%</span><span>80%</span><span>100% cheio</span></span></span>`;
-  else if(CH)lg=`<span style="display:flex;align-items:center;gap:6px;width:100%"><b>${nf0.format(CH.lo)}</b><i style="flex:1;height:10px;border-radius:3px;background:linear-gradient(90deg,${CHRAMP.join(',')})"></i><b>${nf0.format(CH.hi)} mm</b></span>`;
+  const mk=(f,txt)=>f==null?'':`<b style="position:absolute;left:${(Math.max(0,Math.min(1,f))*100).toFixed(1)}%;top:-13px;transform:translateX(-50%);font-size:12px;line-height:1;color:var(--ink)">▼</b>`;
+  const agC=CARD&&AG&&AG.m.get(CARD),chC=CARD&&CH?CH.tv.get(CARD):null,cName=CARD?((M.tal.get(CARD)||{}).tl||CARD):'';
+  if(AGR)lg=`<span style="display:block;width:100%;position:relative;margin-top:${agC?12:0}px">${agC?mk(agC.pct):''}<i style="display:block;width:100%;height:10px;border-radius:3px;background:linear-gradient(90deg,${AGRAMP.map(([t,c])=>c+' '+t*100+'%').join(',')})"></i><span class="help" style="display:flex;justify-content:space-between;font-size:11px"><span>0% seco</span><span>30%</span><span>50%</span><span>80%</span><span>100% cheio</span></span>${agC?`<span class="help" style="display:block;font-size:12px;margin-top:2px">▼ ${esc(cName)}: ${nf0.format(agC.pct*100)}% (${nf0.format(agC.arm)} mm)</span>`:''}</span>`;
+  else if(CH)lg=`<span style="display:flex;align-items:center;gap:6px;width:100%;margin-top:${chC!=null?12:0}px"><b>${nf0.format(CH.lo)}</b><i style="flex:1;height:10px;border-radius:3px;position:relative;background:linear-gradient(90deg,${CHRAMP.join(',')})">${chC!=null?mk((chC-CH.lo)/((CH.hi-CH.lo)||1)):''}</i><b>${nf0.format(CH.hi)} mm</b></span>${chC!=null?`<span class="help" style="display:block;font-size:12px;margin-top:2px">▼ ${esc(cName)}: ${nf0.format(chC)} mm estimados no período</span>`:''}`;
   else if(mapMode==='prog')lg=`<span><i style="background:linear-gradient(90deg,${cssv('--brand')}26,${cssv('--brand')})"></i>0% a 100% plantado</span>`;
   else if(mapMode==='jan')lg=['milho','gergelim','fora','sem'].filter(j=>legend.has(JANLAB[j])).map(j=>`<span><i style="background:${JANCOL[j]}"></i>${JANLAB[j]}</span>`).join('');
   else lg=[...legend.entries()].sort((a,b)=>(a[0]==='Pronto para colher')-(b[0]==='Pronto para colher')).map(([v,c])=>`<span><i style="background:${c}"></i>${esc(v)}</span>`).join('');
@@ -1341,9 +1344,9 @@ function renderMap(){
   });
 }
 function aguaCard(k,AG){const a=AG&&AG.m.get(k);if(!a)return '';const c=agClass(a.pct);
-  return `<p class="help" style="margin:12px 0 2px;font-weight:600">Água no solo (estimada)</p><div style="display:flex;align-items:baseline;gap:8px"><span class="cdot" style="background:${c.c}"></span><b style="font-size:16px;white-space:nowrap">${nf0.format(a.arm)} mm</b><span class="help">de ${nf0.format(a.cad)} mm (${nf0.format(a.pct*100)}%) · ${esc(c.lab.split(' (')[0])}</span></div>`+
+  return `<div style="display:flex;margin-top:6px;align-items:baseline;gap:8px"><span class="cdot" style="background:${c.c}"></span><b style="font-size:16px;white-space:nowrap">${nf0.format(a.arm)} mm</b><span class="help">de ${nf0.format(a.cad)} mm (${nf0.format(a.pct*100)}%) · ${esc(c.lab.split(' (')[0])}</span></div>`+
     `<div class="help" style="font-size:12px">${a.ini?`Lavoura com ${a.dap} dias, consumo ${nf1.format(a.etc)} mm/dia`:`Sem plantio, só evaporação (${nf1.format(a.etc)} mm/dia)`}</div>`+
-    `<div class="help" style="font-size:12px">Chuva: ${nf0.format(a.c7)} mm nos últimos 7 dias${a.ini?`, ${nf0.format(a.cp)} mm desde o plantio`:''} · ${a.own?(a.pl?'pluviômetro '+esc(a.pl):'pluviômetro do talhão'):'média da fazenda'}</div>`+sparkAgua(a.ser,45)+`<div class="help" style="font-size:11px;display:flex;justify-content:space-between"><span>últimos 45 dias</span><span>linha amarela = 50%</span></div>`;}
+sparkAgua(a.ser,45)+`<div class="help" style="font-size:11px;display:flex;justify-content:space-between"><span>últimos 45 dias</span><span>linha amarela = 50%</span></div>`;}
 /* ---- chuva interpolada (IDW) entre os pluviômetros: posição da aba PLUVIOMETROS, senão o centro do talhão de mesmo nome ---- */
 let CHPER='safra',CHPTS=true,CHC=null;
 const CHRAMP=['#F1F7FB','#CFE5F3','#9CCBE8','#5FAAD8','#2B83C2','#135F9E','#0B3D6E'];
@@ -1430,26 +1433,45 @@ function kmlCard(k){const qs=VARGEO.filter(q=>norm(q.tl)===k);if(!qs.length)retu
   const restRows=[...rest.entries()].map(([v,a])=>`<tr><td><span class="cdot" style="background:${vp.get(v)||PAL[0]}"></span>${esc(v)} <span class="help">(resto do talhão)</span></td><td class="n">${at&&rest.size===1?nf1.format(Math.max(0,at-qs.reduce((s,q)=>s+(q.dentro??q.ha),0))):'—'}</td><td class="n">${nf1.format(a)}</td></tr>`).join('');
   return `<p class="help" style="margin:12px 0 0;font-weight:600">Áreas por variedade (KML)</p><table><thead><tr><th>Variedade</th><th class="n">Mapa</th><th class="n">Planilha</th></tr></thead><tbody>${qs.map(q=>{const dif=plOf(q)!=null?plOf(q)-q.ha:null,bad=dif!=null&&Math.abs(dif)>Math.max(1,q.ha*.05);
     return `<tr><td><span class="cdot" style="background:${vp.get(q.v)||PAL[0]}"></span>${esc(q.v)}${q.fora>.5?` <span class="help">(${nf1.format(q.fora)} ha fora do limite, área a mais)</span>`:''}</td><td class="n">${nf1.format(q.ha)}</td><td class="n" ${bad?'style="color:var(--warn);font-weight:700"':''}>${plOf(q)!=null?nf1.format(plOf(q)):'—'}</td></tr>`;}).join('')}${restRows}</tbody></table>`;}
-function renderCard(k,D,AG){
+/* ficha do talhão: dados de todos os modos (usada na lateral e no PDF do mapa) */
+function fichaData(k,D,AG){
   const t=M.tal.get(k),o=D.get(k),f=MAP&&MAP.feats.find(x=>x.k===k);
   const name=t?t.tl:(f?f.name:k),at=t&&t.a?t.a:(f?+f.props.area_mapa||0:0);
-  let body='';
-  if(!o){body=`<p class="help" style="margin:8px 0">Talhão ainda sem plantio lançado.</p>`;}
-  else{
-    let ch7=0;for(let i=0;i<7;i++)ch7+=M.rainK(k,addDays(o.ini,i));const ch7p=addDays(o.ini,6)>M.dMax;
-    const jm=top1(o.js),fol=jm==='milho'&&o.hFim?dayDiff(o.hFim,JAN.milhoFim):jm==='gergelim'&&o.hFim?dayDiff(o.hFim,JAN.gerFim):null;
-    const vrows=colheitaRows(o.rs).sort((a,b)=>String(a.pIni).localeCompare(String(b.pIni)));
-    body=`<div class="cgrid">
+  const pl=M.plano.get(k)||[],sh=pl.filter(p=>p.sha).map(p=>p.sha),pop=sh.length?sh.reduce((a,b)=>a+b,0)/sh.length:null;
+  const rs=M.rainTal.get(k)||M.rain,last=[...M.rain.keys()].sort().pop()||null;let tot=0,u7=0,dp=0;
+  rs.forEach((v,d)=>{tot+=v;if(last&&d>addDays(last,-7)&&d<=last)u7+=v;if(o&&d>=o.ini)dp+=v;});
+  let c7=null,c7p=false;if(o){c7=0;for(let i=0;i<7;i++)c7+=M.rainK(k,addDays(o.ini,i));c7p=addDays(o.ini,6)>M.dMax;}
+  const plv=M.pluvTal.has(k)?[...M.pluvTal.get(k)].join(', '):null;
+  const jm=o?top1(o.js):null,fol=jm==='milho'&&o.hFim?dayDiff(o.hFim,JAN.milhoFim):jm==='gergelim'&&o.hFim?dayDiff(o.hFim,JAN.gerFim):null;
+  const vrows=o?colheitaRows(o.rs).sort((a,b)=>String(a.pIni).localeCompare(String(b.pIni))):[];
+  return {k,t,o,f,name,at,pop,ch:{tot,u7,dp,c7,c7p,last,plv,own:M.rainTal.has(k)},jm,fol,vrows,ag:AG&&AG.m.get(k)};}
+const FB_MODE={var:'plantio',prog:'plantio',tempo:'plantio',jan:'colheita',chuva:'chuva',agua:'agua'};
+function renderCard(k,D,AG){
+  const F_=fichaData(k,D,AG),{o,t,f,name,at,ch}=F_,act=FB_MODE[mapMode]||'plantio';
+  const fmtR=(a,b)=>fmtD(a)+(b&&b!==a?' a '+fmtD(b):'');
+  const B={};
+  B.plantio=o?`<div class="cgrid">
       <div><span>Plantado</span><b>${nf1.format(o.ap)} ha</b><small>${at?nf0.format(Math.min(o.ap/at*100,999))+'% de '+nf1.format(at)+' ha':'sem área total'}</small></div>
-      <div><span>Plantio</span><b>${fmtD(o.ini)}${o.fim!==o.ini?' a '+fmtD(o.fim):''}</b><small>${dayDiff(o.ini,o.fim)+1} dia(s)</small></div>
-      <div><span>Chuva 7 dias</span><b>${nf0.format(ch7)} mm</b><small>${ch7p?'parcial, ':''}desde ${fmtD(o.ini)}</small></div>
-      <div><span>Colheita prevista</span><b>${o.hIni?fmtD(o.hIni)+(o.hFim!==o.hIni?' a '+fmtD(o.hFim):''):'—'}</b><small>${o.hIni?fmtDY(o.hIni).slice(6):'sem ciclo'}</small></div>
-    </div>
-    <div class="cjan" style="border-color:${JANCOL[jm]};background:${JANCOL[jm]}1A"><span class="cdot" style="background:${JANCOL[jm]}"></span><b>${JANLAB[jm]}</b>${fol!=null?` · folga de ${fol} dias até o fim da janela`:''}</div>
-    <table><thead><tr><th>Cultivar</th><th class="n">ha</th><th>Colheita</th></tr></thead><tbody>${vrows.map(r=>`<tr title="Plantio ${fmtDY(r.pIni)}${r.pFim!==r.pIni?' a '+fmtDY(r.pFim):''}, ciclo ${r.cic??'—'} dias"><td>${esc(r.v)}<br><small class="help">plantio ${fmtD(r.pIni)}${r.pFim!==r.pIni?'–'+fmtD(r.pFim):''} · ${r.cic??'—'} d</small></td><td class="n">${nf1.format(r.a)}</td><td>${r.hIni?fmtD(r.hIni)+(r.hFim!==r.hIni?'–'+fmtD(r.hFim):''):'—'}</td></tr>`).join('')}</tbody></table>`;
-  }
-  $('#mapSum').innerHTML=`<div class="tcard"><div class="tchd"><div><h3>${esc(name)}</h3><span class="help">${esc(t?t.f:(f&&f.props.bloco)||'')}</span></div><button class="tcx" id="cardX" aria-label="Fechar ficha">×</button></div>${body}
-    ${kmlCard(k)}${aguaCard(k,AG)}
+      <div><span>Plantio</span><b>${fmtR(o.ini,o.fim)}</b><small>${dayDiff(o.ini,o.fim)+1} dia(s)</small></div>
+      <div><span>População</span><b>${F_.pop?nf0.format(F_.pop/1000)+' mil':'—'}</b><small>sementes/ha</small></div>
+      <div><span>Variedades</span><b>${o.vs.size}</b><small>${esc(top1(o.vs)||'')}</small></div></div>
+    ${kmlCard(k)||`<table><thead><tr><th>Cultivar</th><th class="n">ha</th><th>Plantio</th></tr></thead><tbody>${F_.vrows.map(r=>`<tr><td>${esc(r.v)}</td><td class="n">${nf1.format(r.a)}</td><td>${fmtR(r.pIni,r.pFim)}</td></tr>`).join('')}</tbody></table>`}`
+    :`<p class="help" style="margin:6px 0">Talhão ainda sem plantio lançado${at?` (${nf1.format(at)} ha)`:''}.</p>`;
+  if(o)B.colheita=`<div class="cgrid"><div><span>Colheita prevista</span><b>${o.hIni?fmtR(o.hIni,o.hFim):'—'}</b><small>${o.hIni?fmtDY(o.hIni).slice(6):'sem ciclo'}</small></div>
+      <div><span>Faltam</span><b>${o.hIni?Math.max(0,dayDiff(hoje(),o.hIni))+' dias':'—'}</b><small>até começar</small></div></div>
+    <div class="cjan" style="border-color:${JANCOL[F_.jm]};background:${JANCOL[F_.jm]}1A"><span class="cdot" style="background:${JANCOL[F_.jm]}"></span><b>${JANLAB[F_.jm]}</b>${F_.fol!=null?` · folga de ${F_.fol} dias até o fim da janela`:''}</div>
+    <table><thead><tr><th>Cultivar</th><th class="n">Ciclo</th><th>Colheita</th></tr></thead><tbody>${F_.vrows.map(r=>`<tr><td>${esc(r.v)}</td><td class="n">${r.cic??'—'} d</td><td>${r.hIni?fmtR(r.hIni,r.hFim):'—'}</td></tr>`).join('')}</tbody></table>`;
+  B.chuva=`<div class="cgrid">
+      <div><span>Safra</span><b>${nf0.format(ch.tot)} mm</b><small>até ${ch.last?fmtD(ch.last):'—'}</small></div>
+      <div><span>Últimos 7 dias</span><b>${nf0.format(ch.u7)} mm</b><small>até ${ch.last?fmtD(ch.last):'—'}</small></div>
+      ${o?`<div><span>Desde o plantio</span><b>${nf0.format(ch.dp)} mm</b><small>desde ${fmtD(o.ini)}</small></div>
+      <div><span>7 dias após plantio</span><b>${nf0.format(ch.c7)} mm</b><small>${ch.c7p?'parcial':'emergência'}${ch.c7<5&&!ch.c7p?' · pouca chuva':''}</small></div>`:''}</div>
+    <div class="help" style="font-size:12px">${ch.own?(ch.plv?'Pluviômetro '+esc(ch.plv):'Pluviômetro do talhão'):'Sem pluviômetro: média geral da fazenda'}</div>`;
+  const ag=aguaCard(k,AG);if(ag)B.agua=ag;
+  const TT={plantio:'Plantio',colheita:'Colheita',chuva:'Chuva',agua:'Água no solo (estimada)'};
+  const ord=[act,...['plantio','colheita','chuva','agua'].filter(x=>x!==act)].filter(x=>B[x]);
+  $('#mapSum').innerHTML=`<div class="tcard"><div class="tchd"><div><h3>${esc(name)}</h3><span class="help">${esc(t?t.f:(f&&f.props.bloco)||'')}</span></div><button class="tcx" id="cardX" aria-label="Fechar ficha">×</button></div>
+    ${ord.map((x,i)=>`<div class="fb${i===0?' on':''}"><h4>${TT[x]}</h4>${B[x]}</div>`).join('')}
     ${o?`<button class="lnk" id="cardTbl" style="margin-top:8px;padding-left:0">Ver na tabela de colheita ↓</button>`:''}</div>`;
   $('#cardX').onclick=()=>{clearSel();renderMapa();};
   const ct=$('#cardTbl');if(ct)ct.onclick=()=>$('#tbHarv').closest('.card').scrollIntoView({behavior:'smooth'});
@@ -1824,6 +1846,15 @@ async function exportMapPdf(){
     const qs=CARD?VARGEO.filter(q=>norm(q.tl)===CARD):[];
     if(qs.length){y+=2;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text('Áreas no mapa (KML)',tx,y);y+=5;
       qs.forEach(q=>row(q.v+(q.fora>.5?' (área a mais)':''),nf1.format(q.ha),'',vp.get(q.v)||PAL[0]));}
+    // ficha do talhão
+    if(CARD){const F_=fichaData(CARD,D,aguaAll()),o=F_.o,ch=F_.ch,a=F_.ag,fr=(x,y)=>fmtD(x)+(y&&y!==x?' a '+fmtD(y):'');
+      const sec=tt=>{y+=2;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...INK);doc.text(clean(tt),tx,y);y+=5;};
+      const kv=(l,v)=>{doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MUT);doc.text(clean(l),tx,y);doc.setTextColor(...INK);doc.text(clean(v),tx+tw,y,{align:'right'});y+=1.6;doc.setDrawColor(...LINE);doc.line(tx,y,tx+tw,y);y+=3.8;};
+      if(o){sec('Plantio');kv('Período',fr(o.ini,o.fim));if(F_.pop)kv('População',nf0.format(F_.pop/1000)+' mil sementes/ha');
+        sec('Colheita');kv('Prevista',o.hIni?fr(o.hIni,o.hFim):'-');kv('Janela',JANLAB[F_.jm]+(F_.fol!=null?' (folga '+F_.fol+' d)':''));}
+      sec('Chuva'+(ch.plv?' - pluviômetro '+ch.plv:''));kv('Safra (até '+(ch.last?fmtD(ch.last):'-')+')',nf0.format(ch.tot)+' mm');kv('Últimos 7 dias',nf0.format(ch.u7)+' mm');
+      if(o){kv('Desde o plantio',nf0.format(ch.dp)+' mm');kv('7 dias após o plantio',nf0.format(ch.c7)+' mm');}
+      if(a){sec('Água no solo (estimada)');kv('Hoje',nf0.format(a.arm)+' de '+nf0.format(a.cad)+' mm ('+nf0.format(a.pct*100)+'%)');kv('Situação',agClass(a.pct).lab);}}
     doc.setFont('helvetica','normal');doc.setTextColor(...MUT);
     doc.setFontSize(7.5);doc.text(clean('Limites: '+geoSrc+' · Áreas por variedade: KML de campo · Plantio: aba Diário'),MG,H-6);doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});
     const d=new Date(),stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
