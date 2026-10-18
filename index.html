@@ -288,6 +288,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .mapctl button:hover{border-color:var(--brand)}
 #btnMapPdf{margin-left:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:13px;padding:6px 12px}
 #btnMapPdf:hover{border-color:var(--brand);color:var(--brand)}
+.agcfg{display:inline-flex;gap:10px;margin-left:12px;font-size:13px;color:var(--muted);align-items:center}.agcfg[hidden]{display:none}.agcfg input{width:58px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);font:inherit}
 .mapfull{position:absolute;top:10px;left:10px;z-index:2;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font:600 13px var(--sans);cursor:pointer;box-shadow:0 2px 8px rgba(0,35,43,.12)}
 .mapfull[hidden]{display:none}
 .maptip{position:absolute;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,35,43,.18);padding:8px 11px;font-size:13px;line-height:1.5;pointer-events:none;max-width:280px}
@@ -487,7 +488,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
     <div class="grid">
       <div class="card s12">
         <div class="hd"><h2>Mapa dos talhões</h2><p>Safra inteira. Passe o mouse para ver os detalhes; clique num talhão para abrir a ficha. Em Linha do tempo, arraste a data para ver o avanço do plantio e da colheita.</p>
-          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button></div><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 só com o mapa por variedade e a tabela de áreas">Baixar mapa (PDF)</button></div></div>
+          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button><button data-m="agua" data-tip="Água estimada no solo hoje, pelo balanço hídrico com a chuva lançada">Água no solo</button></div><span class="agcfg" id="agCfg" hidden><label data-tip="Água disponível no solo na zona das raízes. Se a aba DADOS tiver a coluna CAD, vale o valor de cada talhão.">CAD <input type="number" id="agCad" min="10" max="300" step="5"> mm</label><label data-tip="Evapotranspiração de referência média do período">ETo <input type="number" id="agEto" min="1" max="10" step="0.5"> mm/dia</label></span><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 só com o mapa por variedade e a tabela de áreas">Baixar mapa (PDF)</button></div></div>
         <div class="mapwrap">
         <div class="mapbox" id="mapBox">
           <svg id="mapSvg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa dos talhões colorido por variedade plantada"></svg>
@@ -651,7 +652,7 @@ function buildModel(db){
   (db.talhoes||[]).forEach(t=>{
     const k=norm(t.tl); if(tal.has(k)||pasto.has(k))return;
     if(isPasto(t)){pasto.set(k,{tl:t.tl,f:toFaz(t.f)||tf.get(k)||toFaz(t.b)||'—',a:t.a||0});return;}
-    tal.set(k,{tl:t.tl,b:t.b||t.f||'—',f:toFaz(t.f)||tf.get(k)||toFaz(t.b)||tr.get(k)||'—',a:t.a||0});
+    tal.set(k,{tl:t.tl,b:t.b||t.f||'—',f:toFaz(t.f)||tf.get(k)||toFaz(t.b)||tr.get(k)||'—',a:t.a||0,cad:t.cad>0?t.cad:null});
   });
   (db.plantio||[]).forEach(p=>{const k=norm(p.tl);if(p.tl&&!tal.has(k)&&!pasto.has(k))tal.set(k,{tl:p.tl,b:'—',f:tf.get(k)||p.f||'—',a:0,semCad:true});});
   const rain=new Map();(db.chuva||[]).forEach(r=>rain.set(r.d,(rain.get(r.d)||0)+(+r.mm||0)));
@@ -1147,6 +1148,29 @@ function mapTalData(){
   return g;
 }
 const top1=m=>[...m.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0];
+/* ---- balanço hídrico do solo (Thornthwaite-Mather simplificado, passo diário) ----
+   CAD = água disponível no solo na profundidade das raízes (mm). Padrão da fazenda ou coluna "CAD" na aba DADOS.
+   ETo = evapotranspiração de referência (mm/dia), fixa. ETc = Kc da soja (FAO-56) × ETo; antes do plantio Kc 0,3 (solo com palhada).
+   A água começa em zero no primeiro dia com chuva lançada (fim da seca). Chuva acima da CAD é perdida; abaixo de 50% da CAD
+   a planta reduz o consumo na mesma proporção. Dia sem chuva lançada conta como 0 mm. */
+const AGUA={cad:60,eto:5};try{Object.assign(AGUA,JSON.parse(store.get('plantio-agua')||'{}'));}catch(e){}
+const AGCL=[{max:.3,lab:'Seco (< 30%)',c:'#D4454C'},{max:.5,lab:'Atenção (30–50%)',c:'#E0A100'},{max:.8,lab:'Bom (50–80%)',c:'#6FB1E0'},{max:9,lab:'Úmido (≥ 80%)',c:'#1C5E9E'}];
+const agClass=f=>AGCL.find(c=>f<c.max);
+function kcSoja(dap,ciclo){if(dap<0)return .3;const C=ciclo||110,a=C*.15,b=C*.4,c=C*.8;
+  if(dap<=a)return .4;if(dap<=b)return .4+.75*(dap-a)/(b-a);if(dap<=c)return 1.15;if(dap<=C)return 1.15-.65*(dap-c)/(C-c);return .3;}
+let AGC=null;
+function aguaAll(){
+  const key=AGUA.cad+'|'+AGUA.eto+'|'+M.rec.length+'|'+M.rain.size+'|'+hoje();if(AGC&&AGC.key===key)return AGC;
+  const rd=[...M.rain.keys()].filter(d=>(M.rain.get(d)||0)>0).sort(),start=rd[0]||M.dMin,end=hoje(),days=start?dateRange(start,end):[];
+  const m=new Map();
+  M.tal.forEach((t,k)=>{const rs=M.rec.filter(r=>r.k===k&&r.a>0);let ini=null;const vs=new Map();rs.forEach(r=>{if(!ini||r.d<ini)ini=r.d;vs.set(r.v,(vs.get(r.v)||0)+r.a);});
+    const v=top1(vs),ciclo=v?cicloOf(v,k):null,cad=t.cad||AGUA.cad;let arm=0,etc=0;const ser=[];
+    days.forEach(d=>{arm=Math.min(cad,arm+(M.rain.get(d)||0));etc=kcSoja(ini?dayDiff(ini,d):-1,ciclo)*AGUA.eto;const ks=Math.min(1,arm/(.5*cad));arm=Math.max(0,arm-etc*ks);ser.push(arm/cad);});
+    m.set(k,{cad,arm,pct:arm/cad,etc,ini,v,ciclo,ser,dap:ini?dayDiff(ini,end):null});});
+  return AGC={key,m,start,end,rainMax:rd[rd.length-1]||null};}
+function sparkAgua(ser,days){const s=ser.slice(-days),w=220,h=46,n=s.length;if(n<2)return '';
+  const pts=s.map((v,i)=>`${(i/(n-1)*w).toFixed(1)},${(h-Math.min(1,v)*h).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;margin-top:4px"><rect x="0" y="0" width="${w}" height="${h*.2}" fill="#1C5E9E" opacity=".08"/><rect x="0" y="${h*.5}" width="${w}" height="${h*.5}" fill="#D4454C" opacity=".07"/><line x1="0" x2="${w}" y1="${h/2}" y2="${h/2}" stroke="#E0A100" stroke-dasharray="3 3" stroke-width="1"/><polyline points="${pts}" fill="none" stroke="#1C5E9E" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;}
 function varPalette(){const vs=[...new Set(M.rec.filter(r=>r.a>0).map(r=>r.v))].sort();const m=new Map();vs.forEach((v,i)=>m.set(v,PAL[i%PAL.length]));return m;}
 const READY='#C2410C'; // pronto para colher (linha do tempo)
 /* seleção: talhões destacados (mapa, gráfico de colheita ou tabela) */
@@ -1204,7 +1228,8 @@ function renderMap(){
   const D=mapTalData(),vp=varPalette();
   const surf=cssv('--surface-2'),line=cssv('--line'),ink=cssv('--ink');
   const tempo=mapMode==='tempo';
-  $('#tLine').hidden=!tempo;
+  $('#tLine').hidden=!tempo;$('#agCfg').hidden=mapMode!=='agua';$('#agCad').value=AGUA.cad;$('#agEto').value=AGUA.eto;
+  const AG=(mapMode==='agua'||CARD)?aguaAll():null;
   $('#kmlLab').hidden=!(VARGEO.length&&mapMode==='var');$('#kmlOn').checked=KMLON;
   const kml=mapMode==='var'&&KMLON&&VARGEO.length>0,kmlTal=new Set(kml?VARGEO.map(q=>norm(q.tl)):[]);
   let tb=null;if(tempo){tb=tBounds();if(tb){if(!tDate||tDate<tb.a||tDate>tb.b){const today=new Date().toISOString().slice(0,10);tDate=today<tb.a?tb.a:today>tb.b?tb.b:today;}
@@ -1216,7 +1241,8 @@ function renderMap(){
     const at=t&&t.a?t.a:(+f.props.area_mapa||0);tAt+=at;
     const pct=o&&at?Math.min(o.ap/at,1):(o?1:0);
     let fill=surf,op=1,has=!!o;
-    if(o){
+    if(mapMode==='agua'){const a=AG&&AG.m.get(f.k);if(a){const c=agClass(a.pct);fill=c.c;op=.85;has=true;legend.set(c.lab,c.c);}}
+    else if(o){
       if(tempo&&tDate){const s=tStatus(o,tDate);tAp+=s.ap;tReady+=s.ready;has=s.ap>0;
         if(s.ready>0){fill=READY;op=.4+.55*Math.min(s.ready/(at||s.ready),1);legend.set('Pronto para colher',READY);}
         else if(s.ap>0){fill=vp.get(s.v)||PAL[0];op=.35+.6*Math.min(s.ap/(at||s.ap),1);legend.set(s.v,fill);}}
@@ -1254,9 +1280,9 @@ function renderMap(){
   if(mapMode==='prog')lg=`<span><i style="background:linear-gradient(90deg,${cssv('--brand')}26,${cssv('--brand')})"></i>0% a 100% plantado</span>`;
   else if(mapMode==='jan')lg=['milho','gergelim','fora','sem'].filter(j=>legend.has(JANLAB[j])).map(j=>`<span><i style="background:${JANCOL[j]}"></i>${JANLAB[j]}</span>`).join('');
   else lg=[...legend.entries()].sort((a,b)=>(a[0]==='Pronto para colher')-(b[0]==='Pronto para colher')).map(([v,c])=>`<span><i style="background:${c}"></i>${esc(v)}</span>`).join('');
-  $('#mapLeg').innerHTML=lg+`<span><i style="background:${surf};border:1px solid ${line}"></i>Sem plantio${tempo?' nessa data':''}</span>`+(mapMode!=='prog'?`<span class="help">Cor mais forte = maior % do talhão</span>`:'');
-  $('#mapLeg').hidden=!CARD&&(mapMode==='var'||mapMode==='jan');
-  if(CARD)renderCard(CARD,D);else renderSum(D,vp);
+  $('#mapLeg').innerHTML=lg+(mapMode==='agua'?'':`<span><i style="background:${surf};border:1px solid ${line}"></i>Sem plantio${tempo?' nessa data':''}</span>`)+(mapMode!=='prog'&&mapMode!=='agua'?`<span class="help">Cor mais forte = maior % do talhão</span>`:'');
+  $('#mapLeg').hidden=!CARD&&(mapMode==='var'||mapMode==='jan'||mapMode==='agua');
+  if(CARD)renderCard(CARD,D,AG);else if(mapMode==='agua')renderSumAgua(AG);else renderSum(D,vp);
   const semGeo=[...M.tal.values()].filter(t=>!MAP.feats.some(f=>f.k===norm(t.tl))).map(t=>t.tl);
   const semCad=MAP.feats.filter(f=>!M.tal.has(f.k)&&!M.pasto.has(f.k)).map(f=>f.name);
   $('#mapNote').textContent=`Limites: ${geoSrc}, ${MAP.feats.length} polígonos.`+(VARGEO.length?` Áreas por variedade (KML): ${[...new Set(VARGEO.map(q=>q.tl))].join(', ')}.`:'')+(semGeo.length?` Sem polígono no mapa: ${semGeo.join(', ')}.`:'')+(semCad.length?` No mapa, mas fora do cadastro de talhões: ${semCad.join(', ')}.`:'');
@@ -1274,9 +1300,9 @@ function renderMap(){
   host.querySelectorAll('.mp').forEach(p=>{
     p.onmousemove=e=>{const f=MAP.feats[+p.dataset.i],t=M.tal.get(f.k),o=D.get(f.k);const at=t&&t.a?t.a:(+f.props.area_mapa||0);
       const pz=M.pasto.get(f.k);if(pz){tip.innerHTML=`<b>${esc(f.name)}</b> <span class="help">${esc(pz.f)}</span><br><b style="color:${PASTO_COR}">Pastagem (pecuária)</b><br>${nf1.format(pz.a||+f.props.area_mapa||0)} ha, fora da área de soja`;tipAt(e);return;}
-      let extra='';if(tempo&&tDate&&o){const s=tStatus(o,tDate);extra=`<br><b>Em ${fmtD(tDate)}:</b> ${nf1.format(s.ap)} ha plantados`+(s.ready?`, <b style="color:${READY}">${nf1.format(s.ready)} ha prontos</b>`:'');}
+      let extra='';const ag=mapMode==='agua'&&AG&&AG.m.get(f.k);if(ag)extra=`<br><b>Água no solo:</b> ${nf0.format(ag.arm)} de ${nf0.format(ag.cad)} mm (${nf0.format(ag.pct*100)}%)<br><span class="help">Consumo estimado hoje: ${nf1.format(ag.etc)} mm/dia</span>`;if(tempo&&tDate&&o){const s=tStatus(o,tDate);extra=`<br><b>Em ${fmtD(tDate)}:</b> ${nf1.format(s.ap)} ha plantados`+(s.ready?`, <b style="color:${READY}">${nf1.format(s.ready)} ha prontos</b>`:'');}
       tip.innerHTML=`<b>${esc(f.name)}</b> <span class="help">${esc(t?t.f:(f.props.bloco||''))}</span><br>`+
-        (o?`${esc([...o.vs.keys()].join(', '))}<br>Plantado: <b>${nf1.format(o.ap)} ha</b> de ${at?nf1.format(at):'—'} ha<br><span class="help">Colheita: ${o.hIni?fmtDY(o.hIni)+(o.hFim!==o.hIni?' a '+fmtDY(o.hFim):''):'sem ciclo'}</span>${extra}`:`Área total: ${at?nf1.format(at)+' ha':'—'}<br><span class="help">Sem plantio</span>`)+
+        (o?`${esc([...o.vs.keys()].join(', '))}<br>Plantado: <b>${nf1.format(o.ap)} ha</b> de ${at?nf1.format(at):'—'} ha<br><span class="help">Colheita: ${o.hIni?fmtDY(o.hIni)+(o.hFim!==o.hIni?' a '+fmtDY(o.hFim):''):'sem ciclo'}</span>${extra}`:`Área total: ${at?nf1.format(at)+' ha':'—'}<br><span class="help">Sem plantio</span>${extra}`)+
         `<br><span class="help" style="font-size:11.5px">Clique para abrir a ficha</span>`;
       const r=$('#mapBox').getBoundingClientRect();let x=e.clientX-r.left+14,y=e.clientY-r.top+14;tip.hidden=false;
       if(x+tip.offsetWidth>r.width-6)x=e.clientX-r.left-tip.offsetWidth-14;if(y+tip.offsetHeight>r.height-6)y=Math.max(6,e.clientY-r.top-tip.offsetHeight-14);
@@ -1284,6 +1310,17 @@ function renderMap(){
     p.onmouseleave=()=>{tip.hidden=true;};
     p.onclick=()=>{const k=MAP.feats[+p.dataset.i].k;if(M.pasto.has(k))return;tip.hidden=true;pickTal(k);};
   });
+}
+function aguaCard(k,AG){const a=AG&&AG.m.get(k);if(!a)return '';const c=agClass(a.pct);
+  return `<p class="help" style="margin:12px 0 2px;font-weight:600">Água no solo (estimada)</p><div style="display:flex;align-items:baseline;gap:8px"><span class="cdot" style="background:${c.c}"></span><b style="font-size:16px;white-space:nowrap">${nf0.format(a.arm)} mm</b><span class="help">de ${nf0.format(a.cad)} mm (${nf0.format(a.pct*100)}%) · ${esc(c.lab.split(' (')[0])}</span></div>`+
+    `<div class="help" style="font-size:12px">${a.ini?`Lavoura com ${a.dap} dias, consumo ${nf1.format(a.etc)} mm/dia`:`Sem plantio, só evaporação (${nf1.format(a.etc)} mm/dia)`}</div>`+sparkAgua(a.ser,45)+`<div class="help" style="font-size:11px;display:flex;justify-content:space-between"><span>últimos 45 dias</span><span>linha amarela = 50%</span></div>`;}
+function renderSumAgua(AG){
+  const g=AGCL.map(c=>({c,a:0,n:0}));AG.m.forEach((x,k)=>{const t=M.tal.get(k),i=AGCL.indexOf(agClass(x.pct));g[i].a+=t&&t.a||0;g[i].n++;});
+  const pl=[...AG.m.values()].filter(x=>x.ini),med=pl.length?pl.reduce((s,x)=>s+x.pct,0)/pl.length:null;
+  $('#mapSum').innerHTML=`<table><thead><tr><th>Água no solo</th><th class="n">ha</th><th class="n">Talhões</th></tr></thead><tbody>`+
+    g.slice().reverse().map(x=>`<tr><td><span class="cdot" style="background:${x.c.c}"></span>${esc(x.c.lab)}</td><td class="n">${nf0.format(x.a)}</td><td class="n">${x.n}</td></tr>`).join('')+
+    `</tbody>${med!=null?`<tfoot><tr><th>Média plantados</th><th class="n" colspan="2">${nf0.format(med*100)}%</th></tr></tfoot>`:''}</table>`+
+    `<p class="help" style="margin:10px 0 0">% = água no solo em relação à capacidade de campo (solo cheio = 100%). Estimativa pelo balanço hídrico: começa com o solo seco em ${AG.start?fmtDY(AG.start):'—'}, soma a chuva lançada e desconta o consumo da soja (ETo ${nf1.format(AGUA.eto)} mm/dia × Kc pela fase da lavoura). CAD de ${nf0.format(AGUA.cad)} mm${[...M.tal.values()].some(t=>t.cad)?', ou a da coluna CAD da aba DADOS':''}.${AG.rainMax&&AG.rainMax<AG.end?` <b>Chuva lançada até ${fmtDY(AG.rainMax)}</b>; dias sem lançamento contam como sem chuva.`:''} Clique num talhão para ver a curva.</p>`;
 }
 function renderSum(D,vp){
   const groups=new Map();let ap=0,at=0;M.tal.forEach(t=>at+=t.a||0);
@@ -1307,7 +1344,7 @@ function kmlCard(k){const qs=VARGEO.filter(q=>norm(q.tl)===k);if(!qs.length)retu
   const restRows=[...rest.entries()].map(([v,a])=>`<tr><td><span class="cdot" style="background:${vp.get(v)||PAL[0]}"></span>${esc(v)} <span class="help">(resto do talhão)</span></td><td class="n">${at&&rest.size===1?nf1.format(Math.max(0,at-qs.reduce((s,q)=>s+(q.dentro??q.ha),0))):'—'}</td><td class="n">${nf1.format(a)}</td></tr>`).join('');
   return `<p class="help" style="margin:12px 0 0;font-weight:600">Áreas por variedade (KML)</p><table><thead><tr><th>Variedade</th><th class="n">Mapa</th><th class="n">Planilha</th></tr></thead><tbody>${qs.map(q=>{const dif=plOf(q)!=null?plOf(q)-q.ha:null,bad=dif!=null&&Math.abs(dif)>Math.max(1,q.ha*.05);
     return `<tr><td><span class="cdot" style="background:${vp.get(q.v)||PAL[0]}"></span>${esc(q.v)}${q.fora>.5?` <span class="help">(${nf1.format(q.fora)} ha fora do limite, área a mais)</span>`:''}</td><td class="n">${nf1.format(q.ha)}</td><td class="n" ${bad?'style="color:var(--warn);font-weight:700"':''}>${plOf(q)!=null?nf1.format(plOf(q)):'—'}</td></tr>`;}).join('')}${restRows}</tbody></table>`;}
-function renderCard(k,D){
+function renderCard(k,D,AG){
   const t=M.tal.get(k),o=D.get(k),f=MAP&&MAP.feats.find(x=>x.k===k);
   const name=t?t.tl:(f?f.name:k),at=t&&t.a?t.a:(f?+f.props.area_mapa||0:0);
   let body='';
@@ -1326,13 +1363,15 @@ function renderCard(k,D){
     <table><thead><tr><th>Cultivar</th><th class="n">ha</th><th>Colheita</th></tr></thead><tbody>${vrows.map(r=>`<tr title="Plantio ${fmtDY(r.pIni)}${r.pFim!==r.pIni?' a '+fmtDY(r.pFim):''}, ciclo ${r.cic??'—'} dias"><td>${esc(r.v)}<br><small class="help">plantio ${fmtD(r.pIni)}${r.pFim!==r.pIni?'–'+fmtD(r.pFim):''} · ${r.cic??'—'} d</small></td><td class="n">${nf1.format(r.a)}</td><td>${r.hIni?fmtD(r.hIni)+(r.hFim!==r.hIni?'–'+fmtD(r.hFim):''):'—'}</td></tr>`).join('')}</tbody></table>`;
   }
   $('#mapSum').innerHTML=`<div class="tcard"><div class="tchd"><div><h3>${esc(name)}</h3><span class="help">${esc(t?t.f:(f&&f.props.bloco)||'')}</span></div><button class="tcx" id="cardX" aria-label="Fechar ficha">×</button></div>${body}
-    ${kmlCard(k)}
+    ${kmlCard(k)}${aguaCard(k,AG)}
     ${o?`<button class="lnk" id="cardTbl" style="margin-top:8px;padding-left:0">Ver na tabela de colheita ↓</button>`:''}</div>`;
   $('#cardX').onclick=()=>{clearSel();renderMapa();};
   const ct=$('#cardTbl');if(ct)ct.onclick=()=>$('#tbHarv').closest('.card').scrollIntoView({behavior:'smooth'});
 }
 (function(){
   $('#mapFull').onclick=()=>{clearSel();renderMapa();};
+  const agSet=()=>{const c=+$('#agCad').value,e=+$('#agEto').value;if(c>=10&&c<=300)AGUA.cad=c;if(e>=1&&e<=10)AGUA.eto=e;store.set('plantio-agua',JSON.stringify(AGUA));AGC=null;renderMap();};
+  $('#agCad').onchange=agSet;$('#agEto').onchange=agSet;
   $('#kmlOn').onchange=e=>{KMLON=e.target.checked;store.set('plantio-kml',KMLON?'1':'0');renderMap();};
   $('#segMap').onclick=e=>{const b=e.target.closest('button');if(!b)return;mapMode=b.dataset.m;$$('#segMap button').forEach(x=>x.classList.toggle('on',x===b));if(mapMode!=='tempo')tStop();renderMap();};
   $('#segJan').onclick=e=>{const b=e.target.closest('button');if(!b)return;janMode=b.dataset.m;$$('#segJan button').forEach(x=>x.classList.toggle('on',x===b));renderMapa();};
@@ -1919,10 +1958,10 @@ function parseWorkbook(wb,fname){
     const iV=h.findIndex(c=>c.startsWith('VARIEDADE ')||c==='VARIEDADE'||c.startsWith('CULTIVAR')||c.startsWith('HIBRIDO'));
     const iVL=h.findIndex(c=>c.startsWith('VARIEDADES'));
     const iC=h.findIndex(c=>c==='CULTURA'),iTu=h.findIndex(c=>c.startsWith('TURNO')),iCi=h.findIndex(c=>c==='CICLO');
-    const iA=iT>=0?(h.slice(iT+1).findIndex(c=>c.startsWith('AREA'))+iT+1):-1,iU=h.findIndex(c=>c==='USO'||c.startsWith('USO DA')||c==='FINALIDADE');
+    const iA=iT>=0?(h.slice(iT+1).findIndex(c=>c.startsWith('AREA'))+iT+1):-1,iU=h.findIndex(c=>c==='USO'||c.startsWith('USO DA')||c==='FINALIDADE'),iCad=h.findIndex(c=>c==='CAD'||c.startsWith('CAD ')||c.startsWith('AGUA DISP'));
     const fz=new Set();
     rX.slice(1).forEach(r=>{
-      if(iT>=0&&str(r[iT])){const f=iFT>=0?str(r[iFT]):null;if(f)fz.add(f);db.talhoes.push({b:iB>=0?str(r[iB]):(f||'—'),f,tl:str(r[iT]),a:iA>iT?num(r[iA])||0:0,uso:iU>=0?str(r[iU]):null});}
+      if(iT>=0&&str(r[iT])){const f=iFT>=0?str(r[iFT]):null;if(f)fz.add(f);db.talhoes.push({b:iB>=0?str(r[iB]):(f||'—'),f,tl:str(r[iT]),a:iA>iT?num(r[iA])||0:0,uso:iU>=0?str(r[iU]):null,cad:iCad>=0?num(r[iCad]):null});}
       if(iV>=0&&str(r[iV]))db.cultivares.push({v:str(r[iV]),ciclo:iCi>=0?num(r[iCi]):null});
       if(iC>=0&&str(r[iC]))db.culturas.push(str(r[iC]));
       if(iF>=0&&str(r[iF]))fz.add(str(r[iF]));
