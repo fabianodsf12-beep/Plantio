@@ -280,10 +280,13 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .kmlt[hidden]{display:none}
 .mapside table{font-size:13px;margin-top:12px}
 .mapside td,.mapside th{padding:5px 6px;cursor:default}
-.mapbox{position:relative;height:calc(100vh - 210px);min-height:380px;max-height:900px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);overflow:hidden;}
+.mapbox{position:relative;height:620px;min-height:420px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);overflow:hidden;}
 .mapbox svg{width:100%;height:100%;display:block}
 .mapbox .mp{cursor:pointer;transition:fill-opacity .15s}
 .mapbox .mp:hover{fill-opacity:.95}
+.mapwrap:fullscreen{background:var(--surface);padding:14px;overflow:auto}
+.mapwrap:fullscreen .mapbox{height:calc(100vh - 28px)!important}
+.mapbox.pan{cursor:grabbing}
 .mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px;z-index:2}
 .mapctl button{width:32px;height:32px;border:1px solid var(--line);background:var(--surface);border-radius:6px;cursor:pointer;font-size:17px;font-weight:700;line-height:1;color:var(--ink)}
 .mapctl button:hover{border-color:var(--brand)}
@@ -495,6 +498,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
           <svg id="mapSvg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa dos talhões colorido por variedade plantada"></svg>
           <div class="maptip" id="mapTip" hidden></div>
           <button class="mapfull noprint" id="mapFull" hidden>⤢ Mapa inteiro</button>
+          <div class="mapctl noprint"><button id="mzIn" data-tip="Aproximar (ou Ctrl + roda do mouse)" aria-label="Aproximar">+</button><button id="mzOut" data-tip="Afastar" aria-label="Afastar">−</button><button id="mzFs" data-tip="Tela cheia" aria-label="Tela cheia">⛶</button></div>
           <div class="empty" id="mapEmpty">Nenhum limite de talhão carregado. Use Carregar GeoJSON.</div>
         </div>
         <aside class="mapside"><div class="leg" id="mapLeg"></div><div id="mapSum"></div></aside>
@@ -1237,9 +1241,11 @@ function setVB(host,t){const set=v=>host.setAttribute('viewBox',`${v.x} ${v.y} $
   const a={...vbCur},t0=performance.now(),D=380;if(a.x===t.x&&a.y===t.y&&a.w===t.w&&a.h===t.h){set(t);return;}
   const step=n=>{let k=Math.min(1,(n-t0)/D);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;vbCur={x:a.x+(t.x-a.x)*k,y:a.y+(t.y-a.y)*k,w:a.w+(t.w-a.w)*k,h:a.h+(t.h-a.h)*k};set(vbCur);if(k<1)vbAnim=requestAnimationFrame(step);};
   vbAnim=requestAnimationFrame(step);}
+function fitMapBox(){const b=$('#mapBox');if(!MAP||document.fullscreenElement)return;const w=b.clientWidth;if(!w)return;
+  b.style.height=Math.round(Math.min(Math.max(w*(MAP.h+8)/(MAP.w+8),520),innerHeight*.88))+'px';}
 function renderMap(){
   const host=$('#mapSvg');if(!MAP){host.innerHTML='';$('#mapEmpty').classList.add('on');return;}
-  $('#mapEmpty').classList.remove('on');
+  $('#mapEmpty').classList.remove('on');fitMapBox();
   const full={x:-4,y:-4,w:MAP.w+8,h:MAP.h+8},cf=CARD&&MAP.feats.find(f=>f.k===CARD);let tgt=full;
   if(cf){let [a,b,c,d]=cf.bb;if(VARGEO.length&&KMLON&&mapMode==='var')VARGEO.filter(q=>norm(q.tl)===CARD&&q.fora>.5).forEach(q=>q.c.forEach(poly=>poly[0].forEach(pt=>{const [x,y]=MAP.P(pt);a=Math.min(a,x);b=Math.min(b,y);c=Math.max(c,x);d=Math.max(d,y);})));let w=c-a,h=d-b;const pad=Math.max(w,h)*.3+10;w+=2*pad;h+=2*pad;const bx=$('#mapBox').getBoundingClientRect(),ar=bx.width&&bx.height?bx.width/bx.height:full.w/full.h;
     if(w/h<ar)w=h*ar;else h=w/ar;tgt={x:(a+c)/2-w/2,y:(b+d)/2-h/2,w,h};}
@@ -1478,6 +1484,23 @@ function renderCard(k,D,AG){
 }
 (function(){
   $('#mapFull').onclick=()=>{clearSel();renderMapa();};
+  const box=$('#mapBox'),svg=$('#mapSvg');
+  const upp=v=>Math.max(v.w/svg.clientWidth,v.h/svg.clientHeight);
+  const zoom=(f,px,py,inst)=>{if(!MAP)return;const v=vbCur||vb;if(!v)return;const fw=MAP.w+8;f=Math.min(Math.max(f,fw*.04/v.w),fw*1.6/v.w);
+    const r=svg.getBoundingClientRect(),u=upp(v);const cx=px==null?v.x+v.w/2:v.x+v.w/2+(px-r.left-r.width/2)*u,cy=py==null?v.y+v.h/2:v.y+v.h/2+(py-r.top-r.height/2)*u;
+    const t={x:cx-(cx-v.x)*f,y:cy-(cy-v.y)*f,w:v.w*f,h:v.h*f};if(inst){cancelAnimationFrame(vbAnim);vbCur=t;svg.setAttribute('viewBox',`${t.x} ${t.y} ${t.w} ${t.h}`);}else setVB(svg,t);$('#mapFull').hidden=false;};
+  $('#mzIn').onclick=()=>zoom(1/1.5);$('#mzOut').onclick=()=>zoom(1.5);
+  $('#mzFs').onclick=()=>{const w=box.closest('.mapwrap');if(document.fullscreenElement)document.exitFullscreen();else if(w.requestFullscreen)w.requestFullscreen();};
+  document.addEventListener('fullscreenchange',()=>{$('#mzFs').textContent=document.fullscreenElement?'✕':'⛶';if(!document.fullscreenElement)fitMapBox();});
+  box.addEventListener('wheel',e=>{if(!(e.ctrlKey||document.fullscreenElement))return;e.preventDefault();zoom(Math.exp(e.deltaY*.0015),e.clientX,e.clientY,true);},{passive:false});
+  let drag=null,moved=false;
+  svg.addEventListener('pointerdown',e=>{if(e.button!==0||!(vbCur||vb))return;drag={x:e.clientX,y:e.clientY,v:{...(vbCur||vb)},id:e.pointerId};moved=false;});
+  svg.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!moved&&Math.hypot(dx,dy)<5)return;
+    if(!moved){moved=true;svg.setPointerCapture(drag.id);box.classList.add('pan');$('#mapTip').hidden=true;}
+    const u=upp(drag.v),t={...drag.v,x:drag.v.x-dx*u,y:drag.v.y-dy*u};cancelAnimationFrame(vbAnim);vbCur=t;svg.setAttribute('viewBox',`${t.x} ${t.y} ${t.w} ${t.h}`);$('#mapFull').hidden=false;});
+  const end=()=>{drag=null;box.classList.remove('pan');};svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+  box.addEventListener('click',e=>{if(moved){e.stopPropagation();e.preventDefault();moved=false;}},true);
+  let lw=0;new ResizeObserver(()=>{const w=box.clientWidth;if(w&&w!==lw){lw=w;fitMapBox();}}).observe(box);
   const agSet=()=>{const c=+$('#agCad').value,e=+$('#agEto').value;if(c>=10&&c<=300)AGUA.cad=c;if(e>=1&&e<=10)AGUA.eto=e;store.set('plantio-agua',JSON.stringify(AGUA));AGC=null;renderMap();};
   $('#agCad').onchange=agSet;$('#agEto').onchange=agSet;
   $('#agGrad').onchange=e=>{AGGRAD=e.target.checked;renderMap();};$('#chPer').onchange=e=>{CHPER=e.target.value;renderMap();};$('#chPts').onchange=e=>{CHPTS=e.target.checked;renderMap();};
