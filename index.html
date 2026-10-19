@@ -301,7 +301,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .btn.alt{border-color:var(--line);color:var(--ink);background:var(--surface-2)}
 .btn.alt:hover{border-color:var(--brand);background:var(--surface-2)}
 @media (max-width:1100px){
-  .mapwrap{grid-template-columns:1fr}
+  .mapwrap{grid-template-columns:minmax(0,1fr) 220px}
   .kpis{grid-template-columns:repeat(3,1fr)}
   .kpi:nth-child(4){border-left:0}
   .kpi:nth-child(n+4){border-top:1px solid var(--line)}
@@ -335,6 +335,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
   .tw{max-height:none;overflow:visible}
   main{padding:10px 0}
 }
+@media (max-width:760px){.mapwrap{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1241,8 +1242,8 @@ function setVB(host,t){const set=v=>host.setAttribute('viewBox',`${v.x} ${v.y} $
   const a={...vbCur},t0=performance.now(),D=380;if(a.x===t.x&&a.y===t.y&&a.w===t.w&&a.h===t.h){set(t);return;}
   const step=n=>{let k=Math.min(1,(n-t0)/D);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;vbCur={x:a.x+(t.x-a.x)*k,y:a.y+(t.y-a.y)*k,w:a.w+(t.w-a.w)*k,h:a.h+(t.h-a.h)*k};set(vbCur);if(k<1)vbAnim=requestAnimationFrame(step);};
   vbAnim=requestAnimationFrame(step);}
-function fitMapBox(){const b=$('#mapBox');if(!MAP||document.fullscreenElement)return;const w=b.clientWidth;if(!w)return;
-  b.style.height=Math.round(Math.min(Math.max(w*(MAP.h+8)/(MAP.w+8),520),innerHeight*.88))+'px';}
+function fitMapBox(){const b=$('#mapBox');if(!MAP||document.fullscreenElement)return;const w=b.clientWidth;if(!w)return;const one=w>b.parentElement.clientWidth*.9;
+  b.style.height=Math.round(Math.min(Math.max(w*(MAP.h+8)/(MAP.w+8),one?380:520),innerHeight*(one?.62:.88)))+'px';}
 function renderMap(){
   const host=$('#mapSvg');if(!MAP){host.innerHTML='';$('#mapEmpty').classList.add('on');return;}
   $('#mapEmpty').classList.remove('on');fitMapBox();
