@@ -2038,7 +2038,7 @@ async function exportPdf(sel){
   const ov=$('#busyOv');ov.hidden=false;
   const prevMapMode=mapMode,prevCard=CARD,prevTheme=document.documentElement.dataset.theme,prevView=view,prevAnim=Chart.defaults.animation,prevDpr=Chart.defaults.devicePixelRatio;
   const imgs={};
-  const PW=297,PH=210,PM=10,gw0=(PW-2*PM-4)/2,gh0=(PH-21-9-4)/2,shH=(PH-42-9-4)/2,wkH=72,lotH=PH-42-9-2,entH=PH-21-9-2;
+  const PW=297,PH=210,PM=10,gw0=(PW-2*PM-4)/2,gh0=(PH-21-9-4)/2,shH=(PH-42-9-4)/2,wkH=72,lotH=86,entH=PH-42-9-4-86;
   const BOX={chDaily:[PW-2*PM,PH-69-9],chRain:[gw0*1.25,gh0],chCult:[gw0*.75,gh0],chFaz:[gw0,gh0],chVar:[gw0,gh0],
     chTurno:[gw0*.8,wkH],chWeek:[PW-2*PM-gw0*.8-4,wkH],chLot:[PW-2*PM,lotH],chEntVar:[gw0,entH],chEntDate:[gw0,entH]};
   const grab=ids=>{ids.forEach(id=>{const b=BOX[id];if(b)fitChart(id,b[0],b[1]);});return sleep(120).then(()=>ids.forEach(id=>imgs[id]=chartImg(id)));};
@@ -2062,6 +2062,8 @@ async function exportPdf(sel){
     const hrows=colheitaRows(M.rec).filter(r=>r.j==='milho'||r.j==='gergelim').sort((a,b)=>a.j.localeCompare(b.j)*-1||String(a.hIni).localeCompare(String(b.hIni))||a.tl.localeCompare(b.tl,'pt',{numeric:true}));
     show('sementes');await sleep(250);
     if(charts.chLot){const o=charts.chLot.options;o.scales.x.ticks.font={size:10};o.scales.x.ticks.maxRotation=40;o.scales.x.ticks.minRotation=40;o.plugins.legend.labels.font={size:11};charts.chLot.update('none');}
+    ['chEntVar','chEntDate'].forEach(id=>{const ch=charts[id];if(!ch)return;const o=ch.options;Object.values(o.scales||{}).forEach(sc=>{if(sc.ticks)sc.ticks.font={size:9};if(sc.title)sc.title.font={size:9};});
+      if(o.plugins&&o.plugins.legend)o.plugins.legend.labels={...o.plugins.legend.labels,font:{size:9},boxWidth:9,padding:6};ch.update('none');});
     await grab(['chLot','chEntVar','chEntDate']);
     const kl=[...$$('#kpisL .kpi')].map(k=>[k.querySelector('.k').textContent,[...k.querySelector('.v').childNodes].map(x=>x.textContent.trim()).filter(Boolean).join(' '),k.querySelector('.d').textContent]);
     const conf=computeConf();
@@ -2155,8 +2157,7 @@ async function exportPdf(sel){
     if(S.has('sementes')&&((DB.lotes||[]).length||(DB.entradas||[]).length)){
       sec('Sementes: entrada e qualidade');kpiRow(kl,21);
       img('chLot',MG,42,W-2*MG,lotH,'Germinação por lote (7º dia) e IVG (%)');
-      if((DB.entradas||[]).length){newPage('Sementes: chegadas');
-        img('chEntVar',MG,21,gw,entH,'Sementes recebidas por variedade (t)');img('chEntDate',MG+gw+4,21,gw,entH,'Chegadas de sementes (t)');}}
+      img('chEntVar',MG,42+lotH+4,gw,entH,'Sementes recebidas por variedade (t)');img('chEntDate',MG+gw+4,42+lotH+4,gw,entH,'Chegadas de sementes (t)');}
 
     // conferência
     if(S.has('conf')&&conf.length){sec(`Pontos para revisar na planilha (${conf.length})`);let cy=27;
