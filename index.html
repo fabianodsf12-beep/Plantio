@@ -1828,6 +1828,39 @@ $('#btnCsv').onclick=()=>{
 /* ================= entrega de arquivos ================= */
 let dlNs;
 // PDF de uma página: só o mapa por variedade e a tabela de áreas
+function drawMapLegend(doc,tx,tw,y0,clean,dry){/* legenda do mapa (cores lidas da tela) para os PDFs; dry=true só mede a altura */
+  const INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225];let y=y0;
+  const pc=s=>{s=String(s||'');let m=/#([0-9a-f]{6})([0-9a-f]{2})?\b/i.exec(s),r,g,b,a=1;if(m){[r,g,b]=[0,2,4].map(i=>parseInt(m[1].substr(i,2),16));if(m[2])a=parseInt(m[2],16)/255;}
+    else{m=/rgba?\(([^)]*)\)/.exec(s);if(!m)return [150,150,150];[r,g,b,a=1]=m[1].split(',').map(Number);}return [r,g,b].map(v=>Math.round(v*a+255*(1-a)));};
+  const cl=s=>clean(String(s).replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/\s+/g,' ').trim());
+  const lg=$('#mapLeg'),gi=lg&&!lg.hidden?[...lg.querySelectorAll('i')].find(i=>/gradient/.test(i.style.background)):null;
+  const tb=$('#mapSum table'),hd=tb?[...tb.tHead.rows[0].cells].map(c=>cl(c.textContent)):[];
+  if(!dry){doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(cl('Legenda'+(hd[0]?' - '+hd[0]:'')),tx,y);}y+=5;
+  if(gi){if(!dry){const st=[...gi.style.background.matchAll(/(#[0-9a-f]{6,8}|rgba?\([^)]*\))\s*([\d.]+%)?/gi)].map(m=>({c:pc(m[1]),p:m[2]?parseFloat(m[2])/100:null}));
+      st.forEach((o,i)=>{if(o.p==null)o.p=st.length>1?i/(st.length-1):0;});
+      const at=t=>{let i=0;while(i<st.length-2&&t>st[i+1].p)i++;const a=st[i],b=st[i+1]||a,f=b.p>a.p?Math.min(1,Math.max(0,(t-a.p)/(b.p-a.p))):0;return a.c.map((v,j)=>Math.round(v+(b.c[j]-v)*f));};
+      const bw=Math.min(tw,120),N=100;for(let i=0;i<N;i++){doc.setFillColor(...at((i+.5)/N));doc.rect(tx+bw*i/N,y,bw/N+.15,3.4,'F');}
+      doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUT);
+      let labs=[...lg.querySelectorAll('.help span')].map(e=>e.textContent);if(!labs.length)labs=[...lg.querySelectorAll('b')].map(e=>e.textContent);if(!labs.length)labs=[gi.parentElement.textContent];
+      labs.forEach((t,i)=>{const m=/(\d+)%/.exec(t);const f=labs.length===1?.5:m&&mapMode==='agua'?+m[1]/100:i/(labs.length-1);doc.text(cl(t),tx+bw*f,y+7,{align:f<=0?'left':f>=1?'right':'center'});});}
+    y+=13;}
+  let items=[],tots=[];
+  if(tb){const unit=j=>(hd[j]||'').toLowerCase().replace(' na safra','');
+    const val=(c,off)=>c.slice(1).map((x,j)=>{const u=unit(j+1+off);const v=cl(x.textContent);return u&&!/%$/.test(v)?v+' '+(v==='1'&&u==='talhões'?'talhão':u):v;}).join(' · ');
+    [...tb.tBodies[0].rows].forEach(r=>{const c=[...r.cells],d=c[0].querySelector('.cdot');items.push({c:d?pc(d.style.background||d.style.backgroundColor):null,n:cl(c[0].textContent),v:val(c,hd.length-c.length)});});
+    if(tb.tFoot)[...tb.tFoot.rows].forEach(r=>{const c=[...r.cells],d=c[0].querySelector('.cdot');tots.push({c:d?pc(d.style.background||d.style.backgroundColor):null,n:cl(c[0].textContent),v:val(c,c.length===2&&hd.length>2&&c[1].colSpan>1?hd.length-2:hd.length-c.length),b:c[0].tagName==='TH'});});}
+  else if(lg&&!lg.hidden&&!gi)[...lg.querySelectorAll(':scope > span')].forEach(sp=>{const i=sp.querySelector('i');if(i)items.push({c:pc(i.style.background||i.style.backgroundColor),n:cl(sp.textContent),v:''});});
+  if(items.length){const nc=Math.max(1,Math.min(tw>200?5:4,Math.floor(tw/45)));const cols=items.length>12?nc:Math.min(nc,3),cw=tw/cols,rh=items.length>24?4.8:5.4,nr=Math.ceil(items.length/cols);
+    if(!dry){doc.setDrawColor(...LINE);doc.setLineWidth(.2);
+      items.forEach((it,i)=>{const col=Math.floor(i/nr),row=i%nr,x=tx+col*cw,yy=y+row*rh;
+        if(it.c){doc.setFillColor(...it.c);doc.rect(x,yy-2.7,3.2,3.2,'F');}
+        doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...INK);doc.text(it.n,x+(it.c?5:0),yy);
+        if(it.v){doc.setTextColor(...MUT);doc.text(it.v,x+cw-4,yy,{align:'right'});}
+        doc.line(x,yy+1.6,x+cw-4,yy+1.6);});}
+    y+=nr*rh+3;}
+  if(tots.length){let x=tx;doc.setFontSize(8.5);tots.forEach(t=>{const s=t.n+': '+t.v;doc.setFont('helvetica',t.b?'bold':'normal');const w=doc.getTextWidth(s)+(t.c?5:0)+8;if(x+w>tx+tw){x=tx;y+=5;}
+    if(!dry){if(t.c){doc.setFillColor(...t.c);doc.rect(x,y-2.7,3.2,3.2,'F');}doc.setTextColor(...INK);doc.text(s,x+(t.c?5:0),y);}x+=w;});y+=5;}
+  return y;}
 async function exportMapPdf(){
   if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
   if(!MAP){toast('O mapa ainda não carregou.');return;}
@@ -2029,8 +2062,8 @@ async function exportPdf(){
     if(!tal.length){doc.setTextColor(...MUT);doc.text('Nenhum talhão plantado com os filtros atuais.',MG,ty);}
 
     // mapa
-    if(mapIm){newPage('Mapa dos talhões: '+mapMd);const aw=W-2*MG,ah=H-21-9-8;let iw=aw,ih=aw*mapIm.h/mapIm.w;if(ih>ah){ih=ah;iw=ah*mapIm.w/mapIm.h;}
-      doc.addImage(mapIm.src,'JPEG',MG+(aw-iw)/2,21,iw,ih);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...MUT);doc.text(clean('Legenda: '+mapLeg).slice(0,220),MG,H-11);}
+    if(mapIm){newPage('Mapa dos talhões: '+mapMd);const aw=W-2*MG,lh=drawMapLegend(doc,MG,aw,0,clean,true),ah=H-21-12-lh;let iw=aw,ih=aw*mapIm.h/mapIm.w;if(ih>ah){ih=ah;iw=ah*mapIm.w/mapIm.h;}
+      doc.addImage(mapIm.src,'JPEG',MG+(aw-iw)/2,21,iw,ih);drawMapLegend(doc,MG,aw,21+ih+6,clean);}
     // colheita e janelas
     newPage('Previsão de colheita e janelas de segunda safra');kpiRow(kM,21);
     img('chHarv',MG,41,W-2*MG,62,'Área a colher por semana, por janela');
