@@ -225,6 +225,19 @@ button.nowc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,35,43,
 .toast.act.on{pointer-events:auto}
 .toast.act{display:flex;align-items:center;gap:14px}
 .toast button{background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:5px;padding:3px 10px;font-weight:700;cursor:pointer;font-size:13px}
+.pdfdlg{position:fixed;inset:0;background:rgba(0,35,43,.55);z-index:190;display:flex;align-items:center;justify-content:center;padding:16px}
+.pdfdlg[hidden]{display:none}
+.pdfdlg>div{background:var(--surface);color:var(--ink);border-radius:12px;padding:20px 22px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.pdfdlg h3{margin:0 0 4px;font-size:18px}.pdfdlg .help{margin:0 0 14px}
+.pdfdlg fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 14px 12px;margin:0 0 12px}
+.pdfdlg legend{font-weight:700;font-size:13px;padding:0 6px;color:var(--muted)}
+.pdfdlg .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px}
+.pdfdlg label{display:flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+.pdfdlg input{width:16px;height:16px;accent-color:var(--brand)}
+.pdfdlg .acts{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:6px;flex-wrap:wrap}
+.pdfdlg .acts button{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:6px;padding:8px 14px;font:600 14px var(--sans);cursor:pointer}
+.pdfdlg .acts .go{background:var(--brand);border-color:var(--brand);color:#fff}
+.pdfdlg .lnk2{background:none;border:0;color:var(--brand);font:600 13px var(--sans);cursor:pointer;padding:0 8px 0 0}
 .busyov{position:fixed;inset:0;background:rgba(0,35,43,.55);z-index:200;display:flex;align-items:center;justify-content:center}
 .busyov>div{background:var(--surface);color:var(--ink);padding:16px 22px;border-radius:10px;display:flex;gap:12px;align-items:center;font-weight:600}
 .spinner{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite}
@@ -597,6 +610,12 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
   </section>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="pdfdlg noprint" id="pdfDlg" hidden role="dialog" aria-modal="true" aria-labelledby="pdfDlgT"><div>
+  <h3 id="pdfDlgT">O que vai no relatório</h3><p class="help">Marque as páginas e os mapas que devem sair no PDF. Os filtros do painel continuam valendo.</p>
+  <fieldset><legend>Páginas</legend><div class="opts" id="pdfSecs"></div></fieldset>
+  <fieldset><legend>Mapas</legend><div class="opts" id="pdfMaps"></div></fieldset>
+  <div class="acts"><span><button class="lnk2" id="pdfAll">Marcar tudo</button><button class="lnk2" id="pdfNone">Desmarcar tudo</button></span><span style="display:flex;gap:8px"><button id="pdfCancel">Cancelar</button><button class="go" id="pdfGo">Gerar PDF</button></span></div>
+</div></div>
 <div class="busyov" id="busyOv" hidden><div><span class="spinner"></span><span id="busyTxt">Gerando PDF…</span></div></div>
 
 <script>
@@ -1809,7 +1828,21 @@ $('#segTal').onclick=e=>{const b=e.target.closest('button');if(!b)return;talMode
 $('#gMin').oninput=e=>{L.min=+e.target.value;$('#gMinOut').textContent=L.min+'%';renderSementes();};
 $$('.tab').forEach(t=>t.onclick=()=>{view=t.dataset.view;$$('.tab').forEach(x=>x.setAttribute('aria-selected',x===t?'true':'false'));$$('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+view));
   $('#filterBar').style.display=view==='sementes'||view==='base'||view==='mapa'?'none':'';render();});
-$('#btnPrint').onclick=()=>exportPdf();
+const PDF_SECS=[['resumo','Resumo e plantio diário'],['chuva','Chuva, fazendas e materiais'],['ritmo','Turno e ritmo semanal'],['talhoes','Tabela de talhões plantados'],['colheita','Previsão de colheita e janelas'],['sementes','Sementes: entrada e qualidade'],['conf','Pontos para revisar na planilha']];
+const PDF_MAPS=[['var','Variedade'],['prog','% plantado'],['jan','Janela pós-colheita'],['tempo','Linha do tempo'],['agua','Água no solo'],['chuva','Chuva']];
+function openPdfDlg(){let sel=null;try{sel=JSON.parse(store.get('plantio-pdfsel')||'null');}catch(e){}
+  if(!sel)sel={s:PDF_SECS.map(x=>x[0]),m:[mapMode]};
+  $('#pdfSecs').innerHTML=PDF_SECS.map(([k,l])=>`<label><input type="checkbox" data-s="${k}"${sel.s.includes(k)?' checked':''}> ${l}</label>`).join('');
+  $('#pdfMaps').innerHTML=PDF_MAPS.map(([k,l])=>`<label><input type="checkbox" data-m="${k}"${sel.m.includes(k)?' checked':''}> ${l}</label>`).join('');
+  $('#pdfDlg').hidden=false;$('#pdfGo').focus();}
+$('#btnPrint').onclick=openPdfDlg;
+$('#pdfCancel').onclick=()=>{$('#pdfDlg').hidden=true;};
+$('#pdfDlg').onclick=e=>{if(e.target.id==='pdfDlg')$('#pdfDlg').hidden=true;};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#pdfDlg').hidden)$('#pdfDlg').hidden=true;});
+$('#pdfAll').onclick=()=>$$('#pdfDlg input').forEach(i=>i.checked=true);$('#pdfNone').onclick=()=>$$('#pdfDlg input').forEach(i=>i.checked=false);
+$('#pdfGo').onclick=()=>{const sel={s:[...$$('#pdfSecs input:checked')].map(i=>i.dataset.s),m:[...$$('#pdfMaps input:checked')].map(i=>i.dataset.m)};
+  if(!sel.s.length&&!sel.m.length){toast('Marque pelo menos uma página ou um mapa.');return;}
+  store.set('plantio-pdfsel',JSON.stringify(sel));$('#pdfDlg').hidden=true;exportPdf(sel);};
 $('#btnMapPdf').onclick=()=>exportMapPdf();
 function setFold(on){$('#filterBar').classList.toggle('folded',on);$('#btnFold').textContent=on?'Mostrar filtros':'Ocultar filtros';$('#btnFold').setAttribute('aria-expanded',on?'false':'true');store.set('plantio-fold',on?'1':'0');}
 $('#btnFold').onclick=()=>setFold(!$('#filterBar').classList.contains('folded'));
@@ -1828,7 +1861,7 @@ $('#btnCsv').onclick=()=>{
 /* ================= entrega de arquivos ================= */
 let dlNs;
 // PDF de uma página: só o mapa por variedade e a tabela de áreas
-function flowLegend(doc,tx,tw,y0,dry,title,gi,lg,items,tots,pc,cl){/* legenda compacta em linha, numa faixa clara */
+function flowLegend(doc,tx,tw,y0,dry,title,gi,lg,items,tots,pc,cl,md){/* legenda compacta em linha, numa faixa clara */
   const INK=[0,35,43],MUT=[91,107,112],PAD=3,LH=4.6,FS=7.5;let x,y,lines=1;const iw=tw-2*PAD;
   const short=v=>v.split(' · ')[0];
   const chips=[...items.map(it=>({...it,v:short(it.v)})),...tots.map(t=>({...t,v:short(t.v),tot:true}))];
@@ -1848,7 +1881,7 @@ function flowLegend(doc,tx,tw,y0,dry,title,gi,lg,items,tots,pc,cl){/* legenda co
     let labs=[...lg.querySelectorAll('.help span')].map(e=>e.textContent);if(!labs.length)labs=[...lg.querySelectorAll('b')].map(e=>e.textContent);if(!labs.length)labs=[gi.parentElement.textContent];
     const bx=x+tW+2,bw=Math.min(90,iw-tW-4),N=90;for(let i=0;i<N;i++){doc.setFillColor(...at((i+.5)/N));doc.rect(bx+bw*i/N,y-2.6,bw/N+.12,2.8,'F');}
     doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MUT);
-    labs.forEach((t,i)=>{const m=/(\d+)%/.exec(t);const f=labs.length===1?.5:m&&mapMode==='agua'?+m[1]/100:i/(labs.length-1);doc.text(cl(t),bx+bw*f,y+3.3,{align:f<=0?'left':f>=1?'right':'center'});});
+    labs.forEach((t,i)=>{const m=/(\d+)%/.exec(t);const f=labs.length===1?.5:m&&md==='agua'?+m[1]/100:i/(labs.length-1);doc.text(cl(t),bx+bw*f,y+3.3,{align:f<=0?'left':f>=1?'right':'center'});});
     y+=gh+1.5;doc.setFontSize(FS);}
   else if(title){doc.setFont('helvetica','bold');doc.setTextColor(...INK);}
   let cx=0;
@@ -1861,13 +1894,13 @@ function flowLegend(doc,tx,tw,y0,dry,title,gi,lg,items,tots,pc,cl){/* legenda co
     if(c.v){doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.text(c.v,px,y);}
     cx+=w;});
   return y0+h;}
-function drawMapLegend(doc,tx,tw,y0,clean,dry,compact){/* legenda do mapa (cores lidas da tela) para os PDFs; dry=true só mede a altura */
+function drawMapLegend(doc,tx,tw,y0,clean,dry,compact,src){/* legenda do mapa (cores lidas da tela) para os PDFs; dry=true só mede a altura */
   const INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225];let y=y0;
   const pc=s=>{s=String(s||'');let m=/#([0-9a-f]{6})([0-9a-f]{2})?\b/i.exec(s),r,g,b,a=1;if(m){[r,g,b]=[0,2,4].map(i=>parseInt(m[1].substr(i,2),16));if(m[2])a=parseInt(m[2],16)/255;}
     else{m=/rgba?\(([^)]*)\)/.exec(s);if(!m)return [150,150,150];[r,g,b,a=1]=m[1].split(',').map(Number);}return [r,g,b].map(v=>Math.round(v*a+255*(1-a)));};
   const cl=s=>clean(String(s).replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/\s+/g,' ').trim());
-  const lg=$('#mapLeg'),gi=lg&&!lg.hidden?[...lg.querySelectorAll('i')].find(i=>/gradient/.test(i.style.background)):null;
-  const tb=$('#mapSum table'),hd=tb?[...tb.tHead.rows[0].cells].map(c=>cl(c.textContent)):[];
+  const lg=src?src.lg:$('#mapLeg'),gi=lg&&!lg.hidden?[...lg.querySelectorAll('i')].find(i=>/gradient/.test(i.style.background)):null,md=src?src.mode:mapMode;
+  const tb=(src?src.sum:$('#mapSum')).querySelector('table'),hd=tb?[...tb.tHead.rows[0].cells].map(c=>cl(c.textContent)):[];
   if(!compact&&!dry){doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(cl('Legenda'+(hd[0]?' - '+hd[0]:'')),tx,y);}if(!compact)y+=5;
   if(gi&&!compact){if(!dry){const st=[...gi.style.background.matchAll(/(#[0-9a-f]{6,8}|rgba?\([^)]*\))\s*([\d.]+%)?/gi)].map(m=>({c:pc(m[1]),p:m[2]?parseFloat(m[2])/100:null}));
       st.forEach((o,i)=>{if(o.p==null)o.p=st.length>1?i/(st.length-1):0;});
@@ -1875,7 +1908,7 @@ function drawMapLegend(doc,tx,tw,y0,clean,dry,compact){/* legenda do mapa (cores
       const bw=Math.min(tw,120),N=100;for(let i=0;i<N;i++){doc.setFillColor(...at((i+.5)/N));doc.rect(tx+bw*i/N,y,bw/N+.15,3.4,'F');}
       doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUT);
       let labs=[...lg.querySelectorAll('.help span')].map(e=>e.textContent);if(!labs.length)labs=[...lg.querySelectorAll('b')].map(e=>e.textContent);if(!labs.length)labs=[gi.parentElement.textContent];
-      labs.forEach((t,i)=>{const m=/(\d+)%/.exec(t);const f=labs.length===1?.5:m&&mapMode==='agua'?+m[1]/100:i/(labs.length-1);doc.text(cl(t),tx+bw*f,y+7,{align:f<=0?'left':f>=1?'right':'center'});});}
+      labs.forEach((t,i)=>{const m=/(\d+)%/.exec(t);const f=labs.length===1?.5:m&&md==='agua'?+m[1]/100:i/(labs.length-1);doc.text(cl(t),tx+bw*f,y+7,{align:f<=0?'left':f>=1?'right':'center'});});}
     y+=13;}
   let items=[],tots=[];
   if(tb){const unit=j=>(hd[j]||'').toLowerCase().replace(' na safra','');
@@ -1883,7 +1916,7 @@ function drawMapLegend(doc,tx,tw,y0,clean,dry,compact){/* legenda do mapa (cores
     [...tb.tBodies[0].rows].forEach(r=>{const c=[...r.cells],d=c[0].querySelector('.cdot');items.push({c:d?pc(d.style.background||d.style.backgroundColor):null,n:cl(c[0].textContent),v:val(c,hd.length-c.length)});});
     if(tb.tFoot)[...tb.tFoot.rows].forEach(r=>{const c=[...r.cells],d=c[0].querySelector('.cdot');tots.push({c:d?pc(d.style.background||d.style.backgroundColor):null,n:cl(c[0].textContent),v:val(c,c.length===2&&hd.length>2&&c[1].colSpan>1?hd.length-2:hd.length-c.length),b:c[0].tagName==='TH'});});}
   else if(lg&&!lg.hidden&&!gi)[...lg.querySelectorAll(':scope > span')].forEach(sp=>{const i=sp.querySelector('i');if(i)items.push({c:pc(i.style.background||i.style.backgroundColor),n:cl(sp.textContent),v:''});});
-  if(compact)return flowLegend(doc,tx,tw,y0,dry,hd[0]||'',gi,lg,items,tots,pc,cl);
+  if(compact)return flowLegend(doc,tx,tw,y0,dry,hd[0]||'',gi,lg,items,tots,pc,cl,md);
   if(items.length){const nc=Math.max(1,Math.min(tw>200?5:4,Math.floor(tw/45)));const cols=items.length>12?nc:Math.min(nc,3),cw=tw/cols,rh=items.length>24?4.8:5.4,nr=Math.ceil(items.length/cols);
     if(!dry){doc.setDrawColor(...LINE);doc.setLineWidth(.2);
       items.forEach((it,i)=>{const col=Math.floor(i/nr),row=i%nr,x=tx+col*cw,yy=y+row*rh;
@@ -1999,10 +2032,11 @@ function fitChart(id,boxW,boxH){const c=document.getElementById(id);if(!c||!char
 function chartImg(id){const c=document.getElementById(id);if(!c||!c.width||!c.height||!charts[id])return null;
   const k=document.createElement('canvas');k.width=c.width;k.height=c.height;const x=k.getContext('2d');x.fillStyle='#FFFFFF';x.fillRect(0,0,k.width,k.height);x.drawImage(c,0,0);
   return {src:k.toDataURL('image/png'),fmt:'PNG',w:c.width,h:c.height};}
-async function exportPdf(){
+async function exportPdf(sel){
+  sel=sel||{s:PDF_SECS.map(x=>x[0]),m:[mapMode]};const S=new Set(sel.s);
   if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
   const ov=$('#busyOv');ov.hidden=false;
-  const prevTheme=document.documentElement.dataset.theme,prevView=view,prevAnim=Chart.defaults.animation,prevDpr=Chart.defaults.devicePixelRatio;
+  const prevMapMode=mapMode,prevCard=CARD,prevTheme=document.documentElement.dataset.theme,prevView=view,prevAnim=Chart.defaults.animation,prevDpr=Chart.defaults.devicePixelRatio;
   const imgs={};
   const PW=297,PH=210,PM=10,gw0=(PW-2*PM-4)/2,gh0=(PH-21-9-4)/2,shH=(PH-42-9-4)/2,wkH=72,lotH=104,entH=PH-42-9-4-104;
   const BOX={chDaily:[PW-2*PM,PH-69-9],chRain:[gw0*1.25,gh0],chCult:[gw0*.75,gh0],chFaz:[gw0,gh0],chVar:[gw0,gh0],
@@ -2020,7 +2054,10 @@ async function exportPdf(){
     show('talhoes');await sleep(50);
     const tal=talRows().filter(r=>r.ap>0).sort((a,b)=>a.f.localeCompare(b.f,'pt')||a.tl.localeCompare(b.tl,'pt',{numeric:true}));
     show('mapa');await sleep(250);BOX.chHarv=[PW-2*PM,62];await grab(['chHarv']);
-    const mapIm=await mapImage(),mapLeg=[...$$('#mapLeg > span')].map(s=>s.textContent).filter(t=>!t.startsWith('Cor mais')).join('  |  '),mapMd=$('#segMap .on').textContent;
+    const maps=[];CARD=null;
+    for(const [mk,ml] of PDF_MAPS){if(!sel.m.includes(mk))continue;mapMode=mk;vbCur=null;renderMap();await sleep(mk==='agua'||mk==='chuva'?250:80);
+      const im=await mapImage();if(im)maps.push({im,title:mk==='tempo'&&tDate?ml+' em '+fmtDY(tDate):ml,src:{lg:$('#mapLeg').cloneNode(true),sum:$('#mapSum').cloneNode(true),mode:mk}});}
+    mapMode=prevMapMode;CARD=prevCard;
     const kM=[...$$('#kpisM .kpi')].map(k=>[k.querySelector('.k').textContent,[...k.querySelector('.v').childNodes].map(x=>x.textContent.trim()).filter(Boolean).join(' '),k.querySelector('.d').textContent]);
     const hrows=colheitaRows(M.rec).filter(r=>r.j==='milho'||r.j==='gergelim').sort((a,b)=>a.j.localeCompare(b.j)*-1||String(a.hIni).localeCompare(String(b.hIni))||a.tl.localeCompare(b.tl,'pt',{numeric:true}));
     show('sementes');await sleep(250);
@@ -2051,8 +2088,9 @@ async function exportPdf(){
       doc.setFontSize(13);doc.setTextColor(...PET);doc.text(clean(v),x+3,y+11);
       doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...MUT);doc.text(clean(d).slice(0,48),x+3,y+15);});};
 
+    let started=false;const sec=t=>{if(started)newPage(t);else{header(t);started=true;}};
     // página 1
-    header('Acompanhamento de plantio');
+    if(S.has('resumo')){sec('Acompanhamento de plantio');
     let y=21;
     const tags=[];if(F.ini!==M.dMin||F.fim!==M.dMax)tags.push(`Período ${fmtDY(F.ini)} a ${fmtDY(F.fim)}`);
     if(F.cult.size!==M.culturas.length)tags.push('Cultura: '+[...F.cult].join(', '));
@@ -2070,17 +2108,18 @@ async function exportPdf(){
     doc.setFontSize(7.5);doc.setTextColor(...MUT);doc.text('0 ha',bx,by+11);doc.text(clean(nf0.format(mx)+' ha'),bx+bw,by+11,{align:'right'});
     doc.text(clean(M.culturas.filter(c=>byC.get(c)).map(c=>`${c}: ${nf0.format(byC.get(c))} ha`).join('   ')+(plan>tot?`   A plantar: ${nf0.format(plan-tot)} ha`:'')),bx,by+15.5);
     y+=22;kpiRow(kp,y);y+=21;
-    img('chDaily',MG,y,W-2*MG,H-y-9,'Acompanhamento diário de plantio (ha/dia e acumulado)');
+    img('chDaily',MG,y,W-2*MG,H-y-9,'Acompanhamento diário de plantio (ha/dia e acumulado)');}
 
     // página 2
-    newPage('Chuva, fazendas e materiais');
     const gw=(W-2*MG-4)/2,gh=(H-21-9-4)/2;
+    if(S.has('chuva')){sec('Chuva, fazendas e materiais');
     img('chRain',MG,21,gw*1.25,gh,'Pluviometria (mm) e área plantada');img('chCult',MG+gw*1.25+4,21,gw*0.75,gh,$('#tCult').textContent);
-    img('chFaz',MG,21+gh+4,gw,gh,'Área plantada por fazenda');img('chVar',MG+gw+4,21+gh+4,gw,gh,$('#tVar').textContent);
+    img('chFaz',MG,21+gh+4,gw,gh,'Área plantada por fazenda');img('chVar',MG+gw+4,21+gh+4,gw,gh,$('#tVar').textContent);}
 
     // página 3: turno + ritmo semanal em cima, talhões embaixo
-    newPage('Turno, ritmo semanal e talhões plantados');
-    if(imgs.chTurno){img('chTurno',MG,21,BOX.chTurno[0],wkH,'Plantio por turno');img('chWeek',MG+BOX.chTurno[0]+4,21,BOX.chWeek[0],wkH,'Ritmo por semana (ha) e chuva (mm)');}
+    const RT=S.has('ritmo'),TL=S.has('talhoes');
+    if(RT)sec(TL?'Turno, ritmo semanal e talhões plantados':'Turno e ritmo semanal');else if(TL)sec('Talhões plantados');
+    if(!RT){}else if(imgs.chTurno){img('chTurno',MG,21,BOX.chTurno[0],wkH,'Plantio por turno');img('chWeek',MG+BOX.chTurno[0]+4,21,BOX.chWeek[0],wkH,'Ritmo por semana (ha) e chuva (mm)');}
     else img('chWeek',MG,21,W-2*MG,wkH,'Ritmo por semana (ha) e chuva (mm)');
 
     // tabela de talhões
@@ -2089,17 +2128,17 @@ async function exportPdf(){
     const row=(vals,yy,bold,fill)=>{let x=MG;if(fill){doc.setFillColor(...fill);doc.rect(MG,yy-4,W-2*MG,5.6,'F');}
       doc.setFont('helvetica',bold?'bold':'normal');vals.forEach((v,i)=>{const w=cols[i][1]*sc;const s=doc.splitTextToSize(clean(v),w-2)[0]||'';cols[i][2]?doc.text(s,x+w-1.5,yy,{align:'right'}):doc.text(s,x+1.5,yy);x+=w;});};
     const talHead=(y0)=>{doc.setFontSize(8);doc.setTextColor(...MUT);row(cols.map(c=>c[0]),y0,true,[238,242,240]);return y0+6;};
-    let ty=21+wkH+8;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...PET);doc.text(clean(`Talhões plantados (${tal.length})`),MG,ty);ty=talHead(ty+6);doc.setFontSize(8);
+    if(TL){let ty=RT?21+wkH+8:27;doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...PET);doc.text(clean(`Talhões plantados (${tal.length})`),MG,ty);ty=talHead(ty+6);doc.setFontSize(8);
     tal.forEach((r,i)=>{if(ty>H-12){newPage('Talhões plantados (continuação)');ty=talHead(27);}
       doc.setTextColor(...PET);doc.setFontSize(8);
       row([r.tl,r.f,r.at?nf2.format(r.at):'-',nf2.format(r.ap),nf0.format(r.pct)+'%',r.v,fmtDY(r.ini),fmtDY(r.fim),r.dias??'-',r.ch7==null?'-':nf0.format(r.ch7)+(r.ch7p?' (parcial)':''),r.pop?nf0.format(r.pop):'-',r.em?fmtDY(r.em):'-'],ty,false,i%2?null:[248,250,249]);ty+=5.6;});
-    if(!tal.length){doc.setTextColor(...MUT);doc.text('Nenhum talhão plantado com os filtros atuais.',MG,ty);}
+    if(!tal.length){doc.setTextColor(...MUT);doc.text('Nenhum talhão plantado com os filtros atuais.',MG,ty);}}
 
     // mapa
-    if(mapIm){newPage('Mapa dos talhões: '+mapMd);const aw=W-2*MG,lh=drawMapLegend(doc,MG,aw,0,clean,true,true),ah=H-21-12-lh;let iw=aw,ih=aw*mapIm.h/mapIm.w;if(ih>ah){ih=ah;iw=ah*mapIm.w/mapIm.h;}
-      doc.addImage(mapIm.src,'JPEG',MG+(aw-iw)/2,21,iw,ih);drawMapLegend(doc,MG,aw,21+ih+4,clean,false,true);}
+    maps.forEach(({im:mapIm,title,src})=>{sec('Mapa dos talhões: '+title);const aw=W-2*MG,lh=drawMapLegend(doc,MG,aw,0,clean,true,true,src),ah=H-21-12-lh;let iw=aw,ih=aw*mapIm.h/mapIm.w;if(ih>ah){ih=ah;iw=ah*mapIm.w/mapIm.h;}
+      doc.addImage(mapIm.src,'JPEG',MG+(aw-iw)/2,21,iw,ih);drawMapLegend(doc,MG,aw,21+ih+4,clean,false,true,src);});
     // colheita e janelas
-    newPage('Previsão de colheita e janelas de segunda safra');kpiRow(kM,21);
+    if(S.has('colheita')){sec('Previsão de colheita e janelas de segunda safra');kpiRow(kM,21);
     img('chHarv',MG,41,W-2*MG,62,'Área a colher por semana, por janela');
     const hc=[['Janela',28],['Talhão',18],['Fazenda',24],['Cultivar',38],['Área (ha)',20,1],['Plantio',34],['Ciclo',12,1],['Colheita prevista',38],['Folga (dias)',18,1]];
     const hsc=(W-2*MG)/hc.reduce((s,c)=>s+c[1],0);
@@ -2110,20 +2149,21 @@ async function exportPdf(){
     doc.text(clean(`Talhões com colheita prevista até ${fmtDY(JAN.milhoFim)} (milho safrinha) e de ${fmtDY(addDays(JAN.milhoFim,1))} a ${fmtDY(JAN.gerFim)} (gergelim)`),MG,hy);hy=hHead(hy+6);
     hrows.forEach((r,i)=>{if(hy>H-12){newPage('Janelas de segunda safra (continuação)');hy=hHead(27);}doc.setTextColor(...PET);doc.setFontSize(8);
       hrow([r.jl,r.tl,r.f,r.v,nf2.format(r.a),fmtDY(r.pIni)+(r.pFim!==r.pIni?' a '+fmtDY(r.pFim):''),r.cic??'-',fmtDY(r.hIni)+(r.hFim!==r.hIni?' a '+fmtDY(r.hFim):''),r.folga??'-'],hy,false,i%2?null:[248,250,249]);hy+=5.6;});
-    if(!hrows.length){doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.setFontSize(8.5);doc.text('Nenhum talhão nas janelas com os filtros atuais.',MG,hy);}
+    if(!hrows.length){doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.setFontSize(8.5);doc.text('Nenhum talhão nas janelas com os filtros atuais.',MG,hy);}}
 
     // sementes
-    if((DB.lotes||[]).length||(DB.entradas||[]).length){
-      newPage('Sementes: entrada e qualidade');kpiRow(kl,21);
+    if(S.has('sementes')&&((DB.lotes||[]).length||(DB.entradas||[]).length)){
+      sec('Sementes: entrada e qualidade');kpiRow(kl,21);
       img('chLot',MG,42,W-2*MG,lotH,'Germinação por lote (7º dia) e IVG (%)');
       img('chEntVar',MG,42+lotH+4,gw,entH,'Sementes recebidas por variedade (t)');img('chEntDate',MG+gw+4,42+lotH+4,gw,entH,'Chegadas de sementes (t)');}
 
     // conferência
-    if(conf.length){newPage(`Pontos para revisar na planilha (${conf.length})`);let cy=27;
+    if(S.has('conf')&&conf.length){sec(`Pontos para revisar na planilha (${conf.length})`);let cy=27;
       conf.forEach(c=>{const lines=doc.splitTextToSize(clean(c.det),W-2*MG-70);if(cy+lines.length*4.2>H-12){newPage('Pontos para revisar (continuação)');cy=27;}
         doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...PET);doc.text(clean(c.tl),MG,cy);doc.text(clean(c.tipo),MG+18,cy);
         doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.text(lines,MG+70,cy);cy+=lines.length*4.2+2.5;});}
 
+    if(!started)sec('Acompanhamento de plantio');
     const blob=doc.output('blob');
     const d=new Date();const stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     ov.hidden=true;
@@ -2134,6 +2174,7 @@ async function exportPdf(){
     if(prevTheme)document.documentElement.dataset.theme=prevTheme;else delete document.documentElement.dataset.theme;
     $$('.cv[data-pdf-h]').forEach(cv=>{cv.style.height='';delete cv.dataset.pdfH;});
     Chart.defaults.animation=prevAnim;Chart.defaults.devicePixelRatio=prevDpr;themeChart();
+    mapMode=prevMapMode;CARD=prevCard;vbCur=null;
     view=prevView;$$('.view').forEach(x=>x.classList.toggle('on',x.id==='v-'+view));render();
   }
 }
