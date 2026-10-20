@@ -270,11 +270,12 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .leg[hidden]{display:none}
 .harvhd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
 .harvhd .tag button{background:none;border:0;cursor:pointer;font-size:15px;line-height:1;color:var(--muted);padding:0 3px}
-.tline{display:grid;grid-template-columns:auto auto 1fr auto auto auto;gap:10px;align-items:center;margin-top:10px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2)}
+.tline{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:2;width:min(420px,calc(100% - 110px));display:grid;grid-template-columns:auto 1fr auto auto;gap:4px 8px;align-items:center;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:color-mix(in srgb,var(--surface) 92%,transparent);box-shadow:0 2px 8px rgba(0,35,43,.12)}
+.tline #tStart,.tline #tEnd{display:none}
 .tline input[type=range]{width:100%;accent-color:var(--brand)}
-.tline #tSum{grid-column:1/-1;margin:0}
-.tplay{width:34px;height:34px;border-radius:50%;border:0;background:var(--brand);color:#fff;cursor:pointer;font-size:13px}
-.tout{font-size:14px;min-width:84px;text-align:center}
+.tline #tSum{grid-column:1/-1;margin:0;font-size:12px;line-height:1.35}
+.tplay{width:28px;height:28px;border-radius:50%;border:0;background:var(--brand);color:#fff;cursor:pointer;font-size:13px}
+.tout{font-size:13px;min-width:78px;text-align:center}
 @media(max-width:640px){.tline{grid-template-columns:auto 1fr auto}.tline #tStart,.tline #tEnd{display:none}}
 .selchip{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;padding:8px 10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);font-size:13px}
 .tcard h3{margin:0;font-size:18px}
@@ -306,7 +307,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 #btnMapPdf{margin-left:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:13px;padding:6px 12px}
 #btnMapPdf:hover{border-color:var(--brand);color:var(--brand)}
 .agcfg{display:inline-flex;gap:10px;margin-left:12px;font-size:13px;color:var(--muted);align-items:center}.agcfg[hidden]{display:none}.agcfg input{width:58px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);font:inherit}
-.mapfull{position:absolute;top:10px;left:10px;z-index:2;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font:600 13px var(--sans);cursor:pointer;box-shadow:0 2px 8px rgba(0,35,43,.12)}
+.mapfull{position:absolute;bottom:10px;left:10px;z-index:2;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font:600 13px var(--sans);cursor:pointer;box-shadow:0 2px 8px rgba(0,35,43,.12)}
 .mapfull[hidden]{display:none}
 .maptip{position:absolute;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,35,43,.18);padding:8px 11px;font-size:13px;line-height:1.5;pointer-events:none;max-width:280px}
 .janbar{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
@@ -513,12 +514,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
           <div class="maptip" id="mapTip" hidden></div>
           <button class="mapfull noprint" id="mapFull" hidden>⤢ Mapa inteiro</button>
           <div class="mapctl noprint"><button id="mzIn" data-tip="Aproximar (ou Ctrl + roda do mouse)" aria-label="Aproximar">+</button><button id="mzOut" data-tip="Afastar" aria-label="Afastar">−</button><button id="mzFs" data-tip="Tela cheia" aria-label="Tela cheia">⛶</button></div>
-          <div class="empty" id="mapEmpty">Nenhum limite de talhão carregado. Use Carregar GeoJSON.</div>
-        </div>
-        <aside class="mapside"><div class="leg" id="mapLeg"></div><div id="mapSum"></div></aside>
-        </div>
-        <div id="etoCmp" hidden></div>
-        <div class="tline noprint" id="tLine" hidden>
+          <div class="tline noprint" id="tLine" hidden>
           <button class="tplay" id="tPlay" aria-label="Reproduzir">▶</button>
           <span class="help" id="tStart"></span>
           <input type="range" id="tRange" min="0" max="1" value="0" aria-label="Data da linha do tempo">
@@ -526,7 +522,12 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
           <b class="tout" id="tOut"></b>
           <button class="lnk" id="tToday">Hoje</button>
           <p class="help" id="tSum"></p>
+          </div>
+          <div class="empty" id="mapEmpty">Nenhum limite de talhão carregado. Use Carregar GeoJSON.</div>
         </div>
+        <aside class="mapside"><div class="leg" id="mapLeg"></div><div id="mapSum"></div></aside>
+        </div>
+        <div id="etoCmp" hidden></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px">
           <p class="help" id="mapNote" style="margin:0;flex:1;min-width:240px"></p>
           <input type="file" id="geoIn" accept=".geojson,.json,application/geo+json" class="sr" aria-label="Arquivo GeoJSON dos talhões">
@@ -1277,6 +1278,11 @@ function renderEtoCmp(){
    <p class="help" style="margin:8px 0 0">Em negrito: talhões que mudam de faixa (seco, atenção, bom, úmido). O mapa acima segue o modo escolhido em "ETo". A ETo do Open-Meteo é estimada para um ponto da fazenda por modelo de clima, não por estação no campo.</p></div>`;
   $('#ecSort').value=ECSORT;$('#ecSort').onchange=e=>{ECSORT=e.target.value;renderEtoCmp();};
 }
+/* água no solo num dia da linha do tempo: usa a série diária já calculada de cada talhão */
+function aguaView(AG,d){const ti=dayDiff(AG.start,d),m=new Map();
+  AG.m.forEach((x,k)=>{const p=x.ser[ti]!=null?x.ser[ti]:x.pct,dap=x.ini?dayDiff(x.ini,d):null;
+    const pl=x.ini&&x.ini<=d;m.set(k,{...x,ini:pl?x.ini:null,dap:pl?dap:null,pct:p,arm:p*x.cad,etc:kcSoja(pl?dap:-1,x.ciclo)*etoDia(d),ser:x.ser.slice(0,ti+1)});});
+  return {...AG,m,end:d,base:AG,ti,key:AG.key+'|'+d};}
 function sparkAgua(ser,days){const s=ser.slice(-days),w=220,h=46,n=s.length;if(n<2)return '';
   const pts=s.map((v,i)=>`${(i/(n-1)*w).toFixed(1)},${(h-Math.min(1,v)*h).toFixed(1)}`).join(' ');
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;margin-top:4px"><rect x="0" y="0" width="${w}" height="${h*.2}" fill="#1C5E9E" opacity=".08"/><rect x="0" y="${h*.5}" width="${w}" height="${h*.5}" fill="#D4454C" opacity=".07"/><line x1="0" x2="${w}" y1="${h/2}" y2="${h/2}" stroke="#E0A100" stroke-dasharray="3 3" stroke-width="1"/><polyline points="${pts}" fill="none" stroke="#1C5E9E" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;}
@@ -1339,8 +1345,11 @@ function renderMap(){
   const D=mapTalData(),vp=varPalette();
   const surf=cssv('--surface-2'),line=cssv('--line'),ink=cssv('--ink');
   const tempo=mapMode==='tempo';
-  $('#tLine').hidden=!tempo;$('#agCfg').hidden=mapMode!=='agua';$('#chCfg').hidden=mapMode!=='chuva';$('#chPer').value=CHPER;$('#chPts').checked=CHPTS;$('#agCad').value=AGUA.cad;$('#agEto').value=AGUA.eto;$('#agModo').value=AGUA.modo;$('#agEtoLab').style.display=AGUA.modo==='real'?'none':'';
-  const AG=(mapMode==='agua'||CARD)?aguaAll():null;
+  $('#tLine').hidden=!(tempo||mapMode==='agua');$('#agCfg').hidden=mapMode!=='agua';$('#chCfg').hidden=mapMode!=='chuva';$('#chPer').value=CHPER;$('#chPts').checked=CHPTS;$('#agCad').value=AGUA.cad;$('#agEto').value=AGUA.eto;$('#agModo').value=AGUA.modo;$('#agEtoLab').style.display=AGUA.modo==='real'?'none':'';
+  let AG=(mapMode==='agua'||CARD)?aguaAll():null;
+  if(mapMode==='agua'&&AG&&AG.start){if(!tDate||tDate<AG.start||tDate>AG.end)tDate=AG.end;
+    $('#tRange').max=dayDiff(AG.start,AG.end);$('#tRange').value=dayDiff(AG.start,tDate);$('#tOut').textContent=fmtDY(tDate);
+    if(tDate<AG.end)AG=aguaView(AG,tDate);}
   const CH=mapMode==='chuva'?chuvaGrid():null;
   const AGR=mapMode==='agua'&&AGGRAD&&AG?aguaGrid(AG):null;$('#agGrad').checked=AGGRAD;
   $('#kmlLab').hidden=!(VARGEO.length&&mapMode==='var');$('#kmlOn').checked=KMLON;
@@ -1394,6 +1403,8 @@ function renderMap(){
   if(CH){chImg=`<clipPath id="chClip">${MAP.feats.map(f=>`<path d="${f.d}"/>`).join('')}</clipPath><image href="${CH.url}" x="0" y="0" width="${CH.w.toFixed(1)}" height="${CH.h.toFixed(1)}" preserveAspectRatio="none" clip-path="url(#chClip)" style="image-rendering:auto" pointer-events="none"/>`;
     if(CHPTS){const z=(zm?12:10)*zf,bg='#fff';chPts=CH.pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(z*.38).toFixed(2)}" fill="#0B3D6E" stroke="${bg}" stroke-width="${(z*.14).toFixed(2)}" pointer-events="none"/><text x="${p.x.toFixed(1)}" y="${(p.y-z*.75).toFixed(1)}" font-size="${z.toFixed(1)}" text-anchor="middle" fill="#0B2530" paint-order="stroke" stroke="${bg}" stroke-width="${(z*.28).toFixed(2)}" font-weight="700" pointer-events="none">${nf0.format(p.v)}</text><text x="${p.x.toFixed(1)}" y="${(p.y+z*1.25).toFixed(1)}" font-size="${(z*.75).toFixed(1)}" text-anchor="middle" fill="#0B2530" paint-order="stroke" stroke="${bg}" stroke-width="${(z*.24).toFixed(2)}" font-weight="500" pointer-events="none">${esc(p.id)}</text>`).join('');}}
   host.innerHTML=`<defs><pattern id="pastoPat" patternUnits="userSpaceOnUse" width="${(6*zf).toFixed(3)}" height="${(6*zf).toFixed(3)}" patternTransform="rotate(45)"><rect width="100%" height="100%" fill="${PASTO_COR}" fill-opacity=".28"/><line x1="0" y1="0" x2="0" y2="${(6*zf).toFixed(3)}" stroke="${PASTO_COR}" stroke-width="${(2.2*zf).toFixed(3)}"/></pattern></defs>${chImg}<g>${paths}</g><g>${kp}</g><g>${ko}</g><g>${labels.filter(l=>l.ok).map(l=>l.s).join('')}</g><g>${kl}</g><g>${chPts}</g>`;
+  if(mapMode==='agua'&&AG&&AG.start){const pl=[...AG.m.values()].filter(x=>x.ini&&x.ini<=tDate),md=pl.length?pl.reduce((s,x)=>s+x.pct,0)/pl.length:null,ch=M.rain.get(tDate)||0;
+    $('#tSum').innerHTML=`Em <b>${fmtDY(tDate)}</b>: ${md!=null?`água média dos plantados <b>${nf0.format(md*100)}%</b>`:'nenhum talhão plantado ainda'}; chuva média do dia <b>${nf0.format(ch)} mm</b>.`;}
   if(tempo&&tDate)$('#tSum').innerHTML=`Em <b>${fmtDY(tDate)}</b>: <b>${nf0.format(tAp)} ha</b> plantados (${tAt?nf0.format(tAp/tAt*100):0}% da área), <b style="color:${READY}">${nf0.format(tReady)} ha</b> prontos para colher.`;
   // legenda
   let lg='';
@@ -1467,7 +1478,7 @@ function agRamp(t){t=Math.max(0,Math.min(1,t));let i=0;while(i<AGRAMP.length-2&&
 function aguaGrid(AG){
   const pts=[];M.pluv.forEach((m,id)=>{const pp=M.pluvPos.get(id.toUpperCase().trim());if(pp){const [x,y]=MAP.P([pp.lon,pp.lat]);pts.push({x,y,m});}});
   if(pts.length<3)return null;
-  const key=AG.key+'|'+pts.length+'|'+MAP.w+'|'+SOLOON;if(AGG&&AGG.key===key)return AGG;
+  const B=AG.base||AG,key=B.key+'|'+pts.length+'|'+MAP.w+'|'+SOLOON;const ti=AG.ti;if(AGG&&AGG.key===key)return aguaGridImg(AGG,ti);AG=B;
   const days=dateRange(AG.start,AG.end),nd=days.length,np=pts.length,rr=pts.map(p=>Float32Array.from(days,d=>p.m.get(d)||0));
   const N=220,cw=MAP.w/N,NR=Math.ceil(MAP.h/cw);
   // índice do talhão em cada célula: desenha os polígonos com a cor = índice
@@ -1486,15 +1497,18 @@ function aguaGrid(AG){
       for(let rad=1;rad<=2&&!ccad[q];rad++){let s2=0,n2=0;for(let dr=-rad;dr<=rad;dr++)for(let dc=-rad;dc<=rad;dc++){const rr2=r+dr,cc=c+dc;if(rr2<0||cc<0||rr2>=NR||cc>=N)continue;const g=rr2*N+cc;if(cn[g]){s2+=sm[g]/cn[g];n2++;}}if(n2)ccad[q]=s2/n2;}}}
   const dap0=info.map(o=>o.a&&o.a.ini?dayDiff(o.a.ini,days[0]):null);
   const kc=info.map((o,j)=>Float32Array.from(days,(d,t)=>kcSoja(dap0[j]==null?-1:dap0[j]+t,o.a?o.a.ciclo:null)*etoDia(d)));
-  const cv=document.createElement('canvas');cv.width=N;cv.height=NR;const cx=cv.getContext('2d'),im=cx.createImageData(N,NR),w=new Float32Array(np);
+  const w=new Float32Array(np),S=new Uint8Array(N*NR*nd);
   for(let r=0;r<NR;r++)for(let c=0;c<N;c++){const o=(r*N+c)*4,j=cell[r*N+c];if(j<0)continue;
     const x=(c+.5)*cw,y=(r+.5)*cw;let sw=0,hit=-1;for(let i=0;i<np;i++){const d2=(x-pts[i].x)**2+(y-pts[i].y)**2;if(d2<1e-6){hit=i;break;}w[i]=1/d2;sw+=w[i];}
     const ia=info[j].a,cad=ia?(ia.csrc!=='dados'&&ccad&&ccad[r*N+c]?ccad[r*N+c]:ia.cad):(ccad&&ccad[r*N+c]||AGUA.cad),K=kc[j];let arm=0;
     for(let t=0;t<nd;t++){let mm=0;if(hit>=0)mm=rr[hit][t];else for(let i=0;i<np;i++)mm+=w[i]*rr[i][t];if(hit<0)mm/=sw;
-      arm=Math.min(cad,arm+mm);const ks=Math.min(1,arm/(.5*cad));arm=Math.max(0,arm-K[t]*ks);}
-    const [R,G,B]=agRamp(arm/cad);im.data[o]=R;im.data[o+1]=G;im.data[o+2]=B;im.data[o+3]=235;}
-  cx.putImageData(im,0,0);
-  return AGG={key,url:cv.toDataURL('image/png'),w:N*cw,h:NR*cw};}
+      arm=Math.min(cad,arm+mm);const ks=Math.min(1,arm/(.5*cad));arm=Math.max(0,arm-K[t]*ks);S[(r*N+c)*nd+t]=Math.round(Math.min(1,arm/cad)*250);}}
+  AGG={key,N,NR,nd,S,cell,img:new Map(),w:N*cw,h:NR*cw};return aguaGridImg(AGG,ti);}
+function aguaGridImg(G,ti){if(ti==null)ti=G.nd-1;let url=G.img.get(ti);
+  if(!url){const cv=document.createElement('canvas');cv.width=G.N;cv.height=G.NR;const cx=cv.getContext('2d'),im=cx.createImageData(G.N,G.NR);
+    for(let q=0;q<G.N*G.NR;q++){if(G.cell[q]<0)continue;const [R,Gg,Bb]=agRamp(G.S[q*G.nd+ti]/250),o=q*4;im.data[o]=R;im.data[o+1]=Gg;im.data[o+2]=Bb;im.data[o+3]=235;}
+    cx.putImageData(im,0,0);url=cv.toDataURL('image/png');G.img.set(ti,url);}
+  return {url,w:G.w,h:G.h};}
 function renderSumChuva(CH){
   const per={safra:'na safra',30:'nos últimos 30 dias',15:'nos últimos 15 dias',7:'nos últimos 7 dias',ult:'na última chuva'}[CHPER];
   const all=[...CH.pts,...CH.sem].sort((a,b)=>b.v-a.v),med=all.length?all.reduce((s,p)=>s+p.v,0)/all.length:0;
@@ -1598,12 +1612,12 @@ function renderCard(k,D,AG){
   $('#agCad').onchange=agSet;$('#agEto').onchange=agSet;$('#agModo').onchange=agSet;
   $('#agGrad').onchange=e=>{AGGRAD=e.target.checked;renderMap();};$('#agSolo').checked=SOLOON;$('#agSolo').onchange=e=>{SOLOON=e.target.checked;store.set('plantio-solo',SOLOON?'1':'0');for(const z in AGCM)delete AGCM[z];AGG=null;renderMap();};$('#chPer').onchange=e=>{CHPER=e.target.value;renderMap();};$('#chPts').onchange=e=>{CHPTS=e.target.checked;renderMap();};
   $('#kmlOn').onchange=e=>{KMLON=e.target.checked;store.set('plantio-kml',KMLON?'1':'0');renderMap();};
-  $('#segMap').onclick=e=>{const b=e.target.closest('button');if(!b)return;mapMode=b.dataset.m;$$('#segMap button').forEach(x=>x.classList.toggle('on',x===b));if(mapMode!=='tempo')tStop();renderMap();};
+  $('#segMap').onclick=e=>{const b=e.target.closest('button');if(!b)return;mapMode=b.dataset.m;$$('#segMap button').forEach(x=>x.classList.toggle('on',x===b));tStop();tDate=null;renderMap();};
   $('#segJan').onclick=e=>{const b=e.target.closest('button');if(!b)return;janMode=b.dataset.m;$$('#segJan button').forEach(x=>x.classList.toggle('on',x===b));renderMapa();};
   $('#segHarv').onclick=e=>{const b=e.target.closest('button');if(!b)return;harvMode=b.dataset.m;$$('#segHarv button').forEach(x=>x.classList.toggle('on',x===b));if(HP){clearSel();}renderMapa();};
-  $('#tRange').oninput=e=>{const tb=tBounds();if(!tb)return;tDate=addDays(tb.a,+e.target.value);renderMap();};
+  $('#tRange').oninput=e=>{const tb=tlB();if(!tb)return;tDate=addDays(tb.a,+e.target.value);renderMap();};
   $('#tToday').onclick=()=>{tStop();tDate=null;renderMap();};
-  $('#tPlay').onclick=()=>{if(tTimer){tStop();return;}const tb=tBounds();if(!tb)return;if(!tDate||tDate>=tb.b)tDate=tb.a;
+  $('#tPlay').onclick=()=>{if(tTimer){tStop();return;}const tb=tlB();if(!tb)return;if(!tDate||tDate>=tb.b)tDate=tb.a;
     const step=Math.max(1,Math.round(dayDiff(tb.a,tb.b)/60));$('#tPlay').textContent='❚❚';$('#tPlay').setAttribute('aria-label','Pausar');
     tTimer=setInterval(()=>{tDate=addDays(tDate,step);if(tDate>=tb.b){tDate=tb.b;renderMap();tStop();return;}renderMap();},450);};
   $('#btnGeo').onclick=()=>$('#geoIn').click();
@@ -1617,6 +1631,7 @@ function renderCard(k,D,AG){
   try{const j=JSON.parse(store.get('plantio-jan')||'null');if(j&&j.milhoFim&&j.gerFim){JAN.milhoFim=j.milhoFim;JAN.gerFim=j.gerFim;}}catch(e){}
   $('#janMilho').value=JAN.milhoFim;$('#janGer').value=JAN.gerFim;
 })();
+function tlB(){if(mapMode!=='agua')return tBounds();const A=aguaAll();return A.start?{a:A.start,b:A.end}:null;}
 function tStop(){if(tTimer){clearInterval(tTimer);tTimer=null;}const b=$('#tPlay');if(b){b.textContent='▶';b.setAttribute('aria-label','Reproduzir');}}
 
 function renderMapa(){
@@ -2052,7 +2067,7 @@ async function exportMapPdf(){
     const hex=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');return m?[0,2,4].map(i=>parseInt(m[1].substr(i,2),16)):[150,150,150];};
     try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.addImage(lc.toDataURL('image/png'),'PNG',MG,7,30,12.5);}catch(e){}
     const tName=CARD?(M.tal.get(CARD)||{}).tl||CARD:'';
-    doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);const chp=$('#chPer'),MT={var:'Mapa de plantio por variedade',prog:'Mapa de % plantado',jan:'Mapa da janela pós-colheita',tempo:'Mapa de plantio em '+((tDate||M.dMax)?fmtDY(tDate||M.dMax):''),agua:'Mapa de água no solo (estimada)',chuva:'Mapa de chuva - '+(chp?chp.options[chp.selectedIndex].text.toLowerCase():'')};
+    doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);const chp=$('#chPer'),MT={var:'Mapa de plantio por variedade',prog:'Mapa de % plantado',jan:'Mapa da janela pós-colheita',tempo:'Mapa de plantio em '+((tDate||M.dMax)?fmtDY(tDate||M.dMax):''),agua:'Mapa de água no solo (estimada)'+(tDate&&tDate<hoje()?' em '+fmtDY(tDate):''),chuva:'Mapa de chuva - '+(chp?chp.options[chp.selectedIndex].text.toLowerCase():'')};
     doc.text(clean((MT[mapMode]||MT.var)+(tName?' - talhão '+tName:'')),MG+35,12.5);
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...MUT);doc.text(clean((DB.safra||'Safra')+' · Fazenda Reata e unidades'),MG+35,17.5);
     doc.setFontSize(8.5);doc.text(clean('Gerado em '+fmtDY(new Date().toISOString().slice(0,10))),W-MG,12.5,{align:'right'});
