@@ -1942,6 +1942,40 @@ function drawMapLegend(doc,tx,tw,y0,clean,dry,compact,src){/* legenda do mapa (c
   if(tots.length){let x=tx;doc.setFontSize(8.5);tots.forEach(t=>{const s=t.n+': '+t.v;doc.setFont('helvetica',t.b?'bold':'normal');const w=doc.getTextWidth(s)+(t.c?5:0)+8;if(x+w>tx+tw){x=tx;y+=5;}
     if(!dry){if(t.c){doc.setFillColor(...t.c);doc.rect(x,y-2.7,3.2,3.2,'F');}doc.setTextColor(...INK);doc.text(s,x+(t.c?5:0),y);}x+=w;});y+=5;}
   return y;}
+function aguaBlockPdf(doc,a,x,y,w,cl){/* bloco "Água no solo" da ficha no PDF, igual ao da tela */
+  const INK=[0,35,43],MUT=[91,107,112],c=agClass(a.pct),hx=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+  doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...INK);doc.text('Água no solo (estimada)',x,y);y+=7;
+  doc.setFillColor(...hx(c.c));doc.rect(x,y-3.4,3.4,3.4,'F');doc.setFontSize(14);doc.text(nf0.format(a.arm)+' mm',x+5,y);
+  const bw=doc.getTextWidth(nf0.format(a.arm)+' mm');doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MUT);
+  doc.text(cl('de '+nf0.format(a.cad)+' mm ('+nf0.format(a.pct*100)+'%) · '+c.lab.split(' (')[0]),x+5+bw+2,y);y+=5;
+  doc.setFontSize(8);const ln=t=>{doc.splitTextToSize(cl(t),w).forEach(l=>{doc.text(l,x,y);y+=3.8;});};
+  if(a.solo)ln('Solo: textura '+a.solo.cl.toLowerCase()+', '+a.solo.arg+'% argila e '+a.solo.are+'% areia'+(a.csrc==='solo'?' · CAD '+a.solo.cad+' mm pela textura':a.csrc==='dados'?' · CAD da aba DADOS':''));
+  else if(a.csrc==='dados')ln('CAD da aba DADOS');else ln('CAD padrão de '+nf0.format(a.cad)+' mm (sem textura do solo)');
+  ln(a.ini?'Lavoura com '+a.dap+' dias, consumo '+nf1.format(a.etc)+' mm/dia':'Sem plantio, só evaporação ('+nf1.format(a.etc)+' mm/dia)');
+  const ser=(a.ser||[]).slice(-45),h=18;y+=1.5;
+  if(ser.length>1){doc.setFillColor(232,240,248);doc.rect(x,y,w,h*.2,'F');doc.setFillColor(250,236,236);doc.rect(x,y+h*.5,w,h*.5,'F');
+    doc.setDrawColor(224,161,0);doc.setLineWidth(.3);doc.setLineDashPattern([1,1],0);doc.line(x,y+h/2,x+w,y+h/2);doc.setLineDashPattern([],0);
+    doc.setDrawColor(28,94,158);doc.setLineWidth(.45);const n=ser.length;
+    for(let i=1;i<n;i++)doc.line(x+(i-1)/(n-1)*w,y+h-Math.min(1,ser[i-1])*h,x+i/(n-1)*w,y+h-Math.min(1,ser[i])*h);
+    y+=h+3;doc.setFontSize(6.5);doc.setTextColor(...MUT);doc.text('últimos 45 dias',x,y);doc.text('linha amarela = 50%',x+w,y,{align:'right'});y+=3;}
+  doc.setLineWidth(.2);return y;}
+function aguaSecosPdf(doc,W,H,MG,cl,clean){/* segunda página do PDF de Água no solo: talhões mais secos */
+  const AG=aguaAll(),INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225],hx=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+  const all=[...AG.m.entries()].filter(([k])=>!M.pasto.has(k)).sort((p,q)=>p[1].pct-q[1].pct),rows=all.slice(0,20);if(!rows.length)return;
+  doc.addPage();doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(cl('Talhões mais secos hoje ('+rows.length+' de '+all.length+')'),MG,14);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MUT);doc.text(cl('Água no solo estimada em '+fmtDY(AG.end)+', do mais seco para o mais úmido. Chuva lançada até '+(AG.rainMax?fmtDY(AG.rainMax):'-')+'.'),MG,19.5);
+  doc.setDrawColor(1,154,98);doc.setLineWidth(.6);doc.line(MG,22,W-MG,22);doc.setLineWidth(.2);
+  const cols=[['Talhão',22],['Bloco',34],['Situação',34],['Água hoje',22,1],['CAD',18,1],['%',14,1],['Textura',30],['Argila',16,1],['Areia',16,1],['Origem da CAD',30],['Lavoura',26,1]];
+  const sc=(W-2*MG)/cols.reduce((s,c)=>s+c[1],0);let y=30;
+  const row=(vals,bold,fill,dot)=>{let x=MG;if(fill){doc.setFillColor(...fill);doc.rect(MG,y-4,W-2*MG,6,'F');}doc.setFont('helvetica',bold?'bold':'normal');
+    vals.forEach((v,i)=>{const w=cols[i][1]*sc;let tx=x+1.5;if(i===2&&dot){doc.setFillColor(...hx(dot));doc.rect(tx,y-2.6,2.8,2.8,'F');tx+=4;}
+      const t=doc.splitTextToSize(cl(v),w-2)[0]||'';cols[i][2]?doc.text(t,x+w-1.5,y,{align:'right'}):doc.text(t,tx,y);x+=w;});y+=6.6;};
+  doc.setFontSize(8);doc.setTextColor(...MUT);row(cols.map(c=>c[0]),true,[238,242,240]);
+  rows.forEach(([k,a],i)=>{const t=M.tal.get(k)||{},c=agClass(a.pct);doc.setFontSize(8.5);doc.setTextColor(...INK);
+    row([t.tl||k,t.b||'-',c.lab.split(' (')[0],nf0.format(a.arm)+' mm',nf0.format(a.cad)+' mm',nf0.format(a.pct*100)+'%',a.solo?a.solo.cl:'-',a.solo?a.solo.arg+'%':'-',a.solo?a.solo.are+'%':'-',
+      a.csrc==='solo'?'Textura do solo':a.csrc==='dados'?'Aba DADOS':'Padrão',a.ini?a.dap+' dias':'Sem plantio'],false,i%2?null:[248,250,249],c.c);});
+  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MUT);doc.text(clean('Água no solo: balanço hídrico diário com a chuva do pluviômetro de cada talhão, ETo '+nf1.format(AGUA.eto)+' mm/dia e Kc da soja. CAD pela textura do solo (Saxton & Rawls), 50 cm de raiz.'),MG,H-6);
+  doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});}
 async function exportMapPdf(){
   if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
   if(!MAP){toast('O mapa ainda não carregou.');return;}
@@ -1977,14 +2011,15 @@ async function exportMapPdf(){
       const S=[];if(o){S.push(['Plantio',[['Período',fr(o.ini,o.fim)],...(F_.pop?[['População',nf0.format(F_.pop/1000)+' mil sementes/ha']]:[])]]);
         S.push(['Colheita',[['Prevista',o.hIni?fr(o.hIni,o.hFim):'-'],['Janela',JANLAB[F_.jm]+(F_.fol!=null?' (folga '+F_.fol+' d)':'')]]]);}
       S.push(['Chuva'+(ch.plv?' - pluviômetro '+ch.plv:''),[['Safra (até '+(ch.last?fmtD(ch.last):'-')+')',nf0.format(ch.tot)+' mm'],['Últimos 7 dias',nf0.format(ch.u7)+' mm'],...(o?[['Desde o plantio',nf0.format(ch.dp)+' mm'],['7 dias após o plantio',nf0.format(ch.c7)+' mm']]:[])]]);
-      if(a)S.push(['Água no solo (estimada)',[['Hoje',nf0.format(a.arm)+' de '+nf0.format(a.cad)+' mm ('+nf0.format(a.pct*100)+'%)'],['Situação',agClass(a.pct).lab],...(a.solo?[['Solo',a.solo.cl+', '+a.solo.arg+'% argila']]:[])]]);
       let y=my+3;const cw=fw;let yc=[y];
       S.forEach(([tt,kvs])=>{const c=0,x=fx;let yy=yc[c];
         doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(...INK);doc.text(cl(tt),x,yy);yy+=5;
         kvs.forEach(([l,v])=>{doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...MUT);doc.text(cl(l),x,yy);doc.setTextColor(...INK);doc.text(cl(v),x+cw,yy,{align:'right'});yy+=1.6;doc.setDrawColor(...LINE);doc.line(x,yy,x+cw,yy);yy+=3.8;});
-        yc[c]=yy+3;});}
+        yc[c]=yy+3;});
+      if(a)aguaBlockPdf(doc,a,fx,yc[0],cw,cl);}
     doc.setFont('helvetica','normal');doc.setTextColor(...MUT);
     doc.setFontSize(6.5);doc.text(clean('Limites: '+geoSrc+' · Áreas por variedade: KML de campo · Plantio: aba Diário'),MG,H-6);doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});
+    if(mapMode==='agua'&&!CARD)aguaSecosPdf(doc,W,H,MG,cl,clean);
     const d=new Date(),stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     ov.hidden=true;
     await saveFile(`Mapa_${{var:'variedades',prog:'plantado',jan:'janela',tempo:'linha_do_tempo',agua:'agua_no_solo',chuva:'chuva'}[mapMode]||'variedades'}_${tName?tName.replace(/[^\w\-]+/g,'_')+'_':''}${stamp}.pdf`,doc.output('blob'),'application/pdf');
