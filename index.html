@@ -1372,6 +1372,7 @@ function renderMap(){
     if(tDate<AG.end)AG=aguaView(AG,tDate);}
   const CH=mapMode==='chuva'?chuvaGrid():null;
   const AGR=mapMode==='agua'&&AGGRAD&&AG?aguaGrid(AG):null;$('#agGrad').checked=AGGRAD;
+  {const kb=$('#btnMapKml'),cf2=CARD&&MAP.feats.find(f=>f.k===CARD);kb.textContent=cf2?'Baixar KML ('+cf2.name+')':'Baixar KML (fazenda)';kb.dataset.tip=cf2?'Arquivo para o Google Earth só com este talhão e as áreas de cada variedade. Feche a ficha para baixar a fazenda inteira.':'Arquivo para o Google Earth com todos os talhões coloridos pela variedade e as áreas por variedade (KML)';}
   $('#kmlLab').hidden=!(VARGEO.length&&mapMode==='var');$('#kmlOn').checked=KMLON;
   const kml=mapMode==='var'&&KMLON&&VARGEO.length>0,kmlTal=new Set(kml?VARGEO.map(q=>norm(q.tl)):[]);
   let tb=null;if(tempo){tb=tBounds();if(tb){if(!tDate||tDate<tb.a||tDate>tb.b){const today=new Date().toISOString().slice(0,10);tDate=today<tb.a?tb.a:today>tb.b?tb.b:today;}
@@ -1969,7 +1970,7 @@ $('#pdfAll').onclick=()=>$$('#pdfDlg input').forEach(i=>i.checked=true);$('#pdfN
 $('#pdfGo').onclick=()=>{const sel={s:[...$$('#pdfSecs input:checked')].map(i=>i.dataset.s),m:[...$$('#pdfMaps input:checked')].map(i=>i.dataset.m)};
   if(!sel.s.length&&!sel.m.length){toast('Marque pelo menos uma página ou um mapa.');return;}
   store.set('plantio-pdfsel',JSON.stringify(sel));$('#pdfDlg').hidden=true;exportPdf(sel);};
-$('#btnMapPdf').onclick=()=>exportMapPdf();$('#btnMapKml').onclick=()=>exportKml(null);
+$('#btnMapPdf').onclick=()=>exportMapPdf();$('#btnMapKml').onclick=()=>exportKml(CARD||null);
 function setFold(on){$('#filterBar').classList.toggle('folded',on);$('#btnFold').textContent=on?'Mostrar filtros':'Ocultar filtros';$('#btnFold').setAttribute('aria-expanded',on?'false':'true');store.set('plantio-fold',on?'1':'0');}
 $('#btnFold').onclick=()=>setFold(!$('#filterBar').classList.contains('folded'));
 setFold(store.get('plantio-fold')==='1');
