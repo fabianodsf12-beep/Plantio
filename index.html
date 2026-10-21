@@ -266,6 +266,22 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 
 /* Mapa e colheita */
 .mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:14px;align-items:start}
+.mapside{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:6px}
+.mapwrap:fullscreen .mapside{max-height:calc(100vh - 28px)!important}
+.mapwrap.chon:fullscreen .mapbox,.mapwrap.chon:fullscreen .mapside{height:calc(100vh - 136px)!important;max-height:calc(100vh - 136px)!important}
+.chstrip{grid-column:1/-1;display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.chstrip[hidden]{display:none}
+.chstrip select{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:6px;padding:6px 8px;font:600 13px var(--sans)}
+.charr{width:30px;height:30px;border:1px solid var(--line);background:var(--surface-2);border-radius:50%;cursor:pointer;font-size:17px;line-height:1;color:var(--ink)}
+.charr:hover{border-color:var(--brand)}.charr:disabled{opacity:.35;cursor:default}
+.chcards{display:flex;gap:6px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:thin;padding:2px 0 4px}
+.chc{flex:0 0 auto;min-width:76px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 8px 5px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);cursor:pointer;color:var(--ink);font:12px var(--sans)}
+.chc:hover{border-color:var(--brand)}
+.chc small{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.chc b{font-size:13px;text-transform:uppercase;white-space:nowrap}
+.chc span{font-size:13px;font-variant-numeric:tabular-nums}
+.chc i{display:block;width:100%;height:4px;border-radius:2px;margin-top:3px;background:var(--line)}
+.chc.on{background:#2B83C2;border-color:#2B83C2;color:#fff}.chc.on small{color:rgba(255,255,255,.8)}
 .mapside .leg{flex-direction:column;gap:6px;margin-top:0}
 .leg[hidden]{display:none}
 .harvhd{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
@@ -507,8 +523,9 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
     <div class="grid">
       <div class="card s12">
         <div class="hd"><h2>Mapa dos talhões</h2><p>Safra inteira. Passe o mouse para ver os detalhes; clique num talhão para abrir a ficha. Em Linha do tempo, arraste a data para ver o avanço do plantio e da colheita.</p>
-          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button><button data-m="agua" data-tip="Água estimada no solo hoje, pelo balanço hídrico com a chuva lançada">Água no solo</button><button data-m="chuva" data-tip="Chuva interpolada entre os pluviômetros">Chuva</button></div><span class="agcfg" id="chCfg" hidden><label>Período <select id="chPer"><option value="safra">Safra toda</option><option value="30">Últimos 30 dias</option><option value="15">Últimos 15 dias</option><option value="7">Últimos 7 dias</option><option value="ult">Última chuva</option></select></label><label><input type="checkbox" id="chPts" checked> Pluviômetros</label></span><span class="agcfg" id="agCfg" hidden><label data-tip="Usada só nos talhões sem textura do solo e sem a coluna CAD na aba DADOS. Os demais usam a CAD do próprio talhão.">CAD padrão <input type="number" id="agCad" min="10" max="300" step="5"> mm</label><label data-tip="Real: ETo de cada dia calculada pelo Open-Meteo (Penman-Monteith, com temperatura, umidade, vento e radiação). Fixa: o mesmo valor todo dia.">ETo <select id="agModo"><option value="real">real do dia (Open-Meteo)</option><option value="fixa">fixa</option></select></label><label id="agEtoLab" data-tip="ETo fixa, usada só no modo fixo">fixa <input type="number" id="agEto" min="1" max="10" step="0.5"> mm/dia</label><label data-tip="CAD de cada talhão e de cada ponto do degradê estimada pela textura do solo (argila e areia dos hexágonos). A coluna CAD da aba DADOS tem prioridade."><input type="checkbox" id="agSolo"> Textura do solo</label><label data-tip="Degradê calculado ponto a ponto com a chuva interpolada entre os pluviômetros"><input type="checkbox" id="agGrad" checked> Degradê</label></span><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 com o mapa e a legenda do modo selecionado">Baixar mapa (PDF)</button></div></div>
+          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button><button data-m="agua" data-tip="Água estimada no solo hoje, pelo balanço hídrico com a chuva lançada">Água no solo</button><button data-m="chuva" data-tip="Chuva interpolada entre os pluviômetros">Chuva</button></div><span class="agcfg" id="chCfg" hidden><label><input type="checkbox" id="chPts" checked> Pluviômetros</label></span><span class="agcfg" id="agCfg" hidden><label data-tip="Usada só nos talhões sem textura do solo e sem a coluna CAD na aba DADOS. Os demais usam a CAD do próprio talhão.">CAD padrão <input type="number" id="agCad" min="10" max="300" step="5"> mm</label><label data-tip="Real: ETo de cada dia calculada pelo Open-Meteo (Penman-Monteith, com temperatura, umidade, vento e radiação). Fixa: o mesmo valor todo dia.">ETo <select id="agModo"><option value="real">real do dia (Open-Meteo)</option><option value="fixa">fixa</option></select></label><label id="agEtoLab" data-tip="ETo fixa, usada só no modo fixo">fixa <input type="number" id="agEto" min="1" max="10" step="0.5"> mm/dia</label><label data-tip="CAD de cada talhão e de cada ponto do degradê estimada pela textura do solo (argila e areia dos hexágonos). A coluna CAD da aba DADOS tem prioridade."><input type="checkbox" id="agSolo"> Textura do solo</label><label data-tip="Degradê calculado ponto a ponto com a chuva interpolada entre os pluviômetros"><input type="checkbox" id="agGrad" checked> Degradê</label></span><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 com o mapa e a legenda do modo selecionado">Baixar mapa (PDF)</button></div></div>
         <div class="mapwrap">
+        <div class="chstrip noprint" id="chStrip" hidden><select id="chView" aria-label="Período da chuva"><option value="dia">Visualização diária</option><option value="sem">Visualização semanal</option><option value="mes">Visualização mensal</option><option value="safra">Safra</option></select><button class="charr" id="chPrev" aria-label="Período anterior">‹</button><div class="chcards" id="chCards"></div><button class="charr" id="chNext" aria-label="Próximo período">›</button></div>
         <div class="mapbox" id="mapBox">
           <svg id="mapSvg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa dos talhões colorido por variedade plantada"></svg>
           <div class="maptip" id="mapTip" hidden></div>
@@ -1334,7 +1351,8 @@ function setVB(host,t){const set=v=>host.setAttribute('viewBox',`${v.x} ${v.y} $
   const step=n=>{let k=Math.min(1,(n-t0)/D);k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;vbCur={x:a.x+(t.x-a.x)*k,y:a.y+(t.y-a.y)*k,w:a.w+(t.w-a.w)*k,h:a.h+(t.h-a.h)*k};set(vbCur);if(k<1)vbAnim=requestAnimationFrame(step);};
   vbAnim=requestAnimationFrame(step);}
 function fitMapBox(){const b=$('#mapBox');if(!MAP||document.fullscreenElement)return;const w=b.clientWidth;if(!w)return;const one=w>b.parentElement.clientWidth*.9;
-  b.style.height=Math.round(Math.min(Math.max(w*(MAP.h+8)/(MAP.w+8),one?380:520),innerHeight*(one?.62:.88)))+'px';}
+  b.style.height=Math.round(Math.min(Math.max(w*(MAP.h+8)/(MAP.w+8),one?380:520),innerHeight*(one?.62:.88)-(mapMode==='chuva'&&!one?96:0)))+'px';
+  const sd=$('.mapside');if(sd)sd.style.maxHeight=one?'':b.style.height;}
 function renderMap(){
   const host=$('#mapSvg');if(!MAP){host.innerHTML='';$('#mapEmpty').classList.add('on');return;}
   $('#mapEmpty').classList.remove('on');fitMapBox();
@@ -1345,7 +1363,7 @@ function renderMap(){
   const D=mapTalData(),vp=varPalette();
   const surf=cssv('--surface-2'),line=cssv('--line'),ink=cssv('--ink');
   const tempo=mapMode==='tempo';
-  $('#tLine').hidden=!(tempo||mapMode==='agua');$('#agCfg').hidden=mapMode!=='agua';$('#chCfg').hidden=mapMode!=='chuva';$('#chPer').value=CHPER;$('#chPts').checked=CHPTS;$('#agCad').value=AGUA.cad;$('#agEto').value=AGUA.eto;$('#agModo').value=AGUA.modo;$('#agEtoLab').style.display=AGUA.modo==='real'?'none':'';
+  $('#tLine').hidden=!(tempo||mapMode==='agua');$('#agCfg').hidden=mapMode!=='agua';$('#chCfg').hidden=mapMode!=='chuva';$('#chStrip').hidden=mapMode!=='chuva';$('.mapwrap').classList.toggle('chon',mapMode==='chuva');if(mapMode==='chuva')renderChStrip();$('#chPts').checked=CHPTS;$('#agCad').value=AGUA.cad;$('#agEto').value=AGUA.eto;$('#agModo').value=AGUA.modo;$('#agEtoLab').style.display=AGUA.modo==='real'?'none':'';
   let AG=(mapMode==='agua'||CARD)?aguaAll():null;
   if(mapMode==='agua'&&AG&&AG.start){if(!tDate||tDate<AG.start||tDate>AG.end)tDate=AG.end;
     $('#tRange').max=dayDiff(AG.start,AG.end);$('#tRange').value=dayDiff(AG.start,tDate);$('#tOut').textContent=fmtDY(tDate);
@@ -1453,14 +1471,31 @@ function aguaCard(k,AG){const a=AG&&AG.m.get(k);if(!a)return '';const c=agClass(
     `<div class="help" style="font-size:12px">${a.ini?`Lavoura com ${a.dap} dias, consumo ${nf1.format(a.etc)} mm/dia`:`Sem plantio, só evaporação (${nf1.format(a.etc)} mm/dia)`}</div>`+
 sparkAgua(a.ser,45)+`<div class="help" style="font-size:11px;display:flex;justify-content:space-between"><span>últimos 45 dias</span><span>linha amarela = 50%</span></div>`;}
 /* ---- chuva interpolada (IDW) entre os pluviômetros: posição da aba PLUVIOMETROS, senão o centro do talhão de mesmo nome ---- */
-let CHPER='safra',CHPTS=true,CHC=null;
+let CHVIEW=['dia','sem','mes','safra'].includes(store.get('plantio-chview'))?store.get('plantio-chview'):'safra',CHSEL=null,CHP=[],CHPTS=true,CHC=null;
+const WDAY=['dom','seg','ter','qua','qui','sex','sáb'],MESL=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+/* períodos da faixa de chuva: dia, semana (seg a dom), mês ou safra; mm = média da fazenda (soma das leituras ÷ pluviômetros) */
+function chPeriods(){const ds=[...M.rain.keys()].sort();if(!ds.length)return [];const a0=ds[0],end=ds[ds.length-1],P=[],dw=d=>new Date(d+'T12:00:00').getDay(),
+    dl=d=>MES[+d.slice(5,7)-1]+' '+d.slice(8,10),dm=d=>d.slice(8,10)+'/'+d.slice(5,7);
+  if(CHVIEW==='dia')dateRange(a0,end).forEach(d=>P.push({id:d,a:d,b:d,top:WDAY[dw(d)],lab:dl(d),per:'em '+dm(d)}));
+  else if(CHVIEW==='sem'){let w=addDays(a0,-((dw(a0)+6)%7));while(w<=end){const a=w<a0?a0:w,e=addDays(w,6),b=e>end?end:e;P.push({id:'s'+w,a,b,top:'semana',lab:dm(a)+'–'+dm(b),per:'de '+dm(a)+' a '+dm(b)});w=addDays(w,7);}}
+  else if(CHVIEW==='mes'){let m=a0.slice(0,7);while(m<=end.slice(0,7)){const [y,mo]=m.split('-').map(Number),e=new Date(Date.UTC(y,mo,0)).toISOString().slice(0,10),a=m+'-01'<a0?a0:m+'-01',b=e>end?end:e;
+    P.push({id:'m'+m,a,b,top:String(y),lab:MESL[mo-1],per:'em '+MESL[mo-1]});m=mo===12?(y+1)+'-01':y+'-'+String(mo+1).padStart(2,'0');}}
+  else{P.push({id:'safra',a:a0,b:end,top:'acumulado',lab:'Safra toda',per:'na safra'});[30,15,7].forEach(n=>{const a=addDays(end,-(n-1));P.push({id:'u'+n,a:a<a0?a0:a,b:end,top:'acumulado',lab:'Últimos '+n+' dias',per:'nos últimos '+n+' dias'});});}
+  P.forEach(p=>p.mm=dateRange(p.a,p.b).reduce((s,d)=>s+(M.rain.get(d)||0),0));return P;}
+function renderChStrip(){CHP=chPeriods();$('#chView').value=CHVIEW;const host=$('#chCards');
+  if(!CHP.length){host.innerHTML='<span class="help">Sem chuva lançada.</span>';CHSEL=null;return;}
+  const hit=CHSEL&&CHP.find(p=>p.id===CHSEL.id);CHSEL=hit||(CHVIEW==='safra'?CHP[0]:CHP[CHP.length-1]);
+  const hi=Math.max(...CHP.map(p=>p.mm))||1,f=CHVIEW==='dia'?nf2:nf1,sig=CHVIEW+'|'+CHP.length+'|'+CHP.map(p=>p.mm.toFixed(2)).join(',');
+  if(host.dataset.sig!==sig){host.dataset.sig=sig;host.innerHTML=CHP.map((p,i)=>{const [R,G,B]=chRamp(p.mm/hi);return `<button class="chc" data-i="${i}" title="${esc(p.a===p.b?fmtDY(p.a):fmtDY(p.a)+' a '+fmtDY(p.b))}"><small>${esc(p.top)}</small><b>${esc(p.lab)}</b><span>${f.format(p.mm)} mm</span><i style="background:${p.mm>0?`rgb(${R},${G},${B})`:'var(--line)'}"></i></button>`;}).join('');}
+  const k=CHP.indexOf(CHSEL);host.querySelectorAll('.chc').forEach((b,i)=>b.classList.toggle('on',i===k));
+  const on=host.children[k];if(on){const l=on.offsetLeft-host.offsetLeft,r=l+on.offsetWidth;if(l<host.scrollLeft)host.scrollLeft=l-8;else if(r>host.scrollLeft+host.clientWidth)host.scrollLeft=r-host.clientWidth+8;}
+  $('#chPrev').disabled=k<=0;$('#chNext').disabled=k>=CHP.length-1;}
+function chStep(d){const k=CHP.indexOf(CHSEL)+d;if(k<0||k>=CHP.length)return;CHSEL=CHP[k];renderMap();}
 const CHRAMP=['#F1F7FB','#CFE5F3','#9CCBE8','#5FAAD8','#2B83C2','#135F9E','#0B3D6E'];
 function chRamp(t){t=Math.max(0,Math.min(1,t))*(CHRAMP.length-1);const i=Math.min(CHRAMP.length-2,Math.floor(t)),f=t-i,h=c=>[1,3,5].map(j=>parseInt(c.slice(j,j+2),16));const a=h(CHRAMP[i]),b=h(CHRAMP[i+1]);return a.map((v,j)=>Math.round(v+(b[j]-v)*f));}
-function chuvaDays(){const ds=[...M.rain.keys()].sort();if(!ds.length)return [];const end=ds[ds.length-1];
-  if(CHPER==='safra')return dateRange(ds[0],end);if(CHPER==='ult'){const w=ds.filter(d=>(M.rain.get(d)||0)>0);return w.length?[w[w.length-1]]:[];}
-  return dateRange(addDays(end,-(+CHPER-1)),end);}
+function chuvaDays(){if(CHSEL)return dateRange(CHSEL.a,CHSEL.b);const ds=[...M.rain.keys()].sort();return ds.length?dateRange(ds[0],ds[ds.length-1]):[];}
 function chuvaGrid(){
-  const key=CHPER+'|'+M.rain.size+'|'+M.pluv.size+'|'+M.pluvPos.size+'|'+MAP.w;if(CHC&&CHC.key===key)return CHC;
+  const key=(CHSEL?CHSEL.a+CHSEL.b:'all')+'|'+M.rain.size+'|'+M.pluv.size+'|'+M.pluvPos.size+'|'+MAP.w;if(CHC&&CHC.key===key)return CHC;
   const days=chuvaDays(),pts=[],sem=[];
   let real=0;M.pluv.forEach((m,id)=>{const v=days.reduce((s,d)=>s+(m.get(d)||0),0),pp=M.pluvPos.get(id.toUpperCase().trim());const f=MAP.feats.find(x=>x.k===norm(id));
     if(pp){const [x,y]=MAP.P([pp.lon,pp.lat]);real++;pts.push({id,x,y,v,k:f?f.k:null,real:true});}else if(f)pts.push({id,x:f.cx,y:f.cy,v,k:f.k});else sem.push({id,v});});
@@ -1510,7 +1545,7 @@ function aguaGridImg(G,ti){if(ti==null)ti=G.nd-1;let url=G.img.get(ti);
     cx.putImageData(im,0,0);url=cv.toDataURL('image/png');G.img.set(ti,url);}
   return {url,w:G.w,h:G.h};}
 function renderSumChuva(CH){
-  const per={safra:'na safra',30:'nos últimos 30 dias',15:'nos últimos 15 dias',7:'nos últimos 7 dias',ult:'na última chuva'}[CHPER];
+  const per=CHSEL?CHSEL.per:'na safra';
   const all=[...CH.pts,...CH.sem].sort((a,b)=>b.v-a.v),med=all.length?all.reduce((s,p)=>s+p.v,0)/all.length:0;
   $('#mapSum').innerHTML=`<table><thead><tr><th>Pluviômetro</th><th class="n">mm ${per}</th></tr></thead><tbody>`+
     all.map(p=>{const [R,G,B]=chRamp((p.v-CH.lo)/((CH.hi-CH.lo)||1));return `<tr><td><span class="cdot" style="background:rgb(${R},${G},${B});border:1px solid var(--line)"></span>${esc(p.id)}${CH.sem.includes(p)?' <span class="help">(sem posição)</span>':''}</td><td class="n">${nf0.format(p.v)}</td></tr>`;}).join('')+
@@ -1610,7 +1645,7 @@ function renderCard(k,D,AG){
   let lw=0;new ResizeObserver(()=>{const w=box.clientWidth;if(w&&w!==lw){lw=w;fitMapBox();}}).observe(box);
   const agSet=()=>{const c=+$('#agCad').value,e=+$('#agEto').value;AGUA.modo=$('#agModo').value;if(c>=10&&c<=300)AGUA.cad=c;if(e>=1&&e<=10)AGUA.eto=e;store.set('plantio-agua',JSON.stringify(AGUA));for(const z in AGCM)delete AGCM[z];renderMap();};
   $('#agCad').onchange=agSet;$('#agEto').onchange=agSet;$('#agModo').onchange=agSet;
-  $('#agGrad').onchange=e=>{AGGRAD=e.target.checked;renderMap();};$('#agSolo').checked=SOLOON;$('#agSolo').onchange=e=>{SOLOON=e.target.checked;store.set('plantio-solo',SOLOON?'1':'0');for(const z in AGCM)delete AGCM[z];AGG=null;renderMap();};$('#chPer').onchange=e=>{CHPER=e.target.value;renderMap();};$('#chPts').onchange=e=>{CHPTS=e.target.checked;renderMap();};
+  $('#agGrad').onchange=e=>{AGGRAD=e.target.checked;renderMap();};$('#agSolo').checked=SOLOON;$('#agSolo').onchange=e=>{SOLOON=e.target.checked;store.set('plantio-solo',SOLOON?'1':'0');for(const z in AGCM)delete AGCM[z];AGG=null;renderMap();};$('#chView').onchange=e=>{CHVIEW=e.target.value;store.set('plantio-chview',CHVIEW);CHSEL=null;renderMap();};$('#chPrev').onclick=()=>chStep(-1);$('#chNext').onclick=()=>chStep(1);$('#chCards').onclick=e=>{const b=e.target.closest('.chc');if(!b)return;CHSEL=CHP[+b.dataset.i];renderMap();};$('#chPts').onchange=e=>{CHPTS=e.target.checked;renderMap();};
   $('#kmlOn').onchange=e=>{KMLON=e.target.checked;store.set('plantio-kml',KMLON?'1':'0');renderMap();};
   $('#segMap').onclick=e=>{const b=e.target.closest('button');if(!b)return;mapMode=b.dataset.m;$$('#segMap button').forEach(x=>x.classList.toggle('on',x===b));tStop();tDate=null;renderMap();};
   $('#segJan').onclick=e=>{const b=e.target.closest('button');if(!b)return;janMode=b.dataset.m;$$('#segJan button').forEach(x=>x.classList.toggle('on',x===b));renderMapa();};
@@ -2067,7 +2102,7 @@ async function exportMapPdf(){
     const hex=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');return m?[0,2,4].map(i=>parseInt(m[1].substr(i,2),16)):[150,150,150];};
     try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.addImage(lc.toDataURL('image/png'),'PNG',MG,7,30,12.5);}catch(e){}
     const tName=CARD?(M.tal.get(CARD)||{}).tl||CARD:'';
-    doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);const chp=$('#chPer'),MT={var:'Mapa de plantio por variedade',prog:'Mapa de % plantado',jan:'Mapa da janela pós-colheita',tempo:'Mapa de plantio em '+((tDate||M.dMax)?fmtDY(tDate||M.dMax):''),agua:'Mapa de água no solo (estimada)'+(tDate&&tDate<hoje()?' em '+fmtDY(tDate):''),chuva:'Mapa de chuva - '+(chp?chp.options[chp.selectedIndex].text.toLowerCase():'')};
+    doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);const MT={var:'Mapa de plantio por variedade',prog:'Mapa de % plantado',jan:'Mapa da janela pós-colheita',tempo:'Mapa de plantio em '+((tDate||M.dMax)?fmtDY(tDate||M.dMax):''),agua:'Mapa de água no solo (estimada)'+(tDate&&tDate<hoje()?' em '+fmtDY(tDate):''),chuva:'Mapa de chuva '+(CHSEL?CHSEL.per+(CHSEL.a===CHSEL.b?'':' ('+fmtDY(CHSEL.a)+' a '+fmtDY(CHSEL.b)+')'):'na safra')};
     doc.text(clean((MT[mapMode]||MT.var)+(tName?' - talhão '+tName:'')),MG+35,12.5);
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...MUT);doc.text(clean((DB.safra||'Safra')+' · Fazenda Reata e unidades'),MG+35,17.5);
     doc.setFontSize(8.5);doc.text(clean('Gerado em '+fmtDY(new Date().toISOString().slice(0,10))),W-MG,12.5,{align:'right'});
