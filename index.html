@@ -320,6 +320,8 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .mapctl{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px;z-index:2}
 .mapctl button{width:32px;height:32px;border:1px solid var(--line);background:var(--surface);border-radius:6px;cursor:pointer;font-size:17px;font-weight:700;line-height:1;color:var(--ink)}
 .mapctl button:hover{border-color:var(--brand)}
+#btnMapKml{margin-left:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:13px;padding:6px 12px}
+#btnMapKml:hover{border-color:var(--brand);color:var(--brand)}
 #btnMapPdf{margin-left:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:13px;padding:6px 12px}
 #btnMapPdf:hover{border-color:var(--brand);color:var(--brand)}
 .agcfg{display:inline-flex;gap:10px;margin-left:12px;font-size:13px;color:var(--muted);align-items:center}.agcfg[hidden]{display:none}.agcfg input{width:58px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);font:inherit}
@@ -523,7 +525,7 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
     <div class="grid">
       <div class="card s12">
         <div class="hd"><h2>Mapa dos talhões</h2><p>Safra inteira. Passe o mouse para ver os detalhes; clique num talhão para abrir a ficha. Em Linha do tempo, arraste a data para ver o avanço do plantio e da colheita.</p>
-          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button><button data-m="agua" data-tip="Água estimada no solo hoje, pelo balanço hídrico com a chuva lançada">Água no solo</button><button data-m="chuva" data-tip="Chuva interpolada entre os pluviômetros">Chuva</button></div><span class="agcfg" id="chCfg" hidden><label><input type="checkbox" id="chPts" checked> Pluviômetros</label></span><span class="agcfg" id="agCfg" hidden><label data-tip="Usada só nos talhões sem textura do solo e sem a coluna CAD na aba DADOS. Os demais usam a CAD do próprio talhão.">CAD padrão <input type="number" id="agCad" min="10" max="300" step="5"> mm</label><label data-tip="Real: ETo de cada dia calculada pelo Open-Meteo (Penman-Monteith, com temperatura, umidade, vento e radiação). Fixa: o mesmo valor todo dia.">ETo <select id="agModo"><option value="real">real do dia (Open-Meteo)</option><option value="fixa">fixa</option></select></label><label id="agEtoLab" data-tip="ETo fixa, usada só no modo fixo">fixa <input type="number" id="agEto" min="1" max="10" step="0.5"> mm/dia</label><label data-tip="CAD de cada talhão e de cada ponto do degradê estimada pela textura do solo (argila e areia dos hexágonos). A coluna CAD da aba DADOS tem prioridade."><input type="checkbox" id="agSolo"> Textura do solo</label><label data-tip="Degradê calculado ponto a ponto com a chuva interpolada entre os pluviômetros"><input type="checkbox" id="agGrad" checked> Degradê</label></span><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 com o mapa e a legenda do modo selecionado">Baixar mapa (PDF)</button></div></div>
+          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button><button data-m="agua" data-tip="Água estimada no solo hoje, pelo balanço hídrico com a chuva lançada">Água no solo</button><button data-m="chuva" data-tip="Chuva interpolada entre os pluviômetros">Chuva</button></div><span class="agcfg" id="chCfg" hidden><label><input type="checkbox" id="chPts" checked> Pluviômetros</label></span><span class="agcfg" id="agCfg" hidden><label data-tip="Usada só nos talhões sem textura do solo e sem a coluna CAD na aba DADOS. Os demais usam a CAD do próprio talhão.">CAD padrão <input type="number" id="agCad" min="10" max="300" step="5"> mm</label><label data-tip="Real: ETo de cada dia calculada pelo Open-Meteo (Penman-Monteith, com temperatura, umidade, vento e radiação). Fixa: o mesmo valor todo dia.">ETo <select id="agModo"><option value="real">real do dia (Open-Meteo)</option><option value="fixa">fixa</option></select></label><label id="agEtoLab" data-tip="ETo fixa, usada só no modo fixo">fixa <input type="number" id="agEto" min="1" max="10" step="0.5"> mm/dia</label><label data-tip="CAD de cada talhão e de cada ponto do degradê estimada pela textura do solo (argila e areia dos hexágonos). A coluna CAD da aba DADOS tem prioridade."><input type="checkbox" id="agSolo"> Textura do solo</label><label data-tip="Degradê calculado ponto a ponto com a chuva interpolada entre os pluviômetros"><input type="checkbox" id="agGrad" checked> Degradê</label></span><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 com o mapa e a legenda do modo selecionado">Baixar mapa (PDF)</button><button class="btn noprint" id="btnMapKml" data-tip="Arquivo para o Google Earth com todos os talhões coloridos pela variedade e as áreas por variedade (KML)">Baixar KML (fazenda)</button></div></div>
         <div class="mapwrap">
         <div class="chstrip noprint" id="chStrip" hidden><select id="chView" aria-label="Período da chuva"><option value="dia">Visualização diária</option><option value="sem">Visualização semanal</option><option value="mes">Visualização mensal</option><option value="safra">Safra</option></select><button class="charr" id="chPrev" aria-label="Período anterior">‹</button><div class="chcards" id="chCards"></div><button class="charr" id="chNext" aria-label="Próximo período">›</button></div>
         <div class="mapbox" id="mapBox">
@@ -1620,8 +1622,9 @@ function renderCard(k,D,AG){
   const ord=[act,...['plantio','colheita','chuva','agua'].filter(x=>x!==act)].filter(x=>B[x]);
   $('#mapSum').innerHTML=`<div class="tcard"><div class="tchd"><div><h3>${esc(name)}</h3><span class="help">${esc(t?t.f:(f&&f.props.bloco)||'')}</span></div><button class="tcx" id="cardX" aria-label="Fechar ficha">×</button></div>
     ${ord.map((x,i)=>`<div class="fb${i===0?' on':''}"><h4>${TT[x]}</h4>${B[x]}</div>`).join('')}
-    ${o?`<button class="lnk" id="cardTbl" style="margin-top:8px;padding-left:0">Ver na tabela de colheita ↓</button>`:''}</div>`;
-  $('#cardX').onclick=()=>{clearSel();renderMapa();};
+    <button class="lnk" id="cardKml" style="margin-top:8px;padding-left:0;display:block" data-tip="Arquivo para o Google Earth com o limite do talhão e as áreas de cada variedade">⬇ Baixar KML do talhão</button>
+    ${o?`<button class="lnk" id="cardTbl" style="margin-top:4px;padding-left:0">Ver na tabela de colheita ↓</button>`:''}</div>`;
+  $('#cardX').onclick=()=>{clearSel();renderMapa();};$('#cardKml').onclick=()=>exportKml(k);
   const ct=$('#cardTbl');if(ct)ct.onclick=()=>$('#tbHarv').closest('.card').scrollIntoView({behavior:'smooth'});
 }
 (function(){
@@ -1966,7 +1969,7 @@ $('#pdfAll').onclick=()=>$$('#pdfDlg input').forEach(i=>i.checked=true);$('#pdfN
 $('#pdfGo').onclick=()=>{const sel={s:[...$$('#pdfSecs input:checked')].map(i=>i.dataset.s),m:[...$$('#pdfMaps input:checked')].map(i=>i.dataset.m)};
   if(!sel.s.length&&!sel.m.length){toast('Marque pelo menos uma página ou um mapa.');return;}
   store.set('plantio-pdfsel',JSON.stringify(sel));$('#pdfDlg').hidden=true;exportPdf(sel);};
-$('#btnMapPdf').onclick=()=>exportMapPdf();
+$('#btnMapPdf').onclick=()=>exportMapPdf();$('#btnMapKml').onclick=()=>exportKml(null);
 function setFold(on){$('#filterBar').classList.toggle('folded',on);$('#btnFold').textContent=on?'Mostrar filtros':'Ocultar filtros';$('#btnFold').setAttribute('aria-expanded',on?'false':'true');store.set('plantio-fold',on?'1':'0');}
 $('#btnFold').onclick=()=>setFold(!$('#filterBar').classList.contains('folded'));
 setFold(store.get('plantio-fold')==='1');
@@ -2150,6 +2153,42 @@ async function saveFile(filename,data,mime){
   // fora do Claude (arquivo aberto localmente): link de download comum
   try{const blob=data instanceof Blob?data:new Blob([data],{type:mime||'application/octet-stream'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);return true;}catch(e){return false;}
 }
+
+/* ================= KML (Google Earth) ================= */
+const kmlCol=(hex,a)=>{const h=String(hex||'#888888').replace('#','');return a+h.slice(4,6)+h.slice(2,4)+h.slice(0,2);};
+const kmlRing=r=>r.map(c=>(+c[0]).toFixed(7)+','+(+c[1]).toFixed(7)+',0').join(' ');
+function kmlGeom(polys){const ps=polys.map(p=>`<Polygon><tessellate>1</tessellate><outerBoundaryIs><LinearRing><coordinates>${kmlRing(p[0])}</coordinates></LinearRing></outerBoundaryIs>${p.slice(1).map(r=>`<innerBoundaryIs><LinearRing><coordinates>${kmlRing(r)}</coordinates></LinearRing></innerBoundaryIs>`).join('')}</Polygon>`);
+  return ps.length>1?`<MultiGeometry>${ps.join('')}</MultiGeometry>`:ps[0]||'';}
+function kmlTalhao(f,D,vp,sid){
+  const k=f.k,t=M.tal.get(k),o=D.get(k),name=t?t.tl:f.name,at=t&&t.a?t.a:+f.props.area_mapa||0,fmtR=(a,b)=>a?fmtDY(a)+(b&&b!==a?' a '+fmtDY(b):''):'—';
+  const pm=(nm,st,desc,polys)=>`<Placemark><name>${esc(nm)}</name><styleUrl>#${st}</styleUrl><description><![CDATA[${desc}]]></description>${kmlGeom(polys)}</Placemark>`;
+  if(M.pasto.has(k))return `<Folder><name>${esc(name)}</name>${pm(name+' - pastagem','pasto',`<b>${esc(name)}</b><br>Pastagem (pecuária)${at?'<br>'+nf1.format(at)+' ha':''}`,f.polys)}</Folder>`;
+  const rows=o?colheitaRows(o.rs).sort((a,b)=>String(a.pIni).localeCompare(String(b.pIni))):[];
+  const tab=`<table border="1" cellpadding="3" style="border-collapse:collapse"><tr><th>Variedade</th><th>ha</th><th>Plantio</th></tr>${rows.map(r=>`<tr><td>${esc(r.v)}</td><td align="right">${nf1.format(r.a)}</td><td>${fmtR(r.pIni,r.pFim)}</td></tr>`).join('')}</table>`;
+  const head=`<b>${esc(name)}</b>${t&&t.f?' · '+esc(t.f):''}<br>Área: ${at?nf1.format(at)+' ha':'—'}${o?` · plantado ${nf1.format(o.ap)} ha`:' · sem plantio lançado'}`;
+  const qs=VARGEO.filter(q=>norm(q.tl)===k),out=[];
+  if(qs.length){const rest=kmlRest(k,o),rv=[...rest.keys()];
+    out.push(pm(rv.length?`${name} - ${rv.join(' / ')} (resto do talhão)`:name+' - limite',rv.length?sid(top1(rest)):'lim',head+'<br><br>'+tab+(rv.length?`<br>Fora das áreas abaixo: ${rv.map(esc).join(', ')}`:''),f.polys));
+    qs.forEach(q=>{const r=rows.find(x=>x.v===q.v),pl=plOf(q);out.push(pm(`${name} - ${q.v}`,sid(q.v),`<b>${esc(name)} - ${esc(q.v)}</b><br>Área no mapa: ${nf1.format(q.ha)} ha${q.fora>.5?` (${nf1.format(q.fora)} ha fora do limite)`:''}<br>Planilha: ${pl!=null?nf1.format(pl)+' ha':'—'}<br>Plantio: ${r?fmtR(r.pIni,r.pFim):'—'}`,q.c));});}
+  else out.push(pm(o&&o.vs.size?`${name} - ${[...o.vs.keys()].join(' / ')}`:name,o&&o.vs.size?sid(top1(o.vs)):'lim',head+(rows.length?'<br><br>'+tab:'')+(o&&o.vs.size>1?'<br>Sem arquivo das áreas por variedade: a cor é da variedade com mais área.':''),f.polys));
+  return `<Folder><name>${esc(name)}</name>${out.join('')}</Folder>`;}
+function zipOne(name,str){const d=new TextEncoder().encode(str),n=new TextEncoder().encode(name);let c=-1;for(let i=0;i<d.length;i++){c^=d[i];for(let j=0;j<8;j++)c=(c>>>1)^(0xEDB88320&-(c&1));}c=(c^-1)>>>0;
+  const hd=(sig,cen)=>{const v=new DataView(new ArrayBuffer(cen?46:30));let o=0;const u32=x=>{v.setUint32(o,x,true);o+=4;},u16=x=>{v.setUint16(o,x,true);o+=2;};
+    u32(sig);if(cen)u16(20);u16(20);u16(0x0800);u16(0);u16(0);u16(33);u32(c);u32(d.length);u32(d.length);u16(n.length);u16(0);if(cen){u16(0);u16(0);u16(0);u32(0);u32(0);}return new Uint8Array(v.buffer);};
+  const lh=hd(0x04034b50,false),ch=hd(0x02014b50,true),e=new DataView(new ArrayBuffer(22)),off=lh.length+n.length+d.length,cs=ch.length+n.length;
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,1,true);e.setUint16(10,1,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob([lh,n,d,ch,n,new Uint8Array(e.buffer)],{type:'application/zip'});}
+async function exportKml(k){
+  if(!MAP){toast('Nenhum limite de talhão carregado.');return;}
+  const D=mapTalData(),vp=varPalette(),used=new Map(),sid=v=>{if(!used.has(v))used.set(v,'v'+used.size);return used.get(v);};
+  const fs=k?MAP.feats.filter(f=>f.k===k):MAP.feats.slice().sort((a,b)=>a.name.localeCompare(b.name,'pt',{numeric:true}));if(!fs.length)return;
+  const body=fs.map(f=>kmlTalhao(f,D,vp,sid)).join(''),title=k?fs[0].name+' - variedades':'Plantio por variedade - '+(DB.safra||'safra');
+  const sty=`<Style id="lim"><LineStyle><color>ff00ffff</color><width>2.5</width></LineStyle><PolyStyle><color>00ffffff</color></PolyStyle></Style><Style id="pasto"><LineStyle><color>ffffffff</color><width>1.5</width></LineStyle><PolyStyle><color>${kmlCol(PASTO_COR,'90')}</color></PolyStyle></Style>`+
+    [...used].map(([v,id])=>`<Style id="${id}"><LineStyle><color>ffffffff</color><width>2</width></LineStyle><PolyStyle><color>${kmlCol(vp.get(v)||PAL[0],'b0')}</color></PolyStyle></Style>`).join('');
+  const xml=`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(title)}</name><description>Gerado pelo painel de plantio em ${fmtDY(hoje())}</description>${sty}${body}</Document></kml>`;
+  const base=(k?'KML_'+fs[0].name:'KML_fazenda_variedades').replace(/[^\w\-]+/g,'_')+'_'+hoje();
+  if(window.claude&&typeof window.claude.use==='function'){if(await saveFile(base+'.zip',zipOne(base+'.kml',xml),'application/zip'))toast('KML salvo dentro de um .zip: descompacte e abra o .kml no Google Earth.');}
+  else saveFile(base+'.kml',xml,'application/vnd.google-earth.kml+xml');}
 
 /* ================= PDF ================= */
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
