@@ -154,7 +154,7 @@ main{max-width:1480px;margin:0 auto;padding:20px 24px 48px}
 :root[data-theme="dark"] .seg button.on{background:var(--brand-deep)}
 .cv{position:relative;flex:none}
 .s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
-.h380{height:380px}.h320{height:320px}.h300{height:300px}.h280{height:280px}
+.h380{height:380px}.h320{height:320px}.h300{height:300px}.h280{height:280px}.h230{height:230px}
 .empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--muted);font-size:14px;text-align:center;padding:20px}
 .empty.on{display:flex}
 
@@ -489,8 +489,9 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
       </div>
 
       <div class="card s4" id="cardTurno">
-        <div class="hd"><h2>Turno</h2><p>Área plantada por turno em cada fazenda. Clique para filtrar.</p></div>
-        <div class="cv h280"><canvas id="chTurno"></canvas><div class="empty" id="eTurno">Sem turno registrado.</div></div>
+        <div class="hd"><h2>Turno</h2><p>Área e % plantados por cada turno, e por fazenda embaixo. Clique para filtrar.</p></div>
+        <div class="cv" id="cvTurnoTot" style="height:96px"><canvas id="chTurnoTot"></canvas></div>
+        <div class="cv h230"><canvas id="chTurno"></canvas><div class="empty" id="eTurno">Sem turno registrado.</div></div>
       </div>
       <div class="card s8" id="cardWeek">
         <div class="hd"><h2>Ritmo por semana</h2><p>Hectares plantados por semana e chuva da semana; ajuda a ver janelas perdidas por chuva.</p></div>
@@ -915,8 +916,17 @@ function renderPlantio(){
   const hasT=M.turnos.length>0;
   $('#cardTurno').hidden=!hasT;$('#cardWeek').classList.toggle('s8',hasT);$('#cardWeek').classList.toggle('s12',!hasT);
   if(hasT){const fzT=[...sumBy(R,r=>r.f).entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
-    const tcol=['#E0A100','#00232B','#1C8FD0'];
-    mk('chTurno',{type:'bar',data:{labels:fzT,datasets:tns.map((tn,i)=>{const m=sumBy(R.filter(r=>r.t===tn),r=>r.f);return{label:turnoLab(tn),full:tn,data:fzT.map(f=>m.get(f)||0),backgroundColor:tn?(document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches))&&i===1?'#9FC4B6':tcol[i%3]:cssv('--c-outro'),borderRadius:2,maxBarThickness:22};})},
+    const tcol=['#E0A100','#00232B','#1C8FD0'],dark=document.documentElement.dataset.theme==='dark'||(!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches),tc=(tn,i)=>tn?(dark&&i===1?'#9FC4B6':tcol[i%3]):cssv('--c-outro');
+    const tt=tns.map(tn=>R.filter(r=>r.t===tn).reduce((s,r)=>s+r.a,0)),tsum=tt.reduce((a,b)=>a+b,0)||1;
+    $('#cvTurnoTot').style.height=Math.max(70,tns.length*30+16)+'px';
+    mk('chTurnoTot',{type:'bar',data:{labels:tns.map(turnoLab),datasets:[{data:tt,backgroundColor:tns.map(tc),borderRadius:3,maxBarThickness:20}]},
+      options:{indexAxis:'y',layout:{padding:{right:110}},scales:{x:{display:false,beginAtZero:true,max:Math.max(...tt,1)},y:{grid:{display:false},ticks:{font:{weight:600}}}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${nf1.format(c.parsed.x)} ha · ${nf0.format(c.parsed.x/tsum*100)}% da área plantada`}}},
+        onClick:(e,els)=>{if(els.length){const tn=tns[els[0].index];setTimeout(()=>applyF(()=>{F.tn=new Set([tn]);},turnoLab(tn)));}}},
+      plugins:[{id:'tnLab',afterDatasetsDraw(ch){const {ctx}=ch;ctx.save();ctx.textBaseline='middle';ctx.textAlign='left';
+        ch.getDatasetMeta(0).data.forEach((el,i)=>{const v=tt[i];ctx.font=`700 12.5px ${cssv('--sans')}`;ctx.fillStyle=cssv('--ink');const a=nf0.format(v)+' ha';ctx.fillText(a,el.x+6,el.y);
+          const w=ctx.measureText(a).width;ctx.font=`600 12px ${cssv('--sans')}`;ctx.fillStyle=cssv('--muted');ctx.fillText(' · '+nf0.format(v/tsum*100)+'%',el.x+6+w,el.y);});ctx.restore();}}]});
+    mk('chTurno',{type:'bar',data:{labels:fzT,datasets:tns.map((tn,i)=>{const m=sumBy(R.filter(r=>r.t===tn),r=>r.f);return{label:turnoLab(tn),full:tn,data:fzT.map(f=>m.get(f)||0),backgroundColor:tc(tn,i),borderRadius:2,maxBarThickness:22};})},
       options:{indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,title:{display:true,text:'ha'}},y:{stacked:true,grid:{display:false}}},
         plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.full||c.dataset.label}: ${nf1.format(c.parsed.x)} ha`},filter:i=>i.parsed.x>0}},
         onClick:(e,els)=>{if(els.length){const tn=tns[els[0].datasetIndex];setTimeout(()=>applyF(()=>{F.tn=new Set([tn]);},turnoLab(tn)));}}}});
@@ -2207,7 +2217,7 @@ async function exportPdf(sel){
   const imgs={};
   const PW=297,PH=210,PM=10,gw0=(PW-2*PM-4)/2,gh0=(PH-21-9-4)/2,shH=(PH-42-9-4)/2,wkH=72,lotH=86,entH=PH-42-9-4-86;
   const BOX={chDaily:[PW-2*PM,PH-69-9],chRain:[gw0*1.25,gh0],chCult:[gw0*.75,gh0],chFaz:[gw0,gh0],chVar:[gw0,gh0],
-    chTurno:[gw0*.8,wkH],chWeek:[PW-2*PM-gw0*.8-4,wkH],chLot:[PW-2*PM,lotH],chEntVar:[gw0,entH],chEntDate:[gw0,entH]};
+    chTurnoTot:[gw0*.8,30],chTurno:[gw0*.8,wkH-33],chWeek:[PW-2*PM-gw0*.8-4,wkH],chLot:[PW-2*PM,lotH],chEntVar:[gw0,entH],chEntDate:[gw0,entH]};
   const grab=ids=>{ids.forEach(id=>{const b=BOX[id];if(b)fitChart(id,b[0],b[1]);});return sleep(120).then(()=>ids.forEach(id=>imgs[id]=chartImg(id)));};
   try{
     document.documentElement.dataset.theme='light';themeChart();Chart.defaults.animation=false;Chart.defaults.devicePixelRatio=PDF_DPR;
@@ -2288,7 +2298,11 @@ async function exportPdf(sel){
     // página 3: turno + ritmo semanal em cima, talhões embaixo
     const RT=S.has('ritmo'),TL=S.has('talhoes');
     if(RT)sec(TL?'Turno, ritmo semanal e talhões plantados':'Turno e ritmo semanal');else if(TL)sec('Talhões plantados');
-    if(!RT){}else if(imgs.chTurno){img('chTurno',MG,21,BOX.chTurno[0],wkH,'Plantio por turno');img('chWeek',MG+BOX.chTurno[0]+4,21,BOX.chWeek[0],wkH,'Ritmo por semana (ha) e chuva (mm)');}
+    if(!RT){}else if(imgs.chTurno){{const ch=charts.chTurnoTot,bw=BOX.chTurno[0];doc.setDrawColor(...LINE);doc.setLineWidth(.2);doc.roundedRect(MG,21,bw,30,1.5,1.5,'S');doc.setTextColor(...PET);doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.text(clean('Área e % por turno'),MG+3,26);if(ch){const L=ch.data.labels,V=ch.data.datasets[0].data,C=ch.data.datasets[0].backgroundColor,tot=V.reduce((x,y)=>x+y,0)||1,mx=Math.max(...V,1),n=L.length,rh=Math.min(7,19/n),bx=MG+22,bmax=bw-22-36;
+      L.forEach((l,i)=>{const y=21+9+i*rh+(19-n*rh)/2,c=String(C[i]||'#888888'),rgb=/^#[0-9a-f]{6}/i.test(c)?[1,3,5].map(j=>parseInt(c.slice(j,j+2),16)):[150,150,150];
+        doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...PET);doc.text(clean(l),bx-2,y+rh*.62,{align:'right'});
+        const w=Math.max(.5,V[i]/mx*bmax);doc.setFillColor(...rgb);doc.roundedRect(bx,y+rh*.15,w,rh*.7,.6,.6,'F');
+        doc.text(nf0.format(V[i])+' ha',bx+w+2,y+rh*.62);const tw=doc.getTextWidth(nf0.format(V[i])+' ha ');doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.text('· '+nf0.format(V[i]/tot*100)+'%',bx+w+2+tw,y+rh*.62);});}}img('chTurno',MG,21+33,BOX.chTurno[0],wkH-33,'Turno por fazenda');img('chWeek',MG+BOX.chTurno[0]+4,21,BOX.chWeek[0],wkH,'Ritmo por semana (ha) e chuva (mm)');}
     else img('chWeek',MG,21,W-2*MG,wkH,'Ritmo por semana (ha) e chuva (mm)');
 
     // tabela de talhões
