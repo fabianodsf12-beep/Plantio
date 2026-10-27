@@ -1315,7 +1315,10 @@ function aguaView(AG,d){const ti=dayDiff(AG.start,d),m=new Map();
 function sparkAgua(ser,days){const s=ser.slice(-days),w=220,h=46,n=s.length;if(n<2)return '';
   const pts=s.map((v,i)=>`${(i/(n-1)*w).toFixed(1)},${(h-Math.min(1,v)*h).toFixed(1)}`).join(' ');
   return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;margin-top:4px"><rect x="0" y="0" width="${w}" height="${h*.2}" fill="#1C5E9E" opacity=".08"/><rect x="0" y="${h*.5}" width="${w}" height="${h*.5}" fill="#D4454C" opacity=".07"/><line x1="0" x2="${w}" y1="${h/2}" y2="${h/2}" stroke="#E0A100" stroke-dasharray="3 3" stroke-width="1"/><polyline points="${pts}" fill="none" stroke="#1C5E9E" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;}
-function varPalette(){const vs=[...new Set(M.rec.filter(r=>r.a>0).map(r=>r.v))].sort();const m=new Map();vs.forEach((v,i)=>m.set(v,PAL[i%PAL.length]));return m;}
+const VPAL=[...PAL,'#F28E2B','#17BECF','#BCBD22','#FF9DA7','#4B3B8F','#A3D977']; // variedades: 16 cores, para não repetir cor com mais de 10 materiais
+function varPalette(){const ar=new Map();M.rec.forEach(r=>{if(r.a>0)ar.set(r.v,(ar.get(r.v)||0)+r.a);});const vs=[...ar.keys()].sort(),m=new Map(),used=new Set();let x=PAL.length;
+  // cada material mantém a cor de sempre; se repetir a cor de outro, o de menos área ganha uma cor extra
+  vs.map((v,i)=>[v,i]).sort((a,b)=>ar.get(b[0])-ar.get(a[0])).forEach(([v,i])=>{let c=PAL[i%PAL.length];if(used.has(c))c=VPAL[(x++)%VPAL.length];used.add(c);m.set(v,c);});return m;}
 const READY='#C2410C'; // pronto para colher (linha do tempo)
 /* seleção: talhões destacados (mapa, gráfico de colheita ou tabela) */
 const MSEL=new Set();let selLab='',HP=null,CARD=null;
