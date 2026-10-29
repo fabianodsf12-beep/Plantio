@@ -1177,10 +1177,16 @@ function cicloOf(v,k){
   const p=(M.plano.get(k)||[]).find(p=>norm(p.v)===norm(v)&&p.ciclo);return p?p.ciclo:null;
 }
 function janela(h){if(!h)return 'sem';if(h<=JAN.milhoFim)return 'milho';if(h<=JAN.gerFim)return 'gergelim';return 'fora';}
-const harvestOf=r=>{const cic=cicloOf(r.v,r.k);return cic?addDays(r.d,cic):null;};
+/* colheita = emergência + ciclo. Emergência de cada lançamento = data do plantio + dias até emergir do talhão (emergência − início do plantio, aba de planejamento);
+   talhão ainda sem emergência lançada usa a mediana desses dias nos outros talhões */
+let DAEC=null;
+function daeOf(k){if(!DAEC||DAEC.m!==M){const per=new Map(),all=[];M.plano.forEach((ps,kk)=>{const p=ps.find(p=>p.em&&p.ini&&p.em>=p.ini);if(p){const d=dayDiff(p.ini,p.em);if(d<=30){per.set(kk,d);all.push(d);}}});all.sort((a,b)=>a-b);DAEC={m:M,per,med:all.length?all[Math.floor(all.length/2)]:0};}
+  return DAEC.per.has(k)?DAEC.per.get(k):DAEC.med;}
+const daeReal=k=>{daeOf(k);return DAEC.per.has(k);};
+const harvestOf=r=>{const cic=cicloOf(r.v,r.k);return cic?addDays(r.d,daeOf(r.k)+cic):null;};
 function colheitaRows(R){
   const g=new Map();
-  R.forEach(r=>{if(!(r.a>0))return;const cic=cicloOf(r.v,r.k);const h=cic?addDays(r.d,cic):null;const j=janela(h);
+  R.forEach(r=>{if(!(r.a>0))return;const cic=cicloOf(r.v,r.k);const h=harvestOf(r);const j=janela(h);
     const key=r.k+'|'+norm(r.v)+'|'+j;
     if(!g.has(key))g.set(key,{k:r.k,tl:r.tl,f:r.f,c:r.c,v:r.v,cic,j,jl:JANLAB[j],a:0,pIni:r.d,pFim:r.d,hIni:h,hFim:h});
     const o=g.get(key);o.a+=r.a;if(r.d<o.pIni)o.pIni=r.d;if(r.d>o.pFim)o.pFim=r.d;if(h&&(!o.hIni||h<o.hIni))o.hIni=h;if(h&&(!o.hFim||h>o.hFim))o.hFim=h;});
@@ -1693,7 +1699,7 @@ function renderMapa(){
   const talJ=j=>new Set(rows.filter(r=>r.j===j).map(r=>r.tl)).size;
   const hs=rows.flatMap(r=>[r.hIni,r.hFim]).filter(Boolean).sort();
   const gerIni=addDays(JAN.milhoFim,1);
-  $('#janTxt').textContent=`Milho safrinha: colheita prevista até ${fmtDY(JAN.milhoFim)}. Gergelim: de ${fmtDY(gerIni)} a ${fmtDY(JAN.gerFim)}.`+(CARD?` Mostrando só ${selLab.replace('Talhão ','o talhão ')}; volte ao mapa inteiro para ver tudo.`:'');
+  $('#janTxt').textContent=`Colheita prevista = emergência + ciclo da cultivar (talhão sem emergência lançada: plantio + ${DAEC?DAEC.med:0} dias, a mediana dos outros). Milho safrinha: colheita prevista até ${fmtDY(JAN.milhoFim)}. Gergelim: de ${fmtDY(gerIni)} a ${fmtDY(JAN.gerFim)}.`+(CARD?` Mostrando só ${selLab.replace('Talhão ','o talhão ')}; volte ao mapa inteiro para ver tudo.`:'');
   const semA=sumJ('sem');
   $('#kpisM').innerHTML=[
     ['Janela milho safrinha',nf0.format(sumJ('milho')),'ha',`${talJ('milho')} talhões, colheita até ${fmtD(JAN.milhoFim)}`,'milho'],
@@ -1934,7 +1940,7 @@ function backF(){const s=FHIST.pop();if(!s)return;Object.assign(F,s);syncUI();re
 const TIPS={'Ritmo médio':'Área plantada dividida pelos dias em que houve plantio.','Dias com plantio':'Dias com algum plantio lançado no período filtrado.','Maior dia':'Dia com a maior área plantada.',
   'Talhões plantados':'Talhões com algum plantio, sobre os talhões com área total cadastrada.','Chuva no período':'Soma da pluviometria no período filtrado.','Cultivares':'Cultivares e híbridos diferentes plantados.',
   'Janela milho safrinha':'Área com colheita prevista até o fim da janela do milho safrinha.','Janela gergelim':'Área com colheita prevista entre o fim da janela do milho e o fim da janela do gergelim.',
-  'Após as janelas':'Área com colheita prevista depois da janela do gergelim.','Primeira colheita':'Data de colheita prevista mais cedo (plantio + ciclo).','Última colheita':'Data de colheita prevista mais tarde.',
+  'Após as janelas':'Área com colheita prevista depois da janela do gergelim.','Primeira colheita':'Data de colheita prevista mais cedo (emergência + ciclo).','Última colheita':'Data de colheita prevista mais tarde.',
   'Sem ciclo':'Área de cultivares sem ciclo cadastrado; não entra na previsão.','Testes':'Testes de germinação lançados.','Aprovados':'Testes finalizados com germinação no 7º dia igual ou acima do mínimo.',
   'Reprovados':'Testes finalizados abaixo do mínimo.','Germinação média':'Média do 7º dia, só dos testes finalizados.','Vigor médio (IVG)':'Índice de velocidade de germinação, só dos testes finalizados.','Sementes recebidas':'Peso de nota somado das entradas de sementes.'};
 function applyTips(){$$('.kpi').forEach(k=>{const t=k.querySelector('.k');if(t&&!k.dataset.tip){const s=TIPS[t.textContent.trim()];if(s)k.dataset.tip=s;}});}
