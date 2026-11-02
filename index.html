@@ -1835,6 +1835,7 @@ function computeConf(){
     if(ini&&fim){const a=ini<fim?ini:fim,b=ini<fim?fim:ini;o.rs.forEach(r=>{if(r.d<addDays(a,-5)||r.d>addDays(b,5))conf.push({tl:t.tl,tipo:'Data fora da janela planejada',det:`Lançamento de ${fmtDY(r.d)} (${nf2.format(r.a)} ha); planejamento de ${fmtDY(a)} a ${fmtDY(b)}. Verifique o mês digitado.`});});}
     pl.forEach(p=>{if(p.v&&p.ap&&o.v.size&&!o.v.has(norm(p.v)))conf.push({tl:t.tl,tipo:'Variedade sem lançamento',det:`Planejamento prevê ${p.v} (${nf2.format(p.ap)} ha), mas o Diário só tem ${[...new Set(o.rs.map(r=>r.v))].join(', ')}`});});
   });
+  (DB.datasRuins||[]).forEach(r=>conf.unshift({tl:r.tl||'—',tipo:'Data inválida no Diário',det:`Linha ${r.lin||'?'} da aba Diário está com data ${r.d.split('-').reverse().join('/')} (${r.v||'-'}, ${nf2.format(r.a)} ha). Corrija a data na planilha; o lançamento ficou fora dos gráficos.`}));
   const tested=new Set((DB.lotes||[]).map(l=>norm(l.lote)));
   const seen=new Set();(DB.entradas||[]).forEach(e=>{const k=norm(e.lote);if(!tested.has(k)&&!seen.has(k)){seen.add(k);conf.push({tl:'—',tipo:'Lote sem teste de germinação',det:`${e.v}, lote ${e.lote} (${e.sem}), recebido em ${fmtDY(e.d)}`});}});
   return conf;
@@ -2443,7 +2444,7 @@ $('#fileIn').onchange=async e=>{
 };
 $('#btnReset').onclick=()=>{store.del('plantio-db-v2');load(ORIGINAL);toast('Dados originais restaurados.');};
 
-const PARSE_V=4; // muda quando a leitura da planilha muda: força reler o Drive
+const PARSE_V=5; // muda quando a leitura da planilha muda: força reler o Drive
 function parseWorkbook(wb,fname){
   const sheets=wb.SheetNames;
   const find=re=>sheets.find(s=>re.test(norm(s)));
@@ -2462,7 +2463,11 @@ function parseWorkbook(wb,fname){
     for(const r of rD.slice(hD+1)){const d=ds(r[c.d]);if(!d)continue;const tl=str(r[c.tl]);
       if(c.mm>=0&&num(r[c.mm]))rainD.set(d,(rainD.get(d)||0)+num(r[c.mm]));
       if(!tl&&!num(r[c.a]))continue;
-      db.plantio.push({d,t:c.t>=0?str(r[c.t]):null,c:str(r[c.c]),v:str(r[c.v]),f:str(r[c.f]),tl,a:num(r[c.a])||0});}}
+      db.plantio.push({d,t:c.t>=0?str(r[c.t]):null,c:str(r[c.c]),v:str(r[c.v]),f:str(r[c.f]),tl,a:num(r[c.a])||0,lin:rD.indexOf(r)+1});}}
+  // datas digitadas erradas (ex.: só o dia, que o Excel lê como 1900) esticam os gráficos: ficam fora e vão para a conferência
+  const dOk=(()=>{const ds0=db.plantio.map(p=>p.d).sort();if(!ds0.length)return ()=>true;const md=new Date(ds0[Math.floor(ds0.length/2)]+'T12:00:00'),a=new Date(md-240*864e5).toISOString().slice(0,10),b=new Date(+md+240*864e5).toISOString().slice(0,10);return d=>d>=a&&d<=b;})();
+  db.datasRuins=db.plantio.filter(p=>!dOk(p.d));db.plantio=db.plantio.filter(p=>dOk(p.d));
+  [...rainD.keys()].forEach(d=>{if(!dOk(d))rainD.delete(d);});
   // Pluviometria (aba própria tem prioridade)
   const sP=find(/^PLUVIOMETRIA/)||find(/^PLUVIO(?!METROS)/);const rP=aoa(sP);const hP=hdrIdx(rP,['DATA']);const rainP=new Map();
   if(hP>=0){const h=rP[hP];const cd=col(h,'DATA'),cm=col(h,'VOLUME','PLUVIOMETRIA','CHUVA','MM'),ct=col(h,'TALHAO'),cp=col(h,'PLUVIOMETRO');
@@ -2476,6 +2481,7 @@ function parseWorkbook(wb,fname){
       db.chuvaTal.forEach(x=>{const ps=[...new Set(x.p.split(',').map(z=>z.trim()).filter(Boolean))];ps.forEach(z=>ids.add(z));if(ps.length===1){if(!byD.has(x.d))byD.set(x.d,new Map());byD.get(x.d).set(ps[0],x.mm);}});
       byD.forEach((m,d)=>rainP.set(d,[...m.values()].reduce((s,v)=>s+v,0)/(ids.size||1)));}
     else for(const r of rP.slice(hP+1)){const d=ds(r[cd]);const v=num(r[cm]);if(d&&v!=null)rainP.set(d,(rainP.get(d)||0)+v);}}
+  [...rainP.keys()].forEach(d=>{if(!dOk(d))rainP.delete(d);});if(db.chuvaTal)db.chuvaTal=db.chuvaTal.filter(x=>dOk(x.d));
   // posição dos pluviômetros: aba PLUVIOMETROS, nome + "lat, lon" numa célula (ou lat e lon em colunas)
   const sPP=find(/^PLUVIOMETROS/);const rPP=aoa(sPP);db.pluvPos=[];
   const crd=v=>{if(typeof v==='number')return v;const n=parseFloat(String(v||'').replace(',','.'));return isNaN(n)?null:n;};
