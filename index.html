@@ -2434,7 +2434,7 @@ $('#fileIn').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
-    const db=parseWorkbook(wb,f.name);
+    const db=parseWorkbook(wb,f.name);db._manual={at:new Date().toISOString()};
     if(!db.plantio.length&&!db.lotes.length&&!db.talhoes.length&&!db.entradas.length)throw new Error('Não encontrei as abas Diário, DADOS ou Teste de Germinação.');
     if(!store.set('plantio-db-v2',JSON.stringify(db)))toast('Dados carregados (não foi possível salvar neste navegador).');
     load(db);
@@ -2573,6 +2573,7 @@ async function driveRefresh(manual){
     if(!f){driveStatus('err','Não encontrei “Plantio Soja 26-27.xlsx” no seu Google Drive. Mostrando os últimos dados salvos.');return;}
     const last=store.get('plantio-drive-mod'),lastId=store.get('plantio-drive-id');
     const have=DB&&DB._pv===PARSE_V&&DB._drive&&DB._drive.id===f.id&&DB._drive.mod===f.modifiedTime;
+    if(!manual&&DB&&DB._manual&&new Date(f.modifiedTime)<new Date(DB._manual.at)){driveStatus('warn',`Mostrando a planilha carregada do computador. O Drive tem uma versão mais antiga (salva em ${fmtDT(f.modifiedTime)}).`);return;}
     if(!manual&&have&&last===f.modifiedTime&&lastId===f.id){driveStatus('ok',`Planilha em dia no Google Drive (salva em ${fmtDT(f.modifiedTime)}).`);return;}
     driveStatus('busy','Baixando a versão salva em '+fmtDT(f.modifiedTime)+'…');
     const dr=await mcp.callTool(DRIVE.server,'download_file_content',{fileId:f.id},{cache:false});
@@ -2608,6 +2609,7 @@ async function webRefresh(manual){
     const meta=await (await fetch(webUrl+sep+'meta=1&t='+Date.now(),{cache:'no-store'})).json();
     if(!meta||!meta.ok)throw new Error(meta&&meta.error||'resposta inválida');
     const have=DB&&DB._pv===PARSE_V&&DB._drive&&DB._drive.mod===meta.modified;
+    if(!manual&&DB&&DB._manual&&new Date(meta.modified)<new Date(DB._manual.at)){driveStatus('warn',`Mostrando a planilha carregada do computador. O Drive tem uma versão mais antiga (salva em ${fmtDT(meta.modified)}).`);return;}
     if(!manual&&have){driveStatus('ok',`Planilha em dia no Google Drive (salva em ${fmtDT(meta.modified)}).`);return;}
     driveStatus('busy','Baixando a versão salva em '+fmtDT(meta.modified)+'…');
     const r=await (await fetch(webUrl+sep+'t='+Date.now(),{cache:'no-store'})).json();
