@@ -764,14 +764,16 @@ function buildModel(db){
   const tkey=tl=>{const k=norm(tl);if(tal.has(k)||pasto.has(k))return k;const k2=k.replace(/(\d)[A-Z]$/,'$1');return tal.has(k2)||pasto.has(k2)?k2:k;};
   if(db.chuvaTal&&db.chuvaTal.length){
     const acc=new Map();db.chuvaTal.forEach(r=>{const k=tkey(r.tl),kk=k+'|'+r.d;if(!acc.has(kk))acc.set(kk,{k,d:r.d,s:0,n:0});const x=acc.get(kk);x.s+=+r.mm||0;x.n++;
-      if(r.p){if(!pluvTal.has(k))pluvTal.set(k,new Set());r.p.split(',').forEach(z=>z.trim()&&pluvTal.get(k).add(z.trim()));}});
+      if(r.p){if(!pluvTal.has(k))pluvTal.set(k,new Set());r.p.split(',').forEach(z=>z.trim()&&!/^pluvi/i.test(z.trim())&&pluvTal.get(k).add(z.trim()));}});
     acc.forEach(x=>{if(!rainTal.has(x.k))rainTal.set(x.k,new Map());rainTal.get(x.k).set(x.d,x.s/x.n);});
     // chuva da fazenda = média geral dos pluviômetros, como o Protector: pluviômetro sem leitura no dia conta 0 mm
-    const ids=new Set(),pv=new Map();
-    db.chuvaTal.forEach(r=>{const ps=[...new Set((r.p||'').split(',').map(z=>z.trim()).filter(Boolean))];ps.forEach(z=>ids.add(z));
-      if(ps.length===1){if(!pv.has(r.d))pv.set(r.d,new Map());pv.get(r.d).set(ps[0],+r.mm||0);}});
+    // conta só os pluviômetros instalados no dia: do 1º lançamento (os da 1ª semana contam desde o início) até o fim do mês do último lançamento
+    const pv=new Map(),f0=new Map(),f1=new Map();
+    db.chuvaTal.forEach(r=>{const ps=[...new Set((r.p||'').split(',').map(z=>z.trim()).filter(z=>z&&!/^pluvi/i.test(z)))];
+      if(ps.length===1){const z=ps[0];if(!pv.has(r.d))pv.set(r.d,new Map());pv.get(r.d).set(z,+r.mm||0);if(!f0.has(z)||r.d<f0.get(z))f0.set(z,r.d);if(!f1.has(z)||r.d>f1.get(z))f1.set(z,r.d);}});
+    const g0=[...f0.values()].sort()[0],per=[...f0.keys()].map(z=>{const a=f0.get(z)<=addDays(g0,7)?g0:f0.get(z),[y,m]=f1.get(z).split('-').map(Number);return [a,new Date(Date.UTC(y,m,0)).toISOString().slice(0,10)];});
     rain.clear();
-    if(ids.size)[...pv.keys()].sort().forEach(d=>rain.set(d,Math.round([...pv.get(d).values()].reduce((s,v)=>s+v,0)/ids.size*100)/100));
+    if(f0.size)[...pv.keys()].sort().forEach(d=>{const n=per.filter(([a,b])=>a<=d&&d<=b).length||1;rain.set(d,Math.round([...pv.get(d).values()].reduce((s,v)=>s+v,0)/n*100)/100);});
     else{const n=rainTal.size,sd=new Map();rainTal.forEach(m=>m.forEach((v,d)=>sd.set(d,(sd.get(d)||0)+v)));[...sd.keys()].sort().forEach(d=>rain.set(d,Math.round(sd.get(d)/n*100)/100));}}
   // talhão com pluviômetro: dia sem leitura = 0 mm; sem pluviômetro: média geral
   const rainK=(k,d)=>{const m=rainTal.get(k);return m?(m.get(d)||0):(rain.get(d)||0);};
@@ -2444,7 +2446,7 @@ $('#fileIn').onchange=async e=>{
 };
 $('#btnReset').onclick=()=>{store.del('plantio-db-v2');load(ORIGINAL);toast('Dados originais restaurados.');};
 
-const PARSE_V=5; // muda quando a leitura da planilha muda: força reler o Drive
+const PARSE_V=6; // muda quando a leitura da planilha muda: força reler o Drive
 function parseWorkbook(wb,fname){
   const sheets=wb.SheetNames;
   const find=re=>sheets.find(s=>re.test(norm(s)));
