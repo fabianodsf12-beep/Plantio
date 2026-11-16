@@ -774,7 +774,8 @@ function buildModel(db){
     // chuva da fazenda = média geral dos pluviômetros, como o Protector: pluviômetro sem leitura no dia conta 0 mm
     // conta só os pluviômetros instalados no dia: do 1º lançamento (os da 1ª semana contam desde o início) até o fim do mês do último lançamento
     const pv=new Map(),f0=new Map(),f1=new Map();
-    db.chuvaTal.forEach(r=>{const ps=[...new Set((r.p||'').split(',').map(z=>z.trim()).filter(z=>z&&!/^pluvi/i.test(z)))];
+    const leit=db.pluvLeit&&db.pluvLeit.length?db.pluvLeit.filter(r=>!/^pluvi/i.test(r.p)).map(r=>({d:r.d,mm:r.mm,ps:[r.p]})):db.chuvaTal.map(r=>({d:r.d,mm:r.mm,ps:[...new Set((r.p||'').split(',').map(z=>z.trim()).filter(z=>z&&!/^pluvi/i.test(z)))]}));
+    leit.forEach(r=>{const ps=r.ps;
       if(ps.length===1){const z=ps[0];if(!pv.has(r.d))pv.set(r.d,new Map());pv.get(r.d).set(z,+r.mm||0);if(!f0.has(z)||r.d<f0.get(z))f0.set(z,r.d);if(!f1.has(z)||r.d>f1.get(z))f1.set(z,r.d);}});
     const g0=[...f0.values()].sort()[0],per=[...f0.keys()].map(z=>{const a=f0.get(z)<=addDays(g0,7)?g0:f0.get(z),[y,m]=f1.get(z).split('-').map(Number);return [a,new Date(Date.UTC(y,m,0)).toISOString().slice(0,10)];});
     rain.clear();
@@ -798,7 +799,8 @@ function buildModel(db){
   culturas.sort((a,b)=>{const ia=ord.findIndex(o=>norm(a).startsWith(o)),ib=ord.findIndex(o=>norm(b).startsWith(o));return (ia<0?9:ia)-(ib<0?9:ib)||a.localeCompare(b);});
   const turnos=[...new Set(rec.map(r=>r.t).filter(Boolean))].sort();
   const pluvPos=new Map((db.pluvPos||[]).map(p=>[p.id.toUpperCase().trim(),p]));
-  const pluv=new Map();(db.chuvaTal||[]).forEach(r=>{const ps=[...new Set((r.p||'').split(',').map(z=>z.trim()).filter(Boolean))];ps.forEach(z=>{if(!pluv.has(z))pluv.set(z,new Map());});if(ps.length===1)pluv.get(ps[0]).set(r.d,+r.mm||0);});
+  const pluv=new Map();if(db.pluvLeit&&db.pluvLeit.length)db.pluvLeit.forEach(r=>{if(!pluv.has(r.p))pluv.set(r.p,new Map());pluv.get(r.p).set(r.d,+r.mm||0);});
+  else (db.chuvaTal||[]).forEach(r=>{const ps=[...new Set((r.p||'').split(',').map(z=>z.trim()).filter(Boolean))];ps.forEach(z=>{if(!pluv.has(z))pluv.set(z,new Map());});if(ps.length===1)pluv.get(ps[0]).set(r.d,+r.mm||0);});
   return {tal,pasto,rain,rainTal,pluvTal,rainK,pluv,pluvPos,rec,rep,plano,culturas,turnos,dMin:dates[0],dMax:dates[dates.length-1],
     fazendas:[...new Set([...(db.fazendas||[]),...[...tal.values()].map(t=>t.f)])].filter(f=>f&&f!=='—').sort((a,b)=>a.localeCompare(b,'pt'))};
 }
@@ -2482,7 +2484,7 @@ $('#fileIn').onchange=async e=>{
 };
 $('#btnReset').onclick=()=>{store.del('plantio-db-v2');load(ORIGINAL);toast('Dados originais restaurados.');};
 
-const PARSE_V=7; // muda quando a leitura da planilha muda: força reler o Drive
+const PARSE_V=8; // muda quando a leitura da planilha muda: força reler o Drive
 function parseWorkbook(wb,fname){
   const sheets=wb.SheetNames;
   const find=re=>sheets.find(s=>re.test(norm(s)));
@@ -2508,8 +2510,17 @@ function parseWorkbook(wb,fname){
   [...rainD.keys()].forEach(d=>{if(!dOk(d))rainD.delete(d);});
   // Pluviometria (aba própria tem prioridade)
   const sP=find(/^PLUVIOMETRIA/)||find(/^PLUVIO(?!METROS)/);const rP=aoa(sP);const hP=hdrIdx(rP,['DATA']);const rainP=new Map();
-  if(hP>=0){const h=rP[hP];const cd=col(h,'DATA'),cm=col(h,'VOLUME','PLUVIOMETRIA','CHUVA','MM'),ct=col(h,'TALHAO'),cp=col(h,'PLUVIOMETRO');
-    if(ct>=0){ // formato Protector: uma linha por talhão e dia, com o(s) pluviômetro(s) que o representam
+  if(hP>=0){const h=rP[hP];const cd=col(h,'DATA'),cm=col(h,'VOLUME','PLUVIOMETRIA','CHUVA','MM'),ct=col(h,'TALHAO'),cp=col(h,'PLUVIOMETRO'),cts=col(h,'TALHOES');
+    if(ct<0&&cts>=0&&cp>=0){ // formato Protector por pluviômetro: uma linha por pluviômetro e dia, com os talhões que ele representa
+      const g=new Map(),lt=new Map();
+      for(const r of rP.slice(hP+1)){const d=ds(r[cd]),v=num(r[cm]),p=str(r[cp]).trim();if(!d||v==null||!p)continue;
+        const lk=d+'|'+p;if(!lt.has(lk))lt.set(lk,{d,p,s:0,n:0});const L=lt.get(lk);L.s+=v;L.n++;
+        String(r[cts]||'').split(',').map(z=>z.split(/\s+-\s+/)[0].trim()).filter(Boolean).forEach(t=>{const key=d+'|'+t;if(!g.has(key))g.set(key,{d,tl:t,s:0,n:0,p:new Set()});const x=g.get(key);x.s+=v;x.n++;x.p.add(p);});}
+      db.chuvaTal=[...g.values()].map(x=>({d:x.d,tl:x.tl,mm:Math.round(x.s/x.n*100)/100,p:[...x.p].join(', ')})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.tl.localeCompare(b.tl));
+      db.pluvLeit=[...lt.values()].map(x=>({d:x.d,p:x.p,mm:Math.round(x.s/x.n*100)/100}));
+      const ids=new Set(db.pluvLeit.map(x=>x.p)),byD=new Map();db.pluvLeit.forEach(x=>byD.set(x.d,(byD.get(x.d)||0)+x.mm));
+      byD.forEach((v,d)=>rainP.set(d,v/(ids.size||1)));}
+    else if(ct>=0){ // formato Protector: uma linha por talhão e dia, com o(s) pluviômetro(s) que o representam
       const g=new Map();
       for(const r of rP.slice(hP+1)){const d=ds(r[cd]),v=num(r[cm]),tl=str(r[ct]);if(!d||v==null||!tl)continue;
         const t=tl.split(/\s+-\s+/)[0].trim(),key=d+'|'+t;if(!g.has(key))g.set(key,{d,tl:t,s:0,n:0,p:new Set()});const x=g.get(key);x.s+=v;x.n++;
@@ -2519,7 +2530,7 @@ function parseWorkbook(wb,fname){
       db.chuvaTal.forEach(x=>{const ps=[...new Set(x.p.split(',').map(z=>z.trim()).filter(Boolean))];ps.forEach(z=>ids.add(z));if(ps.length===1){if(!byD.has(x.d))byD.set(x.d,new Map());byD.get(x.d).set(ps[0],x.mm);}});
       byD.forEach((m,d)=>rainP.set(d,[...m.values()].reduce((s,v)=>s+v,0)/(ids.size||1)));}
     else for(const r of rP.slice(hP+1)){const d=ds(r[cd]);const v=num(r[cm]);if(d&&v!=null)rainP.set(d,(rainP.get(d)||0)+v);}}
-  [...rainP.keys()].forEach(d=>{if(!dOk(d))rainP.delete(d);});if(db.chuvaTal)db.chuvaTal=db.chuvaTal.filter(x=>dOk(x.d));
+  [...rainP.keys()].forEach(d=>{if(!dOk(d))rainP.delete(d);});if(db.chuvaTal)db.chuvaTal=db.chuvaTal.filter(x=>dOk(x.d));if(db.pluvLeit)db.pluvLeit=db.pluvLeit.filter(x=>dOk(x.d));
   // posição dos pluviômetros: aba PLUVIOMETROS, nome + "lat, lon" numa célula (ou lat e lon em colunas)
   const sPP=find(/^PLUVIOMETROS/);const rPP=aoa(sPP);db.pluvPos=[];
   const crd=v=>{if(typeof v==='number')return v;const n=parseFloat(String(v||'').replace(',','.'));return isNaN(n)?null:n;};
