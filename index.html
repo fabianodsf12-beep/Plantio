@@ -2484,7 +2484,7 @@ $('#fileIn').onchange=async e=>{
 };
 $('#btnReset').onclick=()=>{store.del('plantio-db-v2');load(ORIGINAL);toast('Dados originais restaurados.');};
 
-const PARSE_V=8; // muda quando a leitura da planilha muda: força reler o Drive
+const PARSE_V=9; // muda quando a leitura da planilha muda: força reler o Drive
 function parseWorkbook(wb,fname){
   const sheets=wb.SheetNames;
   const find=re=>sheets.find(s=>re.test(norm(s)));
@@ -2514,10 +2514,12 @@ function parseWorkbook(wb,fname){
     if(ct<0&&cts>=0&&cp>=0){ // formato Protector por pluviômetro: uma linha por pluviômetro e dia, com os talhões que ele representa
       const g=new Map(),lt=new Map();
       for(const r of rP.slice(hP+1)){const d=ds(r[cd]),v=num(r[cm]),p=str(r[cp]).trim();if(!d||v==null||!p)continue;
-        const lk=d+'|'+p;if(!lt.has(lk))lt.set(lk,{d,p,s:0,n:0});const L=lt.get(lk);L.s+=v;L.n++;
-        String(r[cts]||'').split(',').map(z=>z.split(/\s+-\s+/)[0].trim()).filter(Boolean).forEach(t=>{const key=d+'|'+t;if(!g.has(key))g.set(key,{d,tl:t,s:0,n:0,p:new Set()});const x=g.get(key);x.s+=v;x.n++;x.p.add(p);});}
+        // mais de um lançamento do mesmo pluviômetro no dia: soma, como o Protector
+        const lk=d+'|'+p;if(!lt.has(lk))lt.set(lk,{d,p,s:0,tls:new Set()});const L=lt.get(lk);L.s+=v;
+        String(r[cts]||'').split(',').map(z=>z.split(/\s+-\s+/)[0].trim()).filter(Boolean).forEach(t=>L.tls.add(t));}
+      lt.forEach(L=>L.tls.forEach(t=>{const key=L.d+'|'+t;if(!g.has(key))g.set(key,{d:L.d,tl:t,s:0,n:0,p:new Set()});const x=g.get(key);x.s+=L.s;x.n++;x.p.add(L.p);}));
       db.chuvaTal=[...g.values()].map(x=>({d:x.d,tl:x.tl,mm:Math.round(x.s/x.n*100)/100,p:[...x.p].join(', ')})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.tl.localeCompare(b.tl));
-      db.pluvLeit=[...lt.values()].map(x=>({d:x.d,p:x.p,mm:Math.round(x.s/x.n*100)/100}));
+      db.pluvLeit=[...lt.values()].map(x=>({d:x.d,p:x.p,mm:Math.round(x.s*100)/100}));
       const ids=new Set(db.pluvLeit.map(x=>x.p)),byD=new Map();db.pluvLeit.forEach(x=>byD.set(x.d,(byD.get(x.d)||0)+x.mm));
       byD.forEach((v,d)=>rainP.set(d,v/(ids.size||1)));}
     else if(ct>=0){ // formato Protector: uma linha por talhão e dia, com o(s) pluviômetro(s) que o representam
