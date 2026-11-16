@@ -424,6 +424,19 @@ select.sel{height:28px;padding:2px 6px;font-size:13px}
 .toast,.tipbox{background:var(--petrol)}
 .filters{box-shadow:var(--shadow)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ===== Tela que se adapta: o painel ocupa a largura e a altura de qualquer tela =====
+   Celular, notebook, monitor grande ou TV: o conteúdo vai até 2.560 px de largura, a margem lateral
+   cresce com a tela, os gráficos ficam mais altos quando a tela é larga e o mapa usa a altura visível. */
+:root{--margem:clamp(14px,2vw,48px)}
+.top-in,.tabs,.filters-in,.epocas,.status,.statusrow,main{max-width:2560px;padding-left:max(var(--margem),env(safe-area-inset-left,0px));padding-right:max(var(--margem),env(safe-area-inset-right,0px))}
+.mapwrap{grid-template-columns:minmax(0,1fr) clamp(220px,17vw,380px)}
+.h380{height:clamp(320px,24vw,580px)}.h320{height:clamp(280px,20vw,500px)}.h300{height:clamp(260px,19vw,470px)}.h280{height:clamp(240px,18vw,440px)}.h230{height:clamp(210px,15vw,360px)}
+.tw{max-height:max(420px,calc(100dvh - 240px))}
+@media (min-width:1800px){.nowg{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}}
+@media (max-width:760px){.mapwrap{grid-template-columns:1fr}}
+@media (max-width:640px){.h380{height:320px}.h320,.h300{height:280px}}
+.card .hd .tools{flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 4px;min-width:0;max-width:100%}
+@media (max-width:760px){.card .hd .tools{margin-left:0;justify-content:flex-start}.card .hd .tools .seg{max-width:100%;overflow-x:auto}.card .hd .tools .seg button{white-space:nowrap;min-height:36px}.kmlt{margin-left:0}}
 </style>
 </head>
 <body>
