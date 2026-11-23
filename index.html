@@ -1633,11 +1633,11 @@ function aguaGridImg(G,ti){if(ti==null)ti=G.nd-1;let url=G.img.get(ti);
   return {url,w:G.w,h:G.h};}
 function renderSumChuva(CH){
   const per=CHSEL?CHSEL.per:'na safra';
-  const all=[...CH.pts,...CH.sem].sort((a,b)=>b.v-a.v),med=CHSEL&&CHSEL.mm!=null?CHSEL.mm:(all.length?all.reduce((s,p)=>s+p.v,0)/all.length:0); // mesma média da fazenda dos cards (e do Protector)
+  const all=[...CH.pts].sort((a,b)=>b.v-a.v),med=CHSEL&&CHSEL.mm!=null?CHSEL.mm:(all.length?all.reduce((s,p)=>s+p.v,0)/all.length:0); // mesma média da fazenda dos cards (e do Protector)
   $('#mapSum').innerHTML=`<table><thead><tr><th>Pluviômetro</th><th class="n">mm ${per}</th></tr></thead><tbody>`+
     all.map(p=>{const [R,G,B]=chRamp((p.v-CH.lo)/((CH.hi-CH.lo)||1));return `<tr><td><span class="cdot" style="background:rgb(${R},${G},${B});border:1px solid var(--line2)"></span>${esc(p.id)}${CH.sem.includes(p)?' <span class="help">(sem posição)</span>':''}</td><td class="n">${nf0.format(p.v)}</td></tr>`;}).join('')+
     `</tbody><tfoot><tr><th>Média geral</th><th class="n">${nf1.format(med)}</th></tr></tfoot></table>`+
-    `<p class="help" style="margin:10px 0 0">${CH.real===CH.pts.length?'Pluviômetros nas coordenadas da aba PLUVIOMETROS.':CH.real?`${CH.real} pluviômetros pelas coordenadas da aba PLUVIOMETROS; os outros no centro do talhão de mesmo nome.`:'Cada pluviômetro foi posto no centro do talhão de mesmo nome, até chegarem as posições reais.'} Entre eles, a chuva é estimada pela distância (quanto mais perto, mais peso)${CH.sem.length?`. Sem posição, fora do mapa: ${CH.sem.map(p=>esc(p.id)).join(', ')}`:''}. Período: ${CH.days.length?fmtDY(CH.days[0])+(CH.days.length>1?' a '+fmtDY(CH.days[CH.days.length-1]):''):'—'}.</p>`;}
+    `<p class="help" style="margin:10px 0 0">${CH.real===CH.pts.length?'Pluviômetros nas coordenadas da aba PLUVIOMETROS.':CH.real?`${CH.real} pluviômetros pelas coordenadas da aba PLUVIOMETROS; os outros no centro do talhão de mesmo nome.`:'Cada pluviômetro foi posto no centro do talhão de mesmo nome, até chegarem as posições reais.'} Entre eles, a chuva é estimada pela distância (quanto mais perto, mais peso). Período: ${CH.days.length?fmtDY(CH.days[0])+(CH.days.length>1?' a '+fmtDY(CH.days[CH.days.length-1]):''):'—'}.</p>`;}
 function renderSumAgua(AG){
   const g=AGCL.map(c=>({c,a:0,n:0}));AG.m.forEach((x,k)=>{const t=M.tal.get(k),i=AGCL.indexOf(agClass(x.pct));g[i].a+=t&&t.a||0;g[i].n++;});
   const pl=[...AG.m.values()].filter(x=>x.ini),med=pl.length?pl.reduce((s,x)=>s+x.pct,0)/pl.length:null;
@@ -2127,13 +2127,13 @@ function chuvaLegPdf(doc,x,y,w,h,cl){/* PDF do mapa de chuva: coluna com a médi
   doc.setFontSize(7.5);doc.text(cl(P.a===P.b?fmtDY(P.a):fmtDY(P.a)+' a '+fmtDY(P.b)),x,y);y+=7;
   const N=60;for(let i=0;i<N;i++){doc.setFillColor(...chRamp((i+.5)/N));doc.rect(x+w*i/N,y,w/N+.15,3,'F');}y+=6.5;
   doc.setFontSize(7);doc.text(nf0.format(CH.lo)+' mm',x,y);doc.text(nf0.format(CH.hi)+' mm',x+w,y,{align:'right'});y+=7;
-  const all=[...CH.pts,...CH.sem].sort((a,b)=>b.v-a.v),fr=CH.sem.length?4.5:0,rh=Math.min(5.2,(y1-y-6-fr)/Math.max(1,all.length));
+  const all=[...CH.pts].sort((a,b)=>b.v-a.v),fr=0,rh=Math.min(5.2,(y1-y-6-fr)/Math.max(1,all.length));
   doc.setFontSize(7);doc.text(cl('PLUVIÔMETRO'),x,y);doc.text('mm',x+w,y,{align:'right'});y+=1.8;doc.setDrawColor(...LINE);doc.setLineWidth(.2);doc.line(x,y,x+w,y);y+=rh*.78+.6;
   const fs=Math.max(6.5,Math.min(8.5,rh*1.7));
   all.forEach(p=>{const sem=CH.sem.includes(p);doc.setFillColor(...chRamp((p.v-CH.lo)/((CH.hi-CH.lo)||1)));doc.setDrawColor(190,204,207);doc.roundedRect(x,y-rh*.62,rh*.68,rh*.68,.4,.4,'FD');
     doc.setFont('helvetica','normal');doc.setFontSize(fs);doc.setTextColor(...(sem?MUT:INK));doc.text(cl(p.id+(sem?' *':'')),x+rh*.68+2,y);
     doc.setFont('helvetica','bold');doc.text(nf0.format(p.v),x+w,y,{align:'right'});y+=rh;});
-  if(CH.sem.length){doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MUT);doc.text(cl('* sem posição, fora do mapa'),x,y1-3);}}
+}
 function drawMapLegend(doc,tx,tw,y0,clean,dry,compact,src){/* legenda do mapa (cores lidas da tela) para os PDFs; dry=true só mede a altura */
   const INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225];let y=y0;
   const pc=s=>{s=String(s||'');let m=/#([0-9a-f]{6})([0-9a-f]{2})?\b/i.exec(s),r,g,b,a=1;if(m){[r,g,b]=[0,2,4].map(i=>parseInt(m[1].substr(i,2),16));if(m[2])a=parseInt(m[2],16)/255;}
