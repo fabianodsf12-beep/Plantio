@@ -719,6 +719,7 @@ const isCover=c=>{const n=norm(c);return n.startsWith('PASTO')||n.startsWith('MI
 const PASTO_PADRAO=['G-03','G-05'],PASTO_COR='#5E8C3A';
 const isPasto=t=>{const u=norm(t.uso||'');if(u)return u.startsWith('PAST')||u.startsWith('PECU');return PASTO_PADRAO.some(x=>norm(x)===norm(t.tl));};
 let DB, M; // M = modelo derivado
+const AJUSTE_CHUVA_MES={'2026-09':107.62,'2026-10':207.44}; // média da fazenda igual ao Protector (ver buildModel)
 function buildModel(db){
   const tal=new Map();
   const canon=s=>norm(s).replace(/BLOCO/g,'').trim().split(' ')[0].replace(/(.)\1+/g,'$1');
@@ -752,7 +753,11 @@ function buildModel(db){
     const g0=[...f0.values()].sort()[0],per=[...f0.keys()].map(z=>{const a=f0.get(z)<=addDays(g0,7)?g0:f0.get(z),[y,m]=f1.get(z).split('-').map(Number);return [a,new Date(Date.UTC(y,m,0)).toISOString().slice(0,10)];});
     rain.clear();
     if(f0.size)[...pv.keys()].sort().forEach(d=>{const n=per.filter(([a,b])=>a<=d&&d<=b).length||1;rain.set(d,Math.round([...pv.get(d).values()].reduce((s,v)=>s+v,0)/n*100)/100);});
-    else{const n=rainTal.size,sd=new Map();rainTal.forEach(m=>m.forEach((v,d)=>sd.set(d,(sd.get(d)||0)+v)));[...sd.keys()].sort().forEach(d=>rain.set(d,Math.round(sd.get(d)/n*100)/100));}}
+    else{const n=rainTal.size,sd=new Map();rainTal.forEach(m=>m.forEach((v,d)=>sd.set(d,(sd.get(d)||0)+v)));[...sd.keys()].sort().forEach(d=>rain.set(d,Math.round(sd.get(d)/n*100)/100));}
+    // safra 26/27: em set e out o Protector mostra uma média um pouco maior (meses em que FT-02 e SD-02 foram completados com a chuva dos vizinhos).
+    // Pedido do Fabiano (23/11/2026): igualar a média da fazenda nesses meses ao Protector. Corrigir a regra na próxima safra.
+    Object.entries(AJUSTE_CHUVA_MES).forEach(([mo,alvo])=>{const ds=[...rain.keys()].filter(d=>d.startsWith(mo)).sort(),t=ds.reduce((s,d)=>s+rain.get(d),0);if(!t)return;
+      const f=alvo/t;let acc=0;ds.forEach(d=>{const v=Math.round(rain.get(d)*f*100)/100;rain.set(d,v);acc+=v;});const u=ds.filter(d=>rain.get(d)>0).pop();if(u)rain.set(u,Math.round((rain.get(u)+alvo-acc)*100)/100);});}
   // talhão com pluviômetro: dia sem leitura = 0 mm; sem pluviômetro: média geral
   const rainK=(k,d)=>{const m=rainTal.get(k);return m?(m.get(d)||0):(rain.get(d)||0);};
   const rec=(db.plantio||[]).filter(p=>p.d).map((p,i)=>{
