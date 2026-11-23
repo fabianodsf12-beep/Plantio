@@ -556,7 +556,7 @@ body{font-size:15px;line-height:1.45}
     <div class="grid">
       <div class="card s12">
         <div class="hd"><h2>Mapa dos talhões</h2><p>Safra inteira. Passe o mouse para ver os detalhes; clique num talhão para abrir a ficha. Em Linha do tempo, arraste a data para ver o avanço do plantio e da colheita.</p>
-          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button><button data-m="agua" data-tip="Água estimada no solo hoje, pelo balanço hídrico com a chuva lançada">Água no solo</button><button data-m="chuva" data-tip="Chuva interpolada entre os pluviômetros">Chuva</button></div><span class="agcfg" id="chCfg" hidden><label><input type="checkbox" id="chPts" checked> Pluviômetros</label></span><span class="agcfg" id="agCfg" hidden><label data-tip="Usada só nos talhões sem textura do solo e sem a coluna CAD na aba DADOS. Os demais usam a CAD do próprio talhão.">CAD padrão <input type="number" id="agCad" min="10" max="300" step="5"> mm</label><label data-tip="Real: ETo de cada dia calculada pelo Open-Meteo (Penman-Monteith, com temperatura, umidade, vento e radiação). Fixa: o mesmo valor todo dia.">ETo <select id="agModo"><option value="real">real do dia (Open-Meteo)</option><option value="fixa">fixa</option></select></label><label id="agEtoLab" data-tip="ETo fixa, usada só no modo fixo">fixa <input type="number" id="agEto" min="1" max="10" step="0.5"> mm/dia</label><label data-tip="CAD de cada talhão e de cada ponto do degradê estimada pela textura do solo (argila e areia dos hexágonos). A coluna CAD da aba DADOS tem prioridade."><input type="checkbox" id="agSolo"> Textura do solo</label><label data-tip="Degradê calculado ponto a ponto com a chuva interpolada entre os pluviômetros"><input type="checkbox" id="agGrad" checked> Degradê</label></span><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 com o mapa e a legenda do modo selecionado">Baixar mapa (PDF)</button><button class="btn noprint" id="btnMapKml" data-tip="Arquivo para o Google Earth com todos os talhões coloridos pela variedade e as áreas por variedade (KML)">Baixar KML (fazenda)</button></div></div>
+          <div class="tools"><div class="seg" id="segMap"><button class="on" data-m="var">Variedade</button><button data-m="prog" data-tip="Cor mais forte = maior parte do talhão já plantada">% plantado</button><button data-m="jan" data-tip="Cor pela janela de segunda safra que a colheita prevista permite">Janela pós-colheita</button><button data-m="tempo" data-tip="Arraste a data para ver o plantio avançando e o que fica pronto para colher">Linha do tempo</button><button data-m="agua" data-tip="Água estimada no solo hoje, pelo balanço hídrico com a chuva lançada">Água no solo</button><button data-m="chuva" data-tip="Chuva interpolada entre os pluviômetros">Chuva</button></div><span class="agcfg" id="chCfg" hidden><label><input type="checkbox" id="chPts" checked> Pluviômetros</label></span><span class="agcfg" id="agCfg" hidden><label data-tip="Usada só nos talhões sem textura do solo e sem a coluna CAD na aba DADOS. Os demais usam a CAD do próprio talhão.">CAD padrão <input type="number" id="agCad" min="10" max="300" step="5"> mm</label><label data-tip="Real: ETo de cada dia calculada pelo Open-Meteo (Penman-Monteith, com temperatura, umidade, vento e radiação). Fixa: o mesmo valor todo dia.">ETo <select id="agModo"><option value="real">real do dia (Open-Meteo)</option><option value="fixa">fixa</option></select></label><label id="agEtoLab" data-tip="ETo fixa, usada só no modo fixo">fixa <input type="number" id="agEto" min="1" max="10" step="0.5"> mm/dia</label><label data-tip="CAD de cada talhão e de cada ponto do degradê estimada pela textura do solo (argila e areia dos hexágonos). A coluna CAD da aba DADOS tem prioridade."><input type="checkbox" id="agSolo"> Textura do solo</label><label data-tip="Degradê calculado ponto a ponto com a chuva interpolada entre os pluviômetros"><input type="checkbox" id="agGrad" checked> Degradê</label></span><label class="kmlt" id="kmlLab" data-tip="Mostra dentro do talhão onde ficou cada variedade, a partir dos arquivos KML"><input type="checkbox" id="kmlOn"> Áreas por variedade</label><button class="btn noprint" id="btnMapPdf" data-tip="Folha A4 com o mapa e a legenda do modo selecionado. Na chuva, uma página para cada período do grupo escolhido">Baixar mapa (PDF)</button><button class="btn noprint" id="btnMapKml" data-tip="Arquivo para o Google Earth com todos os talhões coloridos pela variedade e as áreas por variedade (KML)">Baixar KML (fazenda)</button></div></div>
         <div class="mapwrap">
         <div class="chstrip noprint" id="chStrip" hidden><select id="chView" aria-label="Período da chuva"><option value="dia">Visualização diária</option><option value="sem">Visualização semanal</option><option value="mes">Visualização mensal</option><option value="safra">Safra</option></select><button class="charr" id="chPrev" aria-label="Período anterior">‹</button><div class="chcards" id="chCards"></div><button class="charr" id="chNext" aria-label="Próximo período">›</button></div>
         <div class="mapbox nd-alto-tela" id="mapBox">
@@ -1633,7 +1633,7 @@ function aguaGridImg(G,ti){if(ti==null)ti=G.nd-1;let url=G.img.get(ti);
   return {url,w:G.w,h:G.h};}
 function renderSumChuva(CH){
   const per=CHSEL?CHSEL.per:'na safra';
-  const all=[...CH.pts,...CH.sem].sort((a,b)=>b.v-a.v),med=all.length?all.reduce((s,p)=>s+p.v,0)/all.length:0;
+  const all=[...CH.pts,...CH.sem].sort((a,b)=>b.v-a.v),med=CHSEL&&CHSEL.mm!=null?CHSEL.mm:(all.length?all.reduce((s,p)=>s+p.v,0)/all.length:0); // mesma média da fazenda dos cards (e do Protector)
   $('#mapSum').innerHTML=`<table><thead><tr><th>Pluviômetro</th><th class="n">mm ${per}</th></tr></thead><tbody>`+
     all.map(p=>{const [R,G,B]=chRamp((p.v-CH.lo)/((CH.hi-CH.lo)||1));return `<tr><td><span class="cdot" style="background:rgb(${R},${G},${B});border:1px solid var(--line2)"></span>${esc(p.id)}${CH.sem.includes(p)?' <span class="help">(sem posição)</span>':''}</td><td class="n">${nf0.format(p.v)}</td></tr>`;}).join('')+
     `</tbody><tfoot><tr><th>Média geral</th><th class="n">${nf1.format(med)}</th></tr></tfoot></table>`+
@@ -2190,19 +2190,23 @@ async function exportMapPdf(){
   if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
   if(!MAP){toast('O mapa ainda não carregou.');return;}
   const ov=$('#busyOv');ov.hidden=false;
-  const prevTheme=document.documentElement.dataset.theme,prevMode=mapMode,prevK=KMLON;
+  const prevTheme=document.documentElement.dataset.theme,prevMode=mapMode,prevK=KMLON;const chSel0=CHSEL;
   try{
     document.documentElement.dataset.theme='light';if(mapMode==='var')KMLON=true;vbCur=null;renderMap();const VAR=mapMode==='var';await sleep(60);
-    const im=await mapImage();if(!im)throw new Error('não consegui desenhar o mapa');
-    const D=mapTalData(),vp=varPalette(),groups=new Map();let ap=0,at=0;M.tal.forEach(t=>at+=t.a||0);
-    const Ds=CARD?new Map([...D].filter(([k])=>k===CARD)):D;
-    Ds.forEach((o,k)=>{ap+=o.ap;o.vs.forEach((a,v)=>{if(!groups.has(v))groups.set(v,{a:0,t:new Set()});const g=groups.get(v);g.a+=a;g.t.add(k);});});
     const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'}),W=297,H=210,MG=10;
     const clean=s=>String(s??'').replace(/[–—]/g,'-').replace(/[^\x20-\xFF]/g,'');
     const INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225],BR=[1,154,98];
     const hex=h=>{const m=/^#?([0-9a-f]{6})$/i.exec(h||'');return m?[0,2,4].map(i=>parseInt(m[1].substr(i,2),16)):[150,150,150];};
-    try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.addImage(lc.toDataURL('image/png'),'PNG',MG,7,30,12.5);}catch(e){}
     const tName=CARD?(M.tal.get(CARD)||{}).tl||CARD:'';
+    // chuva: uma página para cada card do grupo selecionado (safra, semanas, meses; dias só os com chuva)
+    const lote=mapMode==='chuva'&&CHP&&CHP.length>1?(CHVIEW==='dia'?CHP.filter(p=>p.mm>0):CHP):null,sel0=CHSEL,pags=lote&&lote.length?lote:[CHSEL];
+    for(let pi=0;pi<pags.length;pi++){
+    if(lote){CHSEL=pags[pi];renderMap();await sleep(60);}if(pi)doc.addPage();
+    const im=await mapImage();if(!im)throw new Error('não consegui desenhar o mapa');
+    const D=mapTalData(),vp=varPalette(),groups=new Map();let ap=0,at=0;M.tal.forEach(t=>at+=t.a||0);
+    const Ds=CARD?new Map([...D].filter(([k])=>k===CARD)):D;
+    Ds.forEach((o,k)=>{ap+=o.ap;o.vs.forEach((a,v)=>{if(!groups.has(v))groups.set(v,{a:0,t:new Set()});const g=groups.get(v);g.a+=a;g.t.add(k);});});
+    try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.addImage(lc.toDataURL('image/png'),'PNG',MG,7,30,12.5);}catch(e){}
     doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);const MT={var:'Mapa de plantio por variedade',prog:'Mapa de % plantado',jan:'Mapa da janela pós-colheita',tempo:'Mapa de plantio em '+((tDate||M.dMax)?fmtDY(tDate||M.dMax):''),agua:'Mapa de água no solo (estimada)'+(tDate&&tDate<hoje()?' em '+fmtDY(tDate):''),chuva:'Mapa de chuva '+(CHSEL?CHSEL.per+(CHSEL.a===CHSEL.b?'':' ('+fmtDY(CHSEL.a)+' a '+fmtDY(CHSEL.b)+')'):'na safra')};
     doc.text(clean((MT[mapMode]||MT.var)+(tName?' - talhão '+tName:'')),MG+35,12.5);
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...MUT);doc.text(clean((DB.safra||'Safra')+' · Fazenda Reata e unidades'),MG+35,17.5);
@@ -2230,11 +2234,13 @@ async function exportMapPdf(){
     doc.setFont('helvetica','normal');doc.setTextColor(...MUT);
     doc.setFontSize(6.5);doc.text(clean('Limites: '+geoSrc+' · Áreas por variedade: KML de campo · Plantio: aba Diário'),MG,H-6);doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});
     if(mapMode==='agua'&&!CARD)aguaSecosPdf(doc,W,H,MG,cl,clean);
+    }
+    if(lote)CHSEL=sel0;
     const d=new Date(),stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     ov.hidden=true;
-    await saveFile(`Mapa_${{var:'variedades',prog:'plantado',jan:'janela',tempo:'linha_do_tempo',agua:'agua_no_solo',chuva:'chuva'}[mapMode]||'variedades'}_${tName?tName.replace(/[^\w\-]+/g,'_')+'_':''}${stamp}.pdf`,doc.output('blob'),'application/pdf');
+    await saveFile(`Mapa_${{var:'variedades',prog:'plantado',jan:'janela',tempo:'linha_do_tempo',agua:'agua_no_solo',chuva:'chuva'+(lote?'_'+{dia:'dias',sem:'semanas',mes:'meses',safra:'safra'}[CHVIEW]:'')}[mapMode]||'variedades'}_${tName?tName.replace(/[^\w\-]+/g,'_')+'_':''}${stamp}.pdf`,doc.output('blob'),'application/pdf');
   }catch(err){console.error(err);toast('Não foi possível gerar o PDF do mapa: '+(err&&err.message||err));}
-  finally{ov.hidden=true;if(prevTheme)document.documentElement.dataset.theme=prevTheme;else delete document.documentElement.dataset.theme;mapMode=prevMode;KMLON=prevK;renderMapa();}
+  finally{ov.hidden=true;CHSEL=chSel0;if(prevTheme)document.documentElement.dataset.theme=prevTheme;else delete document.documentElement.dataset.theme;mapMode=prevMode;KMLON=prevK;renderMapa();}
 }
 async function saveFile(filename,data,mime){
   try{if(dlNs===undefined)dlNs=(window.claude&&typeof window.claude.use==='function')?await window.claude.use('downloads'):null;}catch(e){dlNs=null;}
