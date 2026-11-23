@@ -2202,6 +2202,10 @@ function aguaSecosPdf(doc,W,H,MG,cl,clean){/* segunda página do PDF de Água no
       a.csrc==='solo'?'Textura do solo':a.csrc==='dados'?'Aba DADOS':'Padrão',a.ini?a.dap+' dias':'Sem plantio'],false,i%2?null:[248,250,249],c.c);});
   doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MUT);doc.text(clean('Água no solo: balanço hídrico diário com a chuva do pluviômetro de cada talhão, '+(AGUA.modo==='real'?'ETo real de cada dia (Open-Meteo, Penman-Monteith)':'ETo fixa de '+nf1.format(AGUA.eto)+' mm/dia')+' e Kc da soja. CAD pela textura do solo (Saxton & Rawls), 50 cm de raiz.'),MG,H-6);
   doc.text('Nadiana Agronegócios',W-MG,H-6,{align:'right'});}
+let LOGOPDF=null; // logo da Nadiana (base publicada) para os PDFs, com fundo branco
+function logoPdf(){if(LOGOPDF)return LOGOPDF;return LOGOPDF=new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';
+  im.onload=()=>{try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0);res({src:c.toDataURL('image/png'),r:im.naturalWidth/im.naturalHeight});}catch(e){LOGOPDF=null;res(null);}};
+  im.onerror=()=>{LOGOPDF=null;res(null);};im.src='https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-logo-vertical.png';});}
 async function exportMapPdf(){
   if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
   if(!MAP){toast('O mapa ainda não carregou.');return;}
@@ -2222,12 +2226,13 @@ async function exportMapPdf(){
     const D=mapTalData(),vp=varPalette(),groups=new Map();let ap=0,at=0;M.tal.forEach(t=>at+=t.a||0);
     const Ds=CARD?new Map([...D].filter(([k])=>k===CARD)):D;
     Ds.forEach((o,k)=>{ap+=o.ap;o.vs.forEach((a,v)=>{if(!groups.has(v))groups.set(v,{a:0,t:new Set()});const g=groups.get(v);g.a+=a;g.t.add(k);});});
-    try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.addImage(lc.toDataURL('image/png'),'PNG',MG,7,30,12.5);}catch(e){}
+    try{const lg=await logoPdf();if(lg)doc.addImage(lg.src,'PNG',MG+15-7*lg.r,5.5,14*lg.r,14);}catch(e){}
     doc.setTextColor(...INK);doc.setFont('helvetica','bold');doc.setFontSize(13);const MT={var:'Mapa de plantio por variedade',prog:'Mapa de % plantado',jan:'Mapa da janela pós-colheita',tempo:'Mapa de plantio em '+((tDate||M.dMax)?fmtDY(tDate||M.dMax):''),agua:'Mapa de água no solo (estimada)'+(tDate&&tDate<hoje()?' em '+fmtDY(tDate):''),chuva:'Mapa de chuva '+(CHSEL?CHSEL.per+(CHSEL.a===CHSEL.b?'':' ('+fmtDY(CHSEL.a)+' a '+fmtDY(CHSEL.b)+')'):'na safra')};
     doc.text(clean((MT[mapMode]||MT.var)+(tName?' - talhão '+tName:'')),MG+35,12.5);
     doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...MUT);doc.text(clean((DB.safra||'Safra')+' · Fazenda Reata e unidades'),MG+35,17.5);
     doc.setFontSize(8.5);doc.text(clean('Gerado em '+fmtDY(new Date().toISOString().slice(0,10))),W-MG,12.5,{align:'right'});
-    if(M.dMax)doc.text(clean('Plantio lançado até '+fmtDY(M.dMax)),W-MG,17,{align:'right'});
+    if(mapMode==='chuva'){const ud=[...M.rain.keys()].filter(d=>M.rain.get(d)>0).sort().pop();if(ud)doc.text(clean('Última chuva: '+fmtDY(ud)),W-MG,17,{align:'right'});}
+    else if(M.dMax)doc.text(clean('Plantio lançado até '+fmtDY(M.dMax)),W-MG,17,{align:'right'});
     doc.setDrawColor(...BR);doc.setLineWidth(.6);doc.line(MG,22,W-MG,22);
     // mapa (paisagem): legenda compacta embaixo; com talhão selecionado, ficha na coluna da direita
     const cl=s=>clean(String(s).replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/\s+/g,' ').trim());
@@ -2359,8 +2364,9 @@ async function exportPdf(sel){
     const W=297,H=210,MG=10;let page=1;
     const PET=[0,35,43],GRN=[1,154,98],MUT=[90,109,113],LINE=[214,223,219];
     const clean=s=>String(s??'').replace(/≥/g,'>=').replace(/[–—]/g,'-').replace(/…/g,'...').replace(/[^\x20-\xFF]/g,'');
+    const LG=await logoPdf();
     const header=(title)=>{doc.setFillColor(...PET);doc.rect(0,0,W,16,'F');
-      try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.setFillColor(255,255,255);doc.roundedRect(MG-1,2,26,12,1,1,'F');doc.addImage(lc.toDataURL('image/png'),'PNG',MG,3,24,10);}catch(e){}
+      try{const lg=LG;if(lg){doc.setFillColor(255,255,255);doc.roundedRect(MG-1,2,26,12,1,1,'F');doc.addImage(lg.src,'PNG',MG+12-5*lg.r,3,10*lg.r,10);}}catch(e){}
       doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(clean(title),MG+28,8.5);
       doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(185,215,203);
       doc.text(clean(`${DB.safra||''}  |  ${DB._file||'Nadiana Agronegócios'}${DB._drive?' (Google Drive, salvo em '+fmtDT(DB._drive.mod)+')':''}`),MG+28,13);
