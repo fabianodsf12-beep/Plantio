@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Acompanhamento de Plantio | Nadiana Agropecuária</title>
+<title>Acompanhamento de Plantio | Nadiana Agronegócios</title>
 <link rel="icon" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/logos/nadiana-simbolo.png">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/tokens.css">
 <link rel="stylesheet" href="https://fabianodsf12-beep.github.io/nadiana-design/v1/componentes.css">
@@ -1899,7 +1899,7 @@ function renderEpocas(){
 let msFaz,msTal,msVar,msLVar,msLSem;
 function setupUI(){
   $('#safraName').textContent=DB.safra||'Safra';
-  $('#srcLine').textContent=DB._drive?`Dados de ${DB._file} (Google Drive)`:DB._file?`Dados de ${DB._file}`:'Fazenda Reata e unidades, Nadiana Agropecuária';
+  $('#srcLine').textContent=DB._drive?`Dados de ${DB._file} (Google Drive)`:DB._file?`Dados de ${DB._file}`:'Fazenda Reata e unidades, Nadiana Agronegócios';
   $('#fIni').min=$('#fFim').min=M.dMin||'';$('#fIni').max=$('#fFim').max=M.dMax||'';
   $('#fCult').innerHTML=M.culturas.map(c=>`<button class="chip" style="--c:${cultColor(c)}" data-c="${esc(c)}" aria-pressed="true"><span class="dot"></span>${esc(c)}</button>`).join('');
   $('#fCult').querySelectorAll('.chip').forEach(b=>b.onclick=e=>{const c=b.dataset.c;
@@ -2118,6 +2118,22 @@ function flowLegend(doc,tx,tw,y0,dry,title,gi,lg,items,tots,pc,cl,md){/* legenda
     if(c.v){doc.setFont('helvetica','normal');doc.setTextColor(...MUT);doc.text(c.v,px,y);}
     cx+=w;});
   return y0+h;}
+function chuvaLegPdf(doc,x,y,w,h,cl){/* PDF do mapa de chuva: coluna com a média da fazenda, a escala e os pluviômetros */
+  const INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225],CH=CHC,P=CHSEL,y1=y+h;
+  doc.setFillColor(244,248,248);doc.roundedRect(x,y,w,h,1.5,1.5,'F');x+=4;w-=8;y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUT);doc.text(cl('MÉDIA DA FAZENDA'),x,y);y+=7.5;
+  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(...INK);const big=nf1.format(P.mm);doc.text(big,x,y);
+  const bw=doc.getTextWidth(big);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(...MUT);doc.text('mm',x+bw+1.5,y);y+=5;
+  doc.setFontSize(7.5);doc.text(cl(P.a===P.b?fmtDY(P.a):fmtDY(P.a)+' a '+fmtDY(P.b)),x,y);y+=7;
+  const N=60;for(let i=0;i<N;i++){doc.setFillColor(...chRamp((i+.5)/N));doc.rect(x+w*i/N,y,w/N+.15,3,'F');}y+=6.5;
+  doc.setFontSize(7);doc.text(nf0.format(CH.lo)+' mm',x,y);doc.text(nf0.format(CH.hi)+' mm',x+w,y,{align:'right'});y+=7;
+  const all=[...CH.pts,...CH.sem].sort((a,b)=>b.v-a.v),fr=CH.sem.length?4.5:0,rh=Math.min(5.2,(y1-y-6-fr)/Math.max(1,all.length));
+  doc.setFontSize(7);doc.text(cl('PLUVIÔMETRO'),x,y);doc.text('mm',x+w,y,{align:'right'});y+=1.8;doc.setDrawColor(...LINE);doc.setLineWidth(.2);doc.line(x,y,x+w,y);y+=rh*.78+.6;
+  const fs=Math.max(6.5,Math.min(8.5,rh*1.7));
+  all.forEach(p=>{const sem=CH.sem.includes(p);doc.setFillColor(...chRamp((p.v-CH.lo)/((CH.hi-CH.lo)||1)));doc.setDrawColor(190,204,207);doc.roundedRect(x,y-rh*.62,rh*.68,rh*.68,.4,.4,'FD');
+    doc.setFont('helvetica','normal');doc.setFontSize(fs);doc.setTextColor(...(sem?MUT:INK));doc.text(cl(p.id+(sem?' *':'')),x+rh*.68+2,y);
+    doc.setFont('helvetica','bold');doc.text(nf0.format(p.v),x+w,y,{align:'right'});y+=rh;});
+  if(CH.sem.length){doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MUT);doc.text(cl('* sem posição, fora do mapa'),x,y1-3);}}
 function drawMapLegend(doc,tx,tw,y0,clean,dry,compact,src){/* legenda do mapa (cores lidas da tela) para os PDFs; dry=true só mede a altura */
   const INK=[0,35,43],MUT=[91,107,112],LINE=[214,223,225];let y=y0;
   const pc=s=>{s=String(s||'');let m=/#([0-9a-f]{6})([0-9a-f]{2})?\b/i.exec(s),r,g,b,a=1;if(m){[r,g,b]=[0,2,4].map(i=>parseInt(m[1].substr(i,2),16));if(m[2])a=parseInt(m[2],16)/255;}
@@ -2185,7 +2201,7 @@ function aguaSecosPdf(doc,W,H,MG,cl,clean){/* segunda página do PDF de Água no
     row([t.tl||k,t.b||'-',c.lab.split(' (')[0],nf0.format(a.arm)+' mm',nf0.format(a.cad)+' mm',nf0.format(a.pct*100)+'%',a.solo?a.solo.cl:'-',a.solo?a.solo.arg+'%':'-',a.solo?a.solo.are+'%':'-',
       a.csrc==='solo'?'Textura do solo':a.csrc==='dados'?'Aba DADOS':'Padrão',a.ini?a.dap+' dias':'Sem plantio'],false,i%2?null:[248,250,249],c.c);});
   doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(...MUT);doc.text(clean('Água no solo: balanço hídrico diário com a chuva do pluviômetro de cada talhão, '+(AGUA.modo==='real'?'ETo real de cada dia (Open-Meteo, Penman-Monteith)':'ETo fixa de '+nf1.format(AGUA.eto)+' mm/dia')+' e Kc da soja. CAD pela textura do solo (Saxton & Rawls), 50 cm de raiz.'),MG,H-6);
-  doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});}
+  doc.text('Nadiana Agronegócios',W-MG,H-6,{align:'right'});}
 async function exportMapPdf(){
   if(!window.jspdf||!window.jspdf.jsPDF){toast('O gerador de PDF não carregou. Verifique a internet e recarregue a página.');return;}
   if(!MAP){toast('O mapa ainda não carregou.');return;}
@@ -2215,11 +2231,12 @@ async function exportMapPdf(){
     doc.setDrawColor(...BR);doc.setLineWidth(.6);doc.line(MG,22,W-MG,22);
     // mapa (paisagem): legenda compacta embaixo; com talhão selecionado, ficha na coluna da direita
     const cl=s=>clean(String(s).replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/\s+/g,' ').trim());
-    const my=26,fw=CARD?72:0,mw=W-2*MG-(CARD?fw+6:0),mx=MG,fx=mx+mw+6;
-    const lsrc={lg:$('#mapLeg'),sum:CARD?document.createElement('div'):$('#mapSum'),mode:mapMode},lh=drawMapLegend(doc,mx,mw,0,clean,true,true,lsrc),mh=H-my-12-lh-4;
+    const CHL=mapMode==='chuva'&&!CARD&&CHC&&CHSEL; // chuva: legenda numa coluna à direita, mapa com a altura toda
+    const my=26,fw=CARD?72:CHL?62:0,mw=W-2*MG-(fw?fw+6:0),mx=MG,fx=mx+mw+6;
+    const lsrc={lg:$('#mapLeg'),sum:CARD?document.createElement('div'):$('#mapSum'),mode:mapMode},lh=CHL?0:drawMapLegend(doc,mx,mw,0,clean,true,true,lsrc),mh=H-my-12-(CHL?0:lh+4);
     doc.setDrawColor(...LINE);doc.setLineWidth(.25);doc.roundedRect(mx,my,mw,mh,1.5,1.5,'S');
     const sc=Math.min((mw-4)/im.w,(mh-4)/im.h),iw=im.w*sc,ih=im.h*sc;doc.addImage(im.src,'JPEG',mx+(mw-iw)/2,my+(mh-ih)/2,iw,ih,undefined,'FAST');
-    drawMapLegend(doc,mx,mw,my+mh+4,clean,false,true,lsrc);
+    if(CHL)chuvaLegPdf(doc,fx,my,fw,mh,cl);else drawMapLegend(doc,mx,mw,my+mh+4,clean,false,true,lsrc);
     // ficha do talhão (coluna à direita)
     if(CARD){const F_=fichaData(CARD,D,aguaAll()),o=F_.o,ch=F_.ch,a=F_.ag,fr=(x,y)=>fmtD(x)+(y&&y!==x?' a '+fmtD(y):'');
       const S=[];if(o){S.push(['Plantio',[['Período',fr(o.ini,o.fim)],...(F_.pop?[['População',nf0.format(F_.pop/1000)+' mil sementes/ha']]:[])]]);
@@ -2232,7 +2249,7 @@ async function exportMapPdf(){
         yc[c]=yy+3;});
       if(a)aguaBlockPdf(doc,a,fx,yc[0],cw,cl);}
     doc.setFont('helvetica','normal');doc.setTextColor(...MUT);
-    doc.setFontSize(6.5);doc.text(clean('Limites: '+geoSrc+' · Áreas por variedade: KML de campo · Plantio: aba Diário'),MG,H-6);doc.text('Nadiana Agropecuária',W-MG,H-6,{align:'right'});
+    doc.setFontSize(6.5);doc.text(clean('Limites: '+geoSrc+' · Áreas por variedade: KML de campo · Plantio: aba Diário'),MG,H-6);doc.text('Nadiana Agronegócios',W-MG,H-6,{align:'right'});
     if(mapMode==='agua'&&!CARD)aguaSecosPdf(doc,W,H,MG,cl,clean);
     }
     if(lote)CHSEL=sel0;
@@ -2346,7 +2363,7 @@ async function exportPdf(sel){
       try{const li=$('.logo img'),lc=document.createElement('canvas');lc.width=li.naturalWidth;lc.height=li.naturalHeight;const lx=lc.getContext('2d');lx.fillStyle='#fff';lx.fillRect(0,0,lc.width,lc.height);lx.drawImage(li,0,0);doc.setFillColor(255,255,255);doc.roundedRect(MG-1,2,26,12,1,1,'F');doc.addImage(lc.toDataURL('image/png'),'PNG',MG,3,24,10);}catch(e){}
       doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(clean(title),MG+28,8.5);
       doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(185,215,203);
-      doc.text(clean(`${DB.safra||''}  |  ${DB._file||'Nadiana Agropecuária'}${DB._drive?' (Google Drive, salvo em '+fmtDT(DB._drive.mod)+')':''}`),MG+28,13);
+      doc.text(clean(`${DB.safra||''}  |  ${DB._file||'Nadiana Agronegócios'}${DB._drive?' (Google Drive, salvo em '+fmtDT(DB._drive.mod)+')':''}`),MG+28,13);
       doc.text(clean('Gerado em '+new Date().toLocaleString('pt-BR')),W-MG,13,{align:'right'});
       doc.setTextColor(...MUT);doc.setFontSize(7.5);doc.text(clean('Página '+page),W-MG,H-5,{align:'right'});doc.text('Acompanhamento de plantio',MG,H-5);};
     const newPage=title=>{doc.addPage();page++;header(title);};
