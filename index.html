@@ -922,7 +922,8 @@ function renderPlantio(){renderRep();
   renderStatus(R.length);
 
   // ---------- gráfico diário (barras + acumulado) ----------
-  const days=dateRange(F.ini,F.fim);
+  // vai só até o último dia com plantio (a chuva lançada depois não estica o gráfico)
+  const ultP=R.filter(r=>r.a>0).map(r=>r.d).sort().pop(),days=dateRange(F.ini,ultP&&ultP<F.fim?ultP:F.fim);
   const labels=days.map(fmtD);
   const cults=M.culturas.filter(c=>byC.get(c));
   let dsets=[];
