@@ -622,20 +622,24 @@ body{font-size:15px;line-height:1.45}
     <div class="kpis" id="kpisC"></div>
     <div class="grid">
       <div class="card s12">
-        <div class="hd"><h2>Acompanhamento diário de colheita</h2><p>Barras: hectares colhidos no dia (aba Diário de colheita). Linhas: área colhida acumulada e a prevista (emergência + ciclo).</p></div>
+        <div class="hd"><h2>Acompanhamento diário de colheita</h2><p>Barras: hectares colhidos no dia (aba Diário de colheita). Área cinza: colheita prevista pela emergência + ciclo, em média de 7 dias.</p></div>
         <div class="cv nd-grafico cresce"><canvas id="chColh"></canvas><div class="empty" id="eColh">Nenhuma colheita lançada ainda. Preencha a aba Diário de colheita.</div></div>
       </div>
       <div class="card s12">
         <div class="hd"><h2>Média por período</h2><p>Área colhida, sacas e produtividade de cada período (a produção entra no último dia de colheita do talhão).</p></div>
         <div class="cpers" id="colhPer"></div>
       </div>
-      <div class="card s6">
-        <div class="hd"><h2>Evolução da colheita</h2><p>% da área plantada já colhida, real e prevista.</p></div>
+      <div class="card s4">
+        <div class="hd"><h2>Evolução da colheita</h2><p>% da área plantada já colhida.</p></div>
         <div class="cv h300"><canvas id="chColhEv"></canvas></div>
       </div>
-      <div class="card s6">
-        <div class="hd"><h2>Produtividade e umidade ao longo da colheita</h2><p>sc/ha acumulada da safra e umidade média dos talhões fechados no dia.</p></div>
+      <div class="card s4">
+        <div class="hd"><h2>Produtividade ao longo da colheita</h2><p>sc/ha acumulada da safra e de cada dia.</p></div>
         <div class="cv h300"><canvas id="chColhSc"></canvas></div>
+      </div>
+      <div class="card s4">
+        <div class="hd"><h2>Umidade na colheita</h2><p>Média dos talhões fechados no dia. Linha: 14% (padrão).</p></div>
+        <div class="cv h300"><canvas id="chColhU"></canvas></div>
       </div>
       <div class="card s6">
         <div class="hd"><h2>Top 10 talhões</h2><p>Maior produtividade entre os talhões com pesagem.</p></div>
@@ -643,7 +647,7 @@ body{font-size:15px;line-height:1.45}
       </div>
       <div class="card s6">
         <div class="hd"><h2>Por fazenda</h2><p id="colhFazTxt"></p></div>
-        <div class="cv h300"><canvas id="chColhFaz"></canvas></div>
+        <div class="cv" id="cvColhFaz" style="height:240px"><canvas id="chColhFaz"></canvas></div>
         <div class="tw" style="margin-top:10px"><table id="tbColhFaz"></table></div>
       </div>
       <div class="card s12">
@@ -1205,6 +1209,17 @@ function semHa(ents){
   return {byV,ok};
 }
 /* ================= colheita ================= */
+/* gráficos da colheita no padrão Nadiana: um eixo só, barras finas com ponta arredondada, linhas de 2px, legenda em cima */
+const ND_LEG={display:true,position:'top',align:'start',labels:{usePointStyle:true,boxWidth:10,boxHeight:10,padding:14}};
+const ndTip=(un,c=1)=>({callbacks:{label:x=>' '+x.dataset.label+': '+(x.parsed.y==null?'—':(c?nf1:nf0).format(x.parsed.y))+' '+un}});
+const ndRef={id:'ndRef',afterDatasetsDraw(ch,a,o){(o&&o.linhas||[]).forEach(L=>{const sc=ch.scales[L.eixo||'y'];if(!sc||L.v==null)return;const p=sc.getPixelForValue(L.v),ar=ch.chartArea,ctx=ch.ctx;ctx.save();ctx.strokeStyle=L.cor||cssv('--muted');ctx.setLineDash([5,4]);ctx.lineWidth=1.4;ctx.beginPath();
+  if(L.eixo==='x'){ctx.moveTo(p,ar.top);ctx.lineTo(p,ar.bottom);}else{ctx.moveTo(ar.left,p);ctx.lineTo(ar.right,p);}ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=L.cor||cssv('--muted');ctx.font='600 11.5px '+(cssv('--sans')||'sans-serif');
+  if(L.eixo==='x'){ctx.textAlign=L.baixo?'center':'left';ctx.textBaseline=L.baixo?'top':'alphabetic';ctx.fillText(L.txt,L.baixo?p:Math.min(p+5,ar.right-70),L.baixo?ar.bottom+5:ar.top+10);}else{ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(L.txt,ar.right+4,p);}ctx.restore();});}};
+const ndPonta={id:'ndPonta',afterDatasetsDraw(ch,a,o){if(!o||!o.ativo)return;const ctx=ch.ctx,hz=ch.options.indexAxis==='y';ctx.save();ctx.fillStyle=cssv('--ink');ctx.font='600 12.5px '+(cssv('--sans')||'sans-serif');
+  ctx.textAlign=hz?'left':'center';ctx.textBaseline=hz?'middle':'bottom';ch.getDatasetMeta(o.ds||0).data.forEach((el,i)=>{const v=ch.data.datasets[o.ds||0].data[i];if(v==null)return;ctx.fillText(o.f?o.f(v):nf1.format(v),hz?el.x+6:el.x,hz?el.y:el.y-4);});ctx.restore();}};
+const ndFim={id:'ndFim',afterDatasetsDraw(ch,a,o){if(!o||o.ds==null)return;const d=ch.data.datasets[o.ds].data;let i=d.length-1;while(i>=0&&d[i]==null)i--;if(i<0)return;const el=ch.getDatasetMeta(o.ds).data[i],ctx=ch.ctx;ctx.save();
+  ctx.fillStyle=ch.data.datasets[o.ds].borderColor;ctx.beginPath();ctx.arc(el.x,el.y,4.5,0,7);ctx.fill();ctx.strokeStyle=cssv('--surface');ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=cssv('--ink');ctx.font='600 13px '+(cssv('--cond')||'sans-serif');ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(o.txt(d[i]),el.x+7,el.y-6);ctx.restore();}};
+const ndX={grid:{display:false},border:{display:false},ticks:{maxRotation:0,autoSkipPadding:14}},ndY=t=>({beginAtZero:true,border:{display:false},grid:{color:cssv('--line2')},title:{display:!!t,text:t}});
 function colhModel(){
   const K=(k,v)=>k+'|'+norm(v||''),m=new Map(),get=(k,v,tl,f)=>{const key=K(k,v);if(!m.has(key))m.set(key,{k,tl,f,v:v||'—',ap:0,hIni:null,hFim:null,ac:0,d0:null,d1:null,res:null});return m.get(key);};
   M.rec.filter(r=>r.a>0).forEach(r=>{const o=get(r.k,r.v,r.tl,r.f);o.ap+=r.a;if(!o.p0||r.d<o.p0)o.p0=r.d;const h=harvestOf(r);if(h){if(!o.hIni||h<o.hIni)o.hIni=h;if(!o.hFim||h>o.hFim)o.hFim=h;}});
@@ -1236,12 +1251,12 @@ function renderColheita(){
   const pv=new Map();M.rec.filter(r=>r.a>0).forEach(r=>{const h=harvestOf(r);if(h)pv.set(h,(pv.get(h)||0)+r.a);});
   const all=[...byD.keys(),...pv.keys()].sort();
   if(all.length){const days=dateRange(all[0],all[all.length-1]);let a=0,b=0;
+    const ini=all[0],fim=all[all.length-1];
     mk('chColh',{data:{labels:days.map(fmtD),datasets:[
-      {type:'bar',label:'Colhido no dia',data:days.map(d=>byD.get(d)||0),backgroundColor:cssv('--graf-7'),yAxisID:'y',order:2,borderRadius:2,maxBarThickness:22},
-      {type:'line',label:'Colhido acumulado',data:days.map(d=>{a+=byD.get(d)||0;return ult&&d<=ult?a:null;}),borderColor:cssv('--ink'),yAxisID:'y1',pointRadius:0,borderWidth:2.5,tension:.2,order:1,spanGaps:false},
-      {type:'line',label:'Previsto acumulado',data:days.map(d=>b+=pv.get(d)||0),borderColor:cssv('--muted'),borderDash:[6,4],yAxisID:'y1',pointRadius:0,borderWidth:1.8,tension:.2,order:1}
-    ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:10}},y:{beginAtZero:true,title:{display:true,text:'ha/dia'}},y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'ha acumulados'}}},
-      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip}}}}});}
+      {type:'bar',label:'Colhido no dia',data:days.map(d=>byD.get(d)||null),backgroundColor:cssv('--graf-7'),borderRadius:{topLeft:4,topRight:4},borderSkipped:'start',maxBarThickness:18,order:2},
+      {type:'line',label:'Previsto (média de 7 dias)',data:days.map((d,i)=>{let t=0;for(let k=-3;k<=3;k++){const x=days[i+k];if(x)t+=pv.get(x)||0;}return t/7;}),borderColor:cssv('--graf-outros'),backgroundColor:cssv('--graf-outros')+'22',fill:'origin',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:.35,order:3}
+    ]},options:{interaction:{mode:'index',intersect:false},scales:{x:ndX,y:ndY('ha por dia')},
+      plugins:{legend:ND_LEG,tooltip:ndTip('ha'),ndRef:{linhas:ult?[{eixo:'x',v:days.indexOf(ult),txt:'Última colheita: '+fmtD(ult),cor:cssv('--ink')}]:[]}}},plugins:[ndRef]});}
   empty('eColh',!all.length);
   colhExtras(rows,T,byD,pv,ult);
   // tabela por variedade
@@ -1272,16 +1287,24 @@ function colhExtras(rows,T,byD,pv,ult){
   // evolução % colhido x previsto
   const all=[...byD.keys(),...pv.keys()].sort();
   if(all.length){const days=dateRange(all[0],all[all.length-1]);let a=0,b=0;
+    const G7=cssv('--graf-7');
     mk('chColhEv',{data:{labels:days.map(fmtD),datasets:[
-      {type:'line',label:'Colhido (%)',unit:'%',data:days.map(d=>{a+=byD.get(d)||0;return ult&&d<=ult?a/T.ap*100:null;}),borderColor:G,backgroundColor:G+'33',fill:'origin',pointRadius:0,borderWidth:2.5,tension:.2},
-      {type:'line',label:'Previsto (%)',unit:'%',data:days.map(d=>(b+=pv.get(d)||0)/T.ap*100),borderColor:MU,borderDash:[6,4],pointRadius:0,borderWidth:1.8,tension:.2}]},
-      options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:12}},y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip}}}}});}
+      {type:'line',label:'Colhido',data:days.map(d=>{a+=byD.get(d)||0;return ult&&d<=ult?a/T.ap*100:null;}),borderColor:G7,backgroundColor:G7+'26',fill:'origin',pointRadius:0,borderWidth:2,tension:.3},
+      {type:'line',label:'Previsto',data:days.map(d=>(b+=pv.get(d)||0)/T.ap*100),borderColor:cssv('--graf-outros'),borderDash:[5,4],pointRadius:0,borderWidth:1.6,tension:.3}]},
+      options:{interaction:{mode:'index',intersect:false},layout:{padding:{right:40,top:8}},scales:{x:ndX,y:{...ndY(),max:100,ticks:{callback:v=>v+'%'}}},
+        plugins:{legend:ND_LEG,tooltip:ndTip('%'),ndFim:{ds:0,txt:v=>nf1.format(v)+'%'}}},plugins:[ndFim]});}
   // sc/ha acumulada e umidade por dia de fechamento
   const dd=[...new Set(done.map(o=>o.d1))].sort();let sc=0,ar=0;
+  const acc=dd.map(d=>{done.filter(o=>o.d1===d).forEach(o=>{sc+=o.res.s;ar+=o.area;});return ar?sc/ar:null;});
+  const dia=dd.map(d=>{const x=done.filter(o=>o.d1===d);const a2=x.reduce((s,o)=>s+o.area,0);return a2?x.reduce((s,o)=>s+o.res.s,0)/a2:null;});
   mk('chColhSc',{data:{labels:dd.map(fmtD),datasets:[
-    {type:'line',label:'sc/ha acumulada',unit:'sc/ha',data:dd.map(d=>{done.filter(o=>o.d1===d).forEach(o=>{sc+=o.res.s;ar+=o.area;});return ar?sc/ar:null;}),borderColor:G,pointRadius:3,pointBackgroundColor:G,borderWidth:2.5,tension:.2,yAxisID:'y'},
-    {type:'bar',label:'Umidade do dia',unit:'%',data:dd.map(d=>{const x=done.filter(o=>o.d1===d&&o.res.u!=null);const w=x.reduce((s,o)=>s+o.res.b,0);return w?x.reduce((s,o)=>s+o.res.u*o.res.b,0)/w:null;}),backgroundColor:cssv('--rain')+'55',yAxisID:'y1',maxBarThickness:18}]},
-    options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:12}},y:{title:{display:true,text:'sc/ha'}},y1:{position:'right',grid:{display:false},title:{display:true,text:'umidade %'},suggestedMin:10,suggestedMax:20}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip}}}}});
+    {type:'line',label:'Acumulada',data:acc,borderColor:G,backgroundColor:G,borderWidth:2,tension:.3,pointRadius:0,order:1},
+    {type:'line',label:'Do dia',data:dia,showLine:false,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:cssv('--graf-outros')+'99',pointBorderColor:cssv('--surface'),pointBorderWidth:1.5,borderColor:cssv('--graf-outros'),order:2}]},
+    options:{interaction:{mode:'index',intersect:false},layout:{padding:{right:46,top:8}},scales:{x:ndX,y:{...ndY(),beginAtZero:false,grace:'8%'}},plugins:{legend:ND_LEG,tooltip:ndTip('sc/ha'),ndFim:{ds:0,txt:v=>nf1.format(v)}}},plugins:[ndFim]});
+  const um=dd.map(d=>{const x=done.filter(o=>o.d1===d&&o.res.u!=null);const w=x.reduce((s,o)=>s+o.res.b,0);return w?x.reduce((s,o)=>s+o.res.u*o.res.b,0)/w:null;});
+  const AG=cssv('--rain');
+  mk('chColhU',{type:'bar',data:{labels:dd.map(fmtD),datasets:[{label:'Umidade',data:um,backgroundColor:um.map(v=>v>14?AG:AG+'88'),borderRadius:{topLeft:4,topRight:4},borderSkipped:'start',maxBarThickness:22}]},
+    options:{layout:{padding:{top:22,right:34}},scales:{x:ndX,y:{...ndY(),beginAtZero:false,suggestedMin:10,suggestedMax:19,ticks:{callback:v=>v+'%'}}},plugins:{legend:{display:false},tooltip:ndTip('%'),ndPonta:{ativo:true,f:v=>nf1.format(v)},ndRef:{linhas:[{v:14,txt:'14%'}]}}},plugins:[ndPonta,ndRef]});
   // top 10
   const top=done.slice().sort((a,b)=>b.sha-a.sha).slice(0,10);
   $('#tbColhTop').innerHTML=`<thead><tr><th>#</th><th>Talhão</th><th>Variedade</th><th class="n">ha</th><th>Colhido em</th><th class="n">sc/ha</th></tr></thead><tbody>`+
@@ -1290,17 +1313,20 @@ function colhExtras(rows,T,byD,pv,ult){
   const fz=new Map();rows.forEach(o=>{const f=o.f||'—';if(!fz.has(f))fz.set(f,[]);fz.get(f).push(o);});
   const fr=[...fz.entries()].map(([f,rs])=>({f,...colhAgg(rs)})).filter(x=>x.ac>0).sort((a,b)=>(b.sha||0)-(a.sha||0));
   $('#colhFazTxt').textContent=fr.length?`Média geral ${T.sha?nf1.format(T.sha)+' sc/ha':'—'} · ${fr.length} fazendas com colheita`:'Sem colheita lançada.';
-  mk('chColhFaz',{type:'bar',data:{labels:fr.map(x=>x.f),datasets:[{label:'sc/ha',unit:'sc/ha',data:fr.map(x=>x.sha),backgroundColor:fr.map(x=>x.sha>=T.sha?G:G+'88'),borderRadius:3,maxBarThickness:26}]},
-    options:{indexAxis:'y',scales:{x:{beginAtZero:false,suggestedMin:Math.max(0,Math.min(...fr.map(x=>x.sha||0))-8),title:{display:true,text:'sc/ha'}},y:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>nf1.format(c.parsed.x)+' sc/ha'}}}}});
+  $('#cvColhFaz').style.height=Math.max(140,fr.length*38+30)+'px';
+  mk('chColhFaz',{type:'bar',data:{labels:fr.map(x=>x.f),datasets:[{label:'sc/ha',data:fr.map(x=>x.sha),backgroundColor:fr.map(x=>x.sha>=T.sha?G:G+'80'),borderRadius:{topRight:4,bottomRight:4},borderSkipped:'start',maxBarThickness:22}]},
+    options:{indexAxis:'y',layout:{padding:{right:52,bottom:18}},scales:{x:{beginAtZero:true,border:{display:false},grid:{color:cssv('--line2')},ticks:{display:false},max:Math.ceil(Math.max(...fr.map(x=>x.sha||0),1)*1.08)},y:{grid:{display:false},border:{display:false},ticks:{color:cssv('--ink'),font:{weight:'600'}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+nf1.format(c.parsed.x)+' sc/ha'}},ndPonta:{ativo:true,f:v=>nf1.format(v)},ndRef:{linhas:T.sha?[{eixo:'x',v:T.sha,txt:'média '+nf1.format(T.sha)+' sc/ha',cor:cssv('--ink'),baixo:1}]:[]}}},plugins:[ndPonta,ndRef]});
   $('#tbColhFaz').innerHTML=`<thead><tr><th>Fazenda</th><th class="n">Plantada</th><th class="n">Colhida</th><th class="n">%</th><th class="n">Sacas</th><th class="n">sc/ha</th><th class="n">Umid.</th><th class="n">Avar.</th></tr></thead><tbody>`+
     [...fz.entries()].map(([f,rs])=>({f,...colhAgg(rs)})).sort((a,b)=>b.ac-a.ac||a.f.localeCompare(b.f,'pt')).map(x=>`<tr${x.ac?'':' class="mut"'}><td>${esc(x.f)}</td><td class="n">${nf0.format(x.ap)}</td><td class="n">${x.ac?nf0.format(x.ac):'—'}</td><td class="n">${x.ac?nf0.format(x.pct)+'%':'—'}</td><td class="n">${x.s?nf0.format(x.s):'—'}</td><td class="n"><b>${x.sha?nf1.format(x.sha):'—'}</b></td><td class="n">${pf(x.u)}</td><td class="n">${pf(x.av)}</td></tr>`).join('')+'</tbody>';
   // cruzamentos
-  const vs=[...new Set(done.map(o=>o.v))],sets=f=>vs.map(v=>({label:v,data:done.filter(o=>o.v===v).map(o=>({x:f(o),y:o.sha,tl:o.tl})),backgroundColor:vp.get(v)||PAL[0],pointRadius:5,pointHoverRadius:7}));
+  const vs=[...new Set(done.map(o=>o.v))],sets=f=>vs.map(v=>({label:v,data:done.filter(o=>o.v===v).map(o=>({x:f(o),y:o.sha,tl:o.tl})),backgroundColor:(vp.get(v)||PAL[0])+'CC',borderColor:cssv('--surface'),borderWidth:1.5,pointRadius:6,pointHoverRadius:8}));
   const rainC=o=>{let t=0;dateRange(o.p0,o.d1).forEach(d=>t+=M.rainK(o.k,d));return t;};
-  const tip={callbacks:{label:c=>`${c.raw.tl} (${c.dataset.label}): ${nf1.format(c.raw.y)} sc/ha`}};
-  mk('chColhChuva',{type:'scatter',data:{datasets:sets(rainC)},options:{scales:{x:{title:{display:true,text:'chuva do plantio à colheita (mm)'}},y:{title:{display:true,text:'sc/ha'}}},plugins:{legend:{position:'bottom'},tooltip:tip}}});
+  const tip={callbacks:{label:c=>` ${c.raw.tl} · ${c.dataset.label}: ${nf1.format(c.raw.y)} sc/ha`}};
+  const yS={...ndY('sc/ha'),beginAtZero:false,grace:'10%'},ref={linhas:T.sha?[{v:T.sha,txt:'média '+nf1.format(T.sha)}]:[]};
+  mk('chColhChuva',{type:'scatter',data:{datasets:sets(rainC)},options:{layout:{padding:{right:64}},scales:{x:{border:{display:false},grid:{color:cssv('--line2')},title:{display:true,text:'chuva do plantio à colheita (mm)'},grace:'5%'},y:yS},plugins:{legend:ND_LEG,tooltip:tip,ndRef:ref}},plugins:[ndRef]});
   const ep=o=>Date.parse(o.p0+'T12:00:00');
-  mk('chColhEpoca',{type:'scatter',data:{datasets:sets(ep)},options:{scales:{x:{title:{display:true,text:'início do plantio'},ticks:{callback:v=>fmtD(new Date(v).toISOString().slice(0,10))}},y:{title:{display:true,text:'sc/ha'}}},plugins:{legend:{position:'bottom'},tooltip:tip}}});
+  mk('chColhEpoca',{type:'scatter',data:{datasets:sets(ep)},options:{layout:{padding:{right:64}},scales:{x:{border:{display:false},grid:{color:cssv('--line2')},title:{display:true,text:'início do plantio'},grace:'5%',ticks:{callback:v=>fmtD(new Date(v).toISOString().slice(0,10))}},y:yS},plugins:{legend:ND_LEG,tooltip:tip,ndRef:ref}},plugins:[ndRef]});
 }
 function renderSementes(){
   const lots=(DB.lotes||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
