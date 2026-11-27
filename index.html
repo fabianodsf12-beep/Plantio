@@ -91,7 +91,15 @@ main{padding-block:20px 48px}
 .scale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
 
 .scol{white-space:nowrap}.scol b{display:inline-block;min-width:38px;font-variant-numeric:tabular-nums}.cbar{display:inline-block;vertical-align:middle;width:110px;height:8px;border-radius:4px;background:var(--line2);margin-left:8px;overflow:hidden}.cbar i{display:block;height:100%;background:var(--graf-7);border-radius:4px}
-#tbColhTal tr.mut td{color:var(--muted)}
+#tbColhTal tr.mut td,#tbColhVar tr.mut td,#tbColhFaz tr.mut td{color:var(--muted)}
+.cpers{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:thin}
+.cper{flex:0 0 auto;min-width:120px;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;background:var(--surface-2)}
+.cper small{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.cper b{display:block;font-family:var(--cond);font-size:22px;font-variant-numeric:tabular-nums;margin:2px 0}
+.cper b i{font-style:normal;font-size:12px;color:var(--muted);font-weight:500;margin-left:3px}
+.cper span{display:block;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cper.on{border-color:var(--graf-7);box-shadow:inset 0 0 0 1px var(--graf-7)}
+.h300{height:300px}
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin:14px 0 18px;background:var(--surface);border:1px solid var(--line2);border-radius:10px;box-shadow:var(--shadow)}
 .kpi{padding:12px 16px;border-left:1px solid var(--line2)}
 .kpi:first-child{border-left:0}
@@ -618,8 +626,37 @@ body{font-size:15px;line-height:1.45}
         <div class="cv nd-grafico cresce"><canvas id="chColh"></canvas><div class="empty" id="eColh">Nenhuma colheita lançada ainda. Preencha a aba Diário de colheita.</div></div>
       </div>
       <div class="card s12">
+        <div class="hd"><h2>Média por período</h2><p>Área colhida, sacas e produtividade de cada período (a produção entra no último dia de colheita do talhão).</p></div>
+        <div class="cpers" id="colhPer"></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Evolução da colheita</h2><p>% da área plantada já colhida, real e prevista.</p></div>
+        <div class="cv h300"><canvas id="chColhEv"></canvas></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Produtividade e umidade ao longo da colheita</h2><p>sc/ha acumulada da safra e umidade média dos talhões fechados no dia.</p></div>
+        <div class="cv h300"><canvas id="chColhSc"></canvas></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Top 10 talhões</h2><p>Maior produtividade entre os talhões com pesagem.</p></div>
+        <div class="tw" style="max-height:none"><table id="tbColhTop"></table></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Por fazenda</h2><p id="colhFazTxt"></p></div>
+        <div class="cv h300"><canvas id="chColhFaz"></canvas></div>
+        <div class="tw" style="margin-top:10px"><table id="tbColhFaz"></table></div>
+      </div>
+      <div class="card s12">
         <div class="hd"><h2>Produtividade e classificação por variedade</h2><p>Sacas de 60 kg do peso líquido. Umidade, impureza, avariados e ardidos: média ponderada pelo peso bruto (aba Colheita).</p></div>
         <div class="tw"><table id="tbColhVar"></table></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Produtividade × chuva no ciclo</h2><p>Cada ponto é um talhão: chuva do plantio à colheita (pluviômetro do talhão).</p></div>
+        <div class="cv h300"><canvas id="chColhChuva"></canvas></div>
+      </div>
+      <div class="card s6">
+        <div class="hd"><h2>Produtividade × data de plantio</h2><p>Mostra a melhor época de plantio de cada variedade.</p></div>
+        <div class="cv h300"><canvas id="chColhEpoca"></canvas></div>
       </div>
       <div class="card s12">
         <div class="hd"><h2>Por talhão</h2><p id="colhTalTxt"></p></div>
@@ -1170,7 +1207,7 @@ function semHa(ents){
 /* ================= colheita ================= */
 function colhModel(){
   const K=(k,v)=>k+'|'+norm(v||''),m=new Map(),get=(k,v,tl,f)=>{const key=K(k,v);if(!m.has(key))m.set(key,{k,tl,f,v:v||'—',ap:0,hIni:null,hFim:null,ac:0,d0:null,d1:null,res:null});return m.get(key);};
-  M.rec.filter(r=>r.a>0).forEach(r=>{const o=get(r.k,r.v,r.tl,r.f);o.ap+=r.a;const h=harvestOf(r);if(h){if(!o.hIni||h<o.hIni)o.hIni=h;if(!o.hFim||h>o.hFim)o.hFim=h;}});
+  M.rec.filter(r=>r.a>0).forEach(r=>{const o=get(r.k,r.v,r.tl,r.f);o.ap+=r.a;if(!o.p0||r.d<o.p0)o.p0=r.d;const h=harvestOf(r);if(h){if(!o.hIni||h<o.hIni)o.hIni=h;if(!o.hFim||h>o.hFim)o.hFim=h;}});
   const vOf=(k,v)=>{if(v)return v;const vs=[...m.values()].filter(o=>o.k===k);return vs.length===1?vs[0].v:'';};
   (DB.colh||[]).forEach(c=>{const k=norm(c.tl),t=M.tal.get(k),o=get(k,vOf(k,c.v),t?t.tl:c.tl,(t&&t.f)||c.f);o.ac+=c.a;if(!o.d0||c.d<o.d0)o.d0=c.d;if(!o.d1||c.d>o.d1)o.d1=c.d;});
   (DB.colhRes||[]).forEach(c=>{const k=norm(c.tl),t=M.tal.get(k),o=get(k,vOf(k,c.v),t?t.tl:c.tl,t&&t.f);if(!o.res){o.res={...c};return;}const r=o.res,B=r.b+c.b;['u','im','av','ar'].forEach(z=>{r[z]=r[z]==null?c[z]:c[z]==null?r[z]:(r[z]*r.b+c[z]*c.b)/B;});r.b=B;r.de+=c.de;r.l+=c.l;r.s+=c.s;});
@@ -1206,6 +1243,7 @@ function renderColheita(){
     ]},options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:10}},y:{beginAtZero:true,title:{display:true,text:'ha/dia'}},y1:{position:'right',beginAtZero:true,grid:{display:false},title:{display:true,text:'ha acumulados'}}},
       plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip}}}}});}
   empty('eColh',!all.length);
+  colhExtras(rows,T,byD,pv,ult);
   // tabela por variedade
   const vp=varPalette(),byV=new Map();rows.forEach(o=>{if(!byV.has(o.v))byV.set(o.v,[]);byV.get(o.v).push(o);});
   const hasIm=rows.some(o=>o.res&&o.res.im!=null);
@@ -1213,7 +1251,7 @@ function renderColheita(){
   const best=Math.max(0,...vr.map(x=>x.sha||0));
   const bar=x=>x.sha?`<span class="cbar"><i style="width:${Math.round(x.sha/best*100)}%"></i></span>`:'';
   $('#tbColhVar').innerHTML=`<thead><tr><th>Variedade</th><th class="n">Plantada (ha)</th><th class="n">Colhida (ha)</th><th class="n">% colhido</th><th class="n">Sacas</th><th>Produtividade (sc/ha)</th><th class="n">Umidade %</th>${hasIm?'<th class="n">Impureza %</th>':''}<th class="n">Avariados %</th><th class="n">Ardidos %</th></tr></thead><tbody>`+
-    vr.map(x=>`<tr><td><span class="cdot" style="background:${vp.get(x.v)||PAL[0]}"></span>${esc(x.v)}</td><td class="n">${nf1.format(x.ap)}</td><td class="n">${x.ac?nf1.format(x.ac):'—'}</td><td class="n">${x.ac?nf0.format(x.pct)+'%':'—'}</td><td class="n">${x.s?nf0.format(x.s):'—'}</td><td class="scol"><b>${x.sha?nf1.format(x.sha):'—'}</b>${bar(x)}</td><td class="n">${pf(x.u)}</td>${hasIm?`<td class="n">${pf(x.im)}</td>`:''}<td class="n">${pf(x.av)}</td><td class="n">${pf(x.ar)}</td></tr>`).join('')+
+    vr.map(x=>`<tr${x.ac?'':' class="mut"'}><td><span class="cdot" style="background:${vp.get(x.v)||PAL[0]}"></span>${esc(x.v)}</td><td class="n">${nf1.format(x.ap)}</td><td class="n">${x.ac?nf1.format(x.ac):'—'}</td><td class="n">${x.ac?nf0.format(x.pct)+'%':'—'}</td><td class="n">${x.s?nf0.format(x.s):'—'}</td><td class="scol"><b>${x.sha?nf1.format(x.sha):'—'}</b>${bar(x)}</td><td class="n">${pf(x.u)}</td>${hasIm?`<td class="n">${pf(x.im)}</td>`:''}<td class="n">${pf(x.av)}</td><td class="n">${pf(x.ar)}</td></tr>`).join('')+
     `</tbody><tfoot><tr><th>Total</th><th class="n">${nf1.format(T.ap)}</th><th class="n">${nf1.format(T.ac)}</th><th class="n">${nf0.format(T.pct)}%</th><th class="n">${nf0.format(T.s)}</th><th>${T.sha?nf1.format(T.sha):'—'}</th><th class="n">${pf(T.u)}</th>${hasIm?`<th class="n">${pf(T.im)}</th>`:''}<th class="n">${pf(T.av)}</th><th class="n">${pf(T.ar)}</th></tr></tfoot>`;
   // tabela por talhão
   const fr=(a,b)=>a?fmtD(a)+(b&&b!==a?' a '+fmtD(b):''):'—';
@@ -1222,6 +1260,47 @@ function renderColheita(){
     rows.map(o=>{const r=o.res,sha=r?r.s/(o.ac||o.ap):null,st=o.ac>=o.ap-.05&&o.ac?'ok':o.ac?'parc':'';
       return `<tr class="${st?'':'mut'}"><td>${esc(o.f||'—')}</td><td><button class="lnk" data-k="${esc(o.k)}">${esc(o.tl)}</button></td><td><span class="cdot" style="background:${vp.get(o.v)||PAL[0]}"></span>${esc(o.v)}</td><td class="n">${nf1.format(o.ap)}</td><td>${fr(o.hIni,o.hFim)}</td><td>${fr(o.d0,o.d1)}</td><td class="n">${o.ac?nf1.format(o.ac)+(st==='parc'?' <span class="help">('+nf0.format(o.ac/o.ap*100)+'%)</span>':''):'—'}</td><td class="n">${r?nf0.format(r.l):'—'}</td><td class="n">${r?nf0.format(r.s):'—'}</td><td class="n"><b>${sha?nf1.format(sha):'—'}</b></td><td class="n">${pf(r&&r.u)}</td>${hasIm?`<td class="n">${pf(r&&r.im)}</td>`:''}<td class="n">${pf(r&&r.av)}</td><td class="n">${pf(r&&r.ar)}</td></tr>`;}).join('')+`</tbody>`;
   $$('#tbColhTal button[data-k]').forEach(b=>b.onclick=()=>{const t=$$('.tab').find(x=>x.dataset.view==='mapa');if(t)t.click();setTimeout(()=>pickTal(b.dataset.k),50);});
+}
+function colhExtras(rows,T,byD,pv,ult){
+  const pf=v=>v==null?'—':nf1.format(v),vp=varPalette(),G=cssv('--graf-7'),INK=cssv('--ink'),MU=cssv('--muted');
+  const done=rows.filter(o=>o.res&&o.d1).map(o=>({...o,sha:o.res.s/(o.ac||o.ap),area:o.ac||o.ap}));
+  // períodos: safra, últimos 15 e 7 dias, e cada semana
+  const per=[];if(ult){const d0=[...byD.keys()].sort()[0];per.push({lab:'Safra toda',a:d0,b:ult});[15,7].forEach(n=>per.push({lab:'Últimos '+n+' dias',a:addDays(ult,-(n-1)),b:ult}));
+    let w=addDays(d0,-((new Date(d0+'T12:00:00').getDay()+6)%7));const wk=[];while(w<=ult){wk.push({lab:'Semana '+fmtD(w<d0?d0:w),a:w,b:addDays(w,6)});w=addDays(w,7);}per.push(...wk.reverse());}
+  $('#colhPer').innerHTML=per.length?per.map((p,i)=>{let ha=0;byD.forEach((v,d)=>{if(d>=p.a&&d<=p.b)ha+=v;});const ds=done.filter(o=>o.d1>=p.a&&o.d1<=p.b),sc=ds.reduce((s,o)=>s+o.res.s,0),ar=ds.reduce((s,o)=>s+o.area,0);
+    return `<div class="cper${i===0?' on':''}"><small>${esc(p.lab)}</small><b>${ar?nf1.format(sc/ar):'—'}<i>sc/ha</i></b><span>${nf0.format(ha)} ha colhidos</span><span>${nf0.format(sc)} sc</span></div>`;}).join(''):'<span class="help">Sem colheita lançada.</span>';
+  // evolução % colhido x previsto
+  const all=[...byD.keys(),...pv.keys()].sort();
+  if(all.length){const days=dateRange(all[0],all[all.length-1]);let a=0,b=0;
+    mk('chColhEv',{data:{labels:days.map(fmtD),datasets:[
+      {type:'line',label:'Colhido (%)',unit:'%',data:days.map(d=>{a+=byD.get(d)||0;return ult&&d<=ult?a/T.ap*100:null;}),borderColor:G,backgroundColor:G+'33',fill:'origin',pointRadius:0,borderWidth:2.5,tension:.2},
+      {type:'line',label:'Previsto (%)',unit:'%',data:days.map(d=>(b+=pv.get(d)||0)/T.ap*100),borderColor:MU,borderDash:[6,4],pointRadius:0,borderWidth:1.8,tension:.2}]},
+      options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:12}},y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip}}}}});}
+  // sc/ha acumulada e umidade por dia de fechamento
+  const dd=[...new Set(done.map(o=>o.d1))].sort();let sc=0,ar=0;
+  mk('chColhSc',{data:{labels:dd.map(fmtD),datasets:[
+    {type:'line',label:'sc/ha acumulada',unit:'sc/ha',data:dd.map(d=>{done.filter(o=>o.d1===d).forEach(o=>{sc+=o.res.s;ar+=o.area;});return ar?sc/ar:null;}),borderColor:G,pointRadius:3,pointBackgroundColor:G,borderWidth:2.5,tension:.2,yAxisID:'y'},
+    {type:'bar',label:'Umidade do dia',unit:'%',data:dd.map(d=>{const x=done.filter(o=>o.d1===d&&o.res.u!=null);const w=x.reduce((s,o)=>s+o.res.b,0);return w?x.reduce((s,o)=>s+o.res.u*o.res.b,0)/w:null;}),backgroundColor:cssv('--rain')+'55',yAxisID:'y1',maxBarThickness:18}]},
+    options:{interaction:{mode:'index',intersect:false},scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkipPadding:12}},y:{title:{display:true,text:'sc/ha'}},y1:{position:'right',grid:{display:false},title:{display:true,text:'umidade %'},suggestedMin:10,suggestedMax:20}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:haTip}}}}});
+  // top 10
+  const top=done.slice().sort((a,b)=>b.sha-a.sha).slice(0,10);
+  $('#tbColhTop').innerHTML=`<thead><tr><th>#</th><th>Talhão</th><th>Variedade</th><th class="n">ha</th><th>Colhido em</th><th class="n">sc/ha</th></tr></thead><tbody>`+
+    (top.length?top.map((o,i)=>`<tr><td>${i+1}</td><td><b>${esc(o.tl)}</b><br><span class="help">${esc(o.f||'')}</span></td><td><span class="cdot" style="background:${vp.get(o.v)||PAL[0]}"></span>${esc(o.v)}</td><td class="n">${nf1.format(o.area)}</td><td>${fmtD(o.d1)}</td><td class="n"><b>${nf1.format(o.sha)}</b></td></tr>`).join(''):'<tr><td colspan="6" class="help">Nenhum talhão com pesagem ainda.</td></tr>')+'</tbody>';
+  // por fazenda
+  const fz=new Map();rows.forEach(o=>{const f=o.f||'—';if(!fz.has(f))fz.set(f,[]);fz.get(f).push(o);});
+  const fr=[...fz.entries()].map(([f,rs])=>({f,...colhAgg(rs)})).filter(x=>x.ac>0).sort((a,b)=>(b.sha||0)-(a.sha||0));
+  $('#colhFazTxt').textContent=fr.length?`Média geral ${T.sha?nf1.format(T.sha)+' sc/ha':'—'} · ${fr.length} fazendas com colheita`:'Sem colheita lançada.';
+  mk('chColhFaz',{type:'bar',data:{labels:fr.map(x=>x.f),datasets:[{label:'sc/ha',unit:'sc/ha',data:fr.map(x=>x.sha),backgroundColor:fr.map(x=>x.sha>=T.sha?G:G+'88'),borderRadius:3,maxBarThickness:26}]},
+    options:{indexAxis:'y',scales:{x:{beginAtZero:false,suggestedMin:Math.max(0,Math.min(...fr.map(x=>x.sha||0))-8),title:{display:true,text:'sc/ha'}},y:{grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>nf1.format(c.parsed.x)+' sc/ha'}}}}});
+  $('#tbColhFaz').innerHTML=`<thead><tr><th>Fazenda</th><th class="n">Plantada</th><th class="n">Colhida</th><th class="n">%</th><th class="n">Sacas</th><th class="n">sc/ha</th><th class="n">Umid.</th><th class="n">Avar.</th></tr></thead><tbody>`+
+    [...fz.entries()].map(([f,rs])=>({f,...colhAgg(rs)})).sort((a,b)=>b.ac-a.ac||a.f.localeCompare(b.f,'pt')).map(x=>`<tr${x.ac?'':' class="mut"'}><td>${esc(x.f)}</td><td class="n">${nf0.format(x.ap)}</td><td class="n">${x.ac?nf0.format(x.ac):'—'}</td><td class="n">${x.ac?nf0.format(x.pct)+'%':'—'}</td><td class="n">${x.s?nf0.format(x.s):'—'}</td><td class="n"><b>${x.sha?nf1.format(x.sha):'—'}</b></td><td class="n">${pf(x.u)}</td><td class="n">${pf(x.av)}</td></tr>`).join('')+'</tbody>';
+  // cruzamentos
+  const vs=[...new Set(done.map(o=>o.v))],sets=f=>vs.map(v=>({label:v,data:done.filter(o=>o.v===v).map(o=>({x:f(o),y:o.sha,tl:o.tl})),backgroundColor:vp.get(v)||PAL[0],pointRadius:5,pointHoverRadius:7}));
+  const rainC=o=>{let t=0;dateRange(o.p0,o.d1).forEach(d=>t+=M.rainK(o.k,d));return t;};
+  const tip={callbacks:{label:c=>`${c.raw.tl} (${c.dataset.label}): ${nf1.format(c.raw.y)} sc/ha`}};
+  mk('chColhChuva',{type:'scatter',data:{datasets:sets(rainC)},options:{scales:{x:{title:{display:true,text:'chuva do plantio à colheita (mm)'}},y:{title:{display:true,text:'sc/ha'}}},plugins:{legend:{position:'bottom'},tooltip:tip}}});
+  const ep=o=>Date.parse(o.p0+'T12:00:00');
+  mk('chColhEpoca',{type:'scatter',data:{datasets:sets(ep)},options:{scales:{x:{title:{display:true,text:'início do plantio'},ticks:{callback:v=>fmtD(new Date(v).toISOString().slice(0,10))}},y:{title:{display:true,text:'sc/ha'}}},plugins:{legend:{position:'bottom'},tooltip:tip}}});
 }
 function renderSementes(){
   const lots=(DB.lotes||[]).filter(l=>(!L.vr.size||L.vr.has(l.v))&&(!L.sem.size||L.sem.has(l.sem)));
